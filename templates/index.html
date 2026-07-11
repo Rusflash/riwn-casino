@@ -607,7 +607,20 @@
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         async function init() {
             try {
-                const response = await fetch('/api/init', { method: 'POST' });
+                const response = await fetch('/api/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username: 'Игрок' })
+                });
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('Ответ сервера:', text);
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                }
+                
                 const data = await response.json();
                 if (data.success) {
                     sessionId = data.session_id;
@@ -615,12 +628,13 @@
                     generateRouletteBoard();
                     generateNumberGrid();
                     setupEvents();
+                    console.log('✅ Инициализация успешна!');
                 } else {
                     showModal('❌ Ошибка: ' + data.error);
                 }
             } catch (error) {
-                console.error('Ошибка:', error);
-                showModal('❌ Ошибка подключения к серверу!');
+                console.error('Ошибка инициализации:', error);
+                showModal('❌ Ошибка подключения к серверу!<br><small>' + error.message + '</small>');
             }
         }
 
@@ -1092,7 +1106,7 @@
         }
 
         // ===== ЗАПУСК =====
-        init();
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
