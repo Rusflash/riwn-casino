@@ -15,13 +15,11 @@ CORS(app)
 DATABASE = 'ruwin.db'
 
 def get_db():
-    """Получение соединения с БД с правильными настройками"""
     conn = sqlite3.connect(DATABASE, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
-    """Инициализация базы данных"""
     conn = get_db()
     c = conn.cursor()
     
@@ -52,7 +50,7 @@ def init_db():
 
 init_db()
 
-# ===== КЛАСС ИГРОКА С ПРАВИЛЬНОЙ РАБОТОЙ С БД =====
+# ===== КЛАСС ИГРОКА =====
 class RuWinCasino:
     def __init__(self, player_id, ip_address, username="Игрок"):
         self.player_id = player_id
@@ -79,8 +77,10 @@ class RuWinCasino:
                 self.wins = data[2]
                 self.level = data[3]
                 self.xp = data[4]
+                print(f"✅ Загружен баланс: {self.balance}")
             else:
                 self.save_to_db()
+                print(f"✅ Создан новый игрок с балансом: {self.balance}")
         except Exception as e:
             print(f"Ошибка загрузки данных: {e}")
     
@@ -95,10 +95,17 @@ class RuWinCasino:
                        self.wins, self.level, self.xp, datetime.now().isoformat()))
             conn.commit()
             conn.close()
+            print(f"💾 Сохранен баланс: {self.balance}")
             return True
         except Exception as e:
             print(f"Ошибка сохранения: {e}")
             return False
+    
+    def update_balance(self, amount):
+        """Обновляет баланс и сразу сохраняет"""
+        self.balance += amount
+        self.save_to_db()
+        return self.balance
     
     def get_stats(self):
         total = self.total_bets
@@ -164,7 +171,6 @@ def get_player(player_id, ip_address):
             players[player_id] = RuWinCasino(player_id, ip_address)
         return players[player_id]
 
-# ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 def get_client_ip():
     if request.headers.get('X-Forwarded-For'):
         ip = request.headers.get('X-Forwarded-For').split(',')[0].strip()
@@ -178,7 +184,6 @@ def is_vpn_user(ip_address):
     vpn_ips = ['147.90.14.196']
     return ip_address in vpn_ips
 
-# ===== ОСНОВНЫЕ МАРШРУТЫ =====
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -193,7 +198,6 @@ def init_game():
         ip_address = get_client_ip()
         is_vpn = is_vpn_user(ip_address)
         
-        # Проверяем существование игрока
         try:
             conn = get_db()
             c = conn.cursor()
@@ -229,7 +233,6 @@ def init_game():
         print(f"Ошибка init: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ===== ЛИДЕРБОРД =====
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
     try:
@@ -321,6 +324,8 @@ def roulette_spin():
         game.total_bets += 1
         game.save_to_db()
         
+        print(f"🎰 Рулетка: новый баланс {game.balance}")
+        
         return jsonify({
             'success': True,
             'result': result,
@@ -389,6 +394,8 @@ def slots_spin():
         
         game.total_bets += 1
         game.save_to_db()
+        
+        print(f"🎲 Слоты: новый баланс {game.balance}")
         
         return jsonify({
             'success': True,
@@ -607,6 +614,7 @@ def crash_start():
             crash_point = 2.0 + random.uniform(0, 1.5)
         
         game.balance -= amount
+        game.save_to_db()
         
         return jsonify({
             'success': True,
