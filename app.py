@@ -14,8 +14,10 @@ def init_db():
     conn = sqlite3.connect('ruwin.db')
     c = conn.cursor()
     
+    # Таблица игроков (привязка по IP)
     c.execute('''CREATE TABLE IF NOT EXISTS players
-                 (session_id TEXT PRIMARY KEY,
+                 (player_id TEXT PRIMARY KEY,
+                  ip_address TEXT,
                   username TEXT,
                   balance INTEGER DEFAULT 10000,
                   total_bets INTEGER DEFAULT 0,
@@ -25,25 +27,27 @@ def init_db():
                   created_at TEXT,
                   last_login TEXT)''')
     
+    # Таблица истории игр
     c.execute('''CREATE TABLE IF NOT EXISTS game_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  session_id TEXT,
+                  player_id TEXT,
                   game TEXT,
                   bet_amount INTEGER,
                   win_amount INTEGER,
                   result TEXT,
                   timestamp TEXT,
-                  FOREIGN KEY (session_id) REFERENCES players(session_id))''')
+                  FOREIGN KEY (player_id) REFERENCES players(player_id))''')
     
     conn.commit()
     conn.close()
 
 init_db()
 
-# ===== КЛАСС ИГРОКА С БД =====
+# ===== КЛАСС ИГРОКА =====
 class RuWinCasino:
-    def __init__(self, session_id, username="Игрок"):
-        self.session_id = session_id
+    def __init__(self, player_id, ip_address, username="Игрок"):
+        self.player_id = player_id
+        self.ip_address = ip_address
         self.username = username
         self.load_data()
     
@@ -51,7 +55,7 @@ class RuWinCasino:
         conn = sqlite3.connect('ruwin.db')
         c = conn.cursor()
         
-        c.execute("SELECT balance, total_bets, wins, level, xp FROM players WHERE session_id = ?", (self.session_id,))
+        c.execute("SELECT balance, total_bets, wins, level, xp FROM players WHERE player_id = ?", (self.player_id,))
         data = c.fetchone()
         conn.close()
         
@@ -74,10 +78,10 @@ class RuWinCasino:
         c = conn.cursor()
         
         c.execute('''INSERT OR REPLACE INTO players 
-                     (session_id, username, balance, total_bets, wins, level, xp, last_login)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                  (self.session_id, self.username, self.balance, self.total_bets, self.wins, 
-                   self.level, self.xp, datetime.now().isoformat()))
+                     (player_id, ip_address, username, balance, total_bets, wins, level, xp, last_login)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (self.player_id, self.ip_address, self.username, self.balance, self.total_bets, 
+                   self.wins, self.level, self.xp, datetime.now().isoformat()))
         
         conn.commit()
         conn.close()
@@ -89,6 +93,7 @@ class RuWinCasino:
         winrate = (wins / total * 100) if total > 0 else 0
         
         return {
+            'player_id': self.player_id,
             'balance': self.balance,
             'total_bets': total,
             'wins': wins,
@@ -111,9 +116,9 @@ class RuWinCasino:
         c = conn.cursor()
         
         c.execute('''INSERT INTO game_history 
-                     (session_id, game, bet_amount, win_amount, result, timestamp)
+                     (player_id, game, bet_amount, win_amount, result, timestamp)
                      VALUES (?, ?, ?, ?, ?, ?)''',
-                  (self.session_id, game, bet_amount, win_amount, result, datetime.now().isoformat()))
+                  (self.player_id, game, bet_amount, win_amount, result, datetime.now().isoformat()))
         
         conn.commit()
         conn.close()
@@ -124,20 +129,32 @@ class RuWinCasino:
         
         c.execute('''SELECT game, bet_amount, win_amount, result, timestamp 
                      FROM game_history 
-                     WHERE session_id = ? 
-                     ORDER BY id DESC LIMIT ?''', (self.session_id, limit))
+                     WHERE player_id = ? 
+                     ORDER BY id DESC LIMIT ?''', (self.player_id, limit))
         
         history = [{'game': row[0], 'bet_amount': row[1], 'win_amount': row[2], 
                     'result': row[3], 'timestamp': row[4]} for row in c.fetchall()]
         conn.close()
         return history
 
-games = {}
+# ===== ХРАНИЛИЩЕ ИГРОКОВ =====
+players = {}
 
-def get_game(session_id):
-    if session_id not in games:
-        games[session_id] = RuWinCasino(session_id)
-    return games[session_id]
+def get_player(player_id, ip_address):
+    if player_id not in players:
+        players[player_id] = RuWinCasino(player_id, ip_address)
+    return players[player_id]
+
+# ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+def get_client_ip():
+    """Получает реальный IP клиента"""
+    if request.headers.get('X-Forwarded-For'):
+        ip = request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    elif request.headers.get('X-Real-IP'):
+        ip = request.headers.get('X-Real-IP')
+    else:
+        ip = request.remote_addr
+    return ip
 
 @app.route('/')
 def index():
@@ -146,23 +163,42 @@ def index():
 @app.route('/api/init', methods=['POST'])
 def init_game():
     try:
-        # Принудительно читаем JSON
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
-        username = data.get('username', 'Игрок')
-        session_id = secrets.token_hex(16)
         
-        game = RuWinCasino(session_id, username)
-        games[session_id] = game
+        # Получаем IP-адрес
+        ip_address = get_client_ip()
+        
+        # Генерируем уникальный ID на основе IP + случайная соль
+        salt = secrets.token_hex(4)
+        player_id = f"{ip_address.replace('.', '_')}_{salt}"
+        
+        # Проверяем, есть ли уже игрок с таким IP
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
+        c.execute("SELECT player_id FROM players WHERE ip_address = ?", (ip_address,))
+        existing = c.fetchone()
+        conn.close()
+        
+        if existing:
+            # Если игрок уже есть, используем его ID
+            player_id = existing[0]
+        
+        username = data.get('username', f'Игрок_{ip_address.split(".")[-1]}')
+        
+        game = get_player(player_id, ip_address)
+        game.username = username
+        game.save_to_db()
         
         return jsonify({
             'success': True,
-            'session_id': session_id,
+            'player_id': player_id,
+            'ip_address': ip_address,
             'username': username,
             'stats': game.get_stats(),
-            'history': game.get_history(10)
+            'history': game.get_history(10),
+            'is_new': not existing
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -173,14 +209,15 @@ def load_game():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
-        session_id = data.get('session_id')
         
-        if session_id in games:
-            game = games[session_id]
+        player_id = data.get('player_id')
+        ip_address = get_client_ip()
+        
+        if player_id in players:
+            game = players[player_id]
         else:
-            game = RuWinCasino(session_id)
-            games[session_id] = game
+            game = RuWinCasino(player_id, ip_address)
+            players[player_id] = game
         
         return jsonify({
             'success': True,
@@ -198,12 +235,12 @@ def roulette_spin():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        session_id = data.get('session_id')
+        player_id = data.get('player_id')
         bet_type = data.get('bet_type')
         amount = float(data.get('amount', 0))
         number = data.get('number')
         
-        game = get_game(session_id)
+        game = get_player(player_id, get_client_ip())
         
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -272,10 +309,10 @@ def slots_spin():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        session_id = data.get('session_id')
+        player_id = data.get('player_id')
         amount = float(data.get('amount', 0))
         
-        game = get_game(session_id)
+        game = get_player(player_id, get_client_ip())
         
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -336,10 +373,10 @@ def blackjack_start():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        session_id = data.get('session_id')
+        player_id = data.get('player_id')
         amount = float(data.get('amount', 0))
         
-        game = get_game(session_id)
+        game = get_player(player_id, get_client_ip())
         
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -405,12 +442,12 @@ def blackjack_hit():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        session_id = data.get('session_id')
+        player_id = data.get('player_id')
         deck = data.get('deck')
         player_hand = data.get('player_hand')
         amount = float(data.get('amount', 0))
         
-        game = get_game(session_id)
+        game = get_player(player_id, get_client_ip())
         
         player_hand.append(deck.pop())
         
@@ -447,13 +484,13 @@ def blackjack_stand():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        session_id = data.get('session_id')
+        player_id = data.get('player_id')
         deck = data.get('deck')
         player_hand = data.get('player_hand')
         dealer_hand = data.get('dealer_hand')
         amount = float(data.get('amount', 0))
         
-        game = get_game(session_id)
+        game = get_player(player_id, get_client_ip())
         
         while sum(dealer_hand) < 17:
             dealer_hand.append(deck.pop())
@@ -504,10 +541,10 @@ def crash_start():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        session_id = data.get('session_id')
+        player_id = data.get('player_id')
         amount = float(data.get('amount', 0))
         
-        game = get_game(session_id)
+        game = get_player(player_id, get_client_ip())
         
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -534,11 +571,11 @@ def crash_cashout():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        session_id = data.get('session_id')
+        player_id = data.get('player_id')
         amount = float(data.get('amount', 0))
         multiplier = float(data.get('multiplier', 1))
         
-        game = get_game(session_id)
+        game = get_player(player_id, get_client_ip())
         
         win_amount = amount * multiplier
         game.balance += win_amount
@@ -565,10 +602,10 @@ def crash_result():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        session_id = data.get('session_id')
+        player_id = data.get('player_id')
         amount = float(data.get('amount', 0))
         
-        game = get_game(session_id)
+        game = get_player(player_id, get_client_ip())
         
         game.total_bets += 1
         game.add_history('crash', amount, -amount, 'loss')
