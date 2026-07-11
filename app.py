@@ -154,9 +154,7 @@ def get_client_ip():
     return ip
 
 def is_vpn_user(ip_address):
-    vpn_ips = [
-        '147.90.14.196',
-    ]
+    vpn_ips = ['147.90.14.196']
     return ip_address in vpn_ips
 
 @app.route('/')
@@ -173,9 +171,6 @@ def init_game():
         ip_address = get_client_ip()
         is_vpn = is_vpn_user(ip_address)
         
-        salt = secrets.token_hex(4)
-        player_id = f"{ip_address.replace('.', '_')}_{salt}"
-        
         conn = sqlite3.connect('ruwin.db')
         c = conn.cursor()
         c.execute("SELECT player_id FROM players WHERE ip_address = ?", (ip_address,))
@@ -184,6 +179,9 @@ def init_game():
         
         if existing:
             player_id = existing[0]
+        else:
+            salt = secrets.token_hex(4)
+            player_id = f"{ip_address.replace('.', '_')}_{salt}"
         
         username = data.get('username', f'Игрок_{ip_address.split(".")[-1]}')
         
@@ -204,29 +202,31 @@ def init_game():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/load', methods=['POST'])
-def load_game():
+# ===== ЛИДЕРБОРД =====
+@app.route('/api/leaderboard', methods=['GET'])
+def get_leaderboard():
     try:
-        data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
         
-        player_id = data.get('player_id')
-        ip_address = get_client_ip()
-        is_vpn = is_vpn_user(ip_address)
+        c.execute('''SELECT username, balance, level, wins, total_bets 
+                     FROM players 
+                     ORDER BY balance DESC 
+                     LIMIT 10''')
         
-        if player_id in players:
-            game = players[player_id]
-        else:
-            game = RuWinCasino(player_id, ip_address)
-            players[player_id] = game
+        leaders = []
+        for idx, row in enumerate(c.fetchall(), 1):
+            leaders.append({
+                'rank': idx,
+                'username': row[0],
+                'balance': row[1],
+                'level': row[2],
+                'wins': row[3],
+                'total_bets': row[4]
+            })
         
-        return jsonify({
-            'success': True,
-            'stats': game.get_stats(),
-            'history': game.get_history(10),
-            'is_vpn': is_vpn
-        })
+        conn.close()
+        return jsonify({'success': True, 'leaders': leaders})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -239,6 +239,9 @@ def roulette_spin():
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
         player_id = data.get('player_id')
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Не указан player_id'}), 400
+            
         bet_type = data.get('bet_type')
         amount = float(data.get('amount', 0))
         number = data.get('number')
@@ -313,6 +316,9 @@ def slots_spin():
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
         player_id = data.get('player_id')
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Не указан player_id'}), 400
+            
         amount = float(data.get('amount', 0))
         
         game = get_player(player_id, get_client_ip())
@@ -377,6 +383,9 @@ def blackjack_start():
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
         player_id = data.get('player_id')
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Не указан player_id'}), 400
+            
         amount = float(data.get('amount', 0))
         
         game = get_player(player_id, get_client_ip())
@@ -446,6 +455,9 @@ def blackjack_hit():
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
         player_id = data.get('player_id')
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Не указан player_id'}), 400
+            
         deck = data.get('deck')
         player_hand = data.get('player_hand')
         amount = float(data.get('amount', 0))
@@ -488,6 +500,9 @@ def blackjack_stand():
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
         player_id = data.get('player_id')
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Не указан player_id'}), 400
+            
         deck = data.get('deck')
         player_hand = data.get('player_hand')
         dealer_hand = data.get('dealer_hand')
@@ -545,6 +560,9 @@ def crash_start():
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
         player_id = data.get('player_id')
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Не указан player_id'}), 400
+            
         amount = float(data.get('amount', 0))
         
         game = get_player(player_id, get_client_ip())
@@ -575,6 +593,9 @@ def crash_cashout():
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
         player_id = data.get('player_id')
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Не указан player_id'}), 400
+            
         amount = float(data.get('amount', 0))
         multiplier = float(data.get('multiplier', 1))
         
@@ -606,6 +627,9 @@ def crash_result():
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
         player_id = data.get('player_id')
+        if not player_id:
+            return jsonify({'success': False, 'error': 'Не указан player_id'}), 400
+            
         amount = float(data.get('amount', 0))
         
         game = get_player(player_id, get_client_ip())
