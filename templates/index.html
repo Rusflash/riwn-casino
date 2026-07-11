@@ -14,7 +14,6 @@
             padding: 20px;
         }
         
-        /* ===== ХЕДЕР ===== */
         .header {
             background: linear-gradient(135deg, rgba(10,10,15,0.95), rgba(20,20,40,0.95));
             border: 1px solid rgba(0,240,255,0.15);
@@ -48,7 +47,6 @@
         .balance-amount { font-size: 22px; color: #00ff88; font-weight: bold; }
         .level-amount { font-size: 22px; color: #00f0ff; font-weight: bold; }
         
-        /* ===== VPN УВЕДОМЛЕНИЕ ===== */
         .vpn-banner {
             background: linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(0, 255, 136, 0.05));
             border: 1px solid rgba(0, 240, 255, 0.2);
@@ -93,7 +91,6 @@
         }
         .vpn-banner .vpn-close:hover { color: #fff; }
         
-        /* ===== НАВИГАЦИЯ ===== */
         .nav {
             display: flex;
             gap: 8px;
@@ -122,7 +119,6 @@
             border-color: rgba(0,240,255,0.2);
         }
         
-        /* ===== ОБЩИЕ ===== */
         .page { display: none; animation: fadeIn 0.3s ease; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
@@ -180,6 +176,105 @@
         }
         .spin-btn:hover { transform: scale(1.02); box-shadow: 0 0 40px rgba(0,240,255,0.2); }
         .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        
+        /* ===== ЛИДЕРБОРД ===== */
+        .leaderboard-section {
+            margin-top: 30px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(0,240,255,0.08);
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .leaderboard-header h3 {
+            color: #00f0ff;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .leaderboard-header .update-time {
+            font-size: 11px;
+            color: #666;
+        }
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .leaderboard-table th {
+            text-align: left;
+            padding: 10px 15px;
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(0,240,255,0.05);
+        }
+        .leaderboard-table td {
+            padding: 10px 15px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: all 0.3s;
+        }
+        .leaderboard-table tr:hover td {
+            background: rgba(0,240,255,0.03);
+        }
+        .leaderboard-table .rank-1 td { color: #ffd700; }
+        .leaderboard-table .rank-2 td { color: #c0c0c0; }
+        .leaderboard-table .rank-3 td { color: #cd7f32; }
+        .leaderboard-table .rank-number {
+            font-weight: 700;
+            font-size: 14px;
+            min-width: 30px;
+        }
+        .leaderboard-table .rank-1 .rank-number { color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.3); }
+        .leaderboard-table .rank-2 .rank-number { color: #c0c0c0; text-shadow: 0 0 20px rgba(192,192,192,0.3); }
+        .leaderboard-table .rank-3 .rank-number { color: #cd7f32; text-shadow: 0 0 20px rgba(205,127,50,0.3); }
+        .leaderboard-table .player-name { font-weight: 600; }
+        .leaderboard-table .player-balance {
+            font-weight: 700;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0,255,136,0.1);
+        }
+        .leaderboard-table .player-level {
+            color: #00f0ff;
+            font-weight: 600;
+        }
+        .leaderboard-table .player-stats {
+            color: #888;
+            font-size: 12px;
+        }
+        .leaderboard-table tr {
+            animation: rowAppear 0.5s ease;
+        }
+        @keyframes rowAppear {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .leaderboard-table .rank-1 {
+            background: rgba(255,215,0,0.03);
+            border-left: 2px solid rgba(255,215,0,0.3);
+        }
+        .leaderboard-table .rank-2 {
+            background: rgba(192,192,192,0.02);
+            border-left: 2px solid rgba(192,192,192,0.2);
+        }
+        .leaderboard-table .rank-3 {
+            background: rgba(205,127,50,0.02);
+            border-left: 2px solid rgba(205,127,50,0.2);
+        }
+        .leaderboard-empty {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 14px;
+        }
         
         /* ===== ЛОББИ ===== */
         .lobby-header { text-align: center; margin-bottom: 30px; }
@@ -485,6 +580,14 @@
             .crash-rocket { font-size: 32px; }
             .game-wrapper { padding: 15px; }
             .header { padding: 15px; }
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 8px 10px;
+                font-size: 11px;
+            }
+            .leaderboard-table .player-stats {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -560,6 +663,17 @@
                 <div class="stat-item"><div class="stat-label">Выигрыши</div><div class="stat-value win" id="wins">0</div></div>
                 <div class="stat-item"><div class="stat-label">Проигрыши</div><div class="stat-value loss" id="losses">0</div></div>
                 <div class="stat-item"><div class="stat-label">Winrate</div><div class="stat-value" id="winrate">0%</div></div>
+            </div>
+            
+            <!-- ЛИДЕРБОРД -->
+            <div class="leaderboard-section">
+                <div class="leaderboard-header">
+                    <h3>🏆 ТОП ИГРОКОВ</h3>
+                    <span class="update-time" id="leaderboardTime">Обновлено: сейчас</span>
+                </div>
+                <div id="leaderboardContainer">
+                    <div class="leaderboard-empty">Загрузка...</div>
+                </div>
             </div>
         </div>
 
@@ -659,6 +773,7 @@
         let selectedDozen = null;
         let spinning = false;
         let isRouletteSpinning = false;
+        let leaderboardInterval = null;
 
         let blackjackState = { deck: [], playerHand: [], dealerHand: [], amount: 0, gameOver: false };
         let crashState = { multiplier: 1, isActive: false, isBetPlaced: false, crashPoint: 0, amount: 0, interval: null };
@@ -676,22 +791,118 @@
             document.getElementById('vpnBanner').classList.remove('show');
         }
 
+        // ===== ЛИДЕРБОРД =====
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('/api/leaderboard');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderLeaderboard(data.leaders);
+                    updateLeaderboardTime();
+                } else {
+                    document.getElementById('leaderboardContainer').innerHTML = 
+                        '<div class="leaderboard-empty">❌ Ошибка загрузки</div>';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки лидерборда:', error);
+                document.getElementById('leaderboardContainer').innerHTML = 
+                    '<div class="leaderboard-empty">❌ Ошибка соединения</div>';
+            }
+        }
+
+        function renderLeaderboard(leaders) {
+            const container = document.getElementById('leaderboardContainer');
+            
+            if (!leaders || leaders.length === 0) {
+                container.innerHTML = '<div class="leaderboard-empty">📊 Пока нет игроков</div>';
+                return;
+            }
+            
+            let html = `
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Игрок</th>
+                            <th>💰 Баланс</th>
+                            <th>🏆 Уровень</th>
+                            <th class="player-stats">🏅 Победы</th>
+                            <th class="player-stats">🎯 Ставок</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            leaders.forEach(player => {
+                const rankClass = player.rank <= 3 ? `rank-${player.rank}` : '';
+                const medal = player.rank === 1 ? '🥇' : player.rank === 2 ? '🥈' : player.rank === 3 ? '🥉' : '';
+                
+                html += `
+                    <tr class="${rankClass}">
+                        <td class="rank-number">${medal || '#' + player.rank}</td>
+                        <td class="player-name">${escapeHtml(player.username)}</td>
+                        <td class="player-balance">$${player.balance.toLocaleString()}</td>
+                        <td class="player-level">${player.level}</td>
+                        <td class="player-stats">${player.wins}</td>
+                        <td class="player-stats">${player.total_bets}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateLeaderboardTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('leaderboardTime').textContent = `Обновлено: ${timeStr}`;
+        }
+
+        function startLeaderboardUpdates() {
+            loadLeaderboard();
+            if (leaderboardInterval) clearInterval(leaderboardInterval);
+            leaderboardInterval = setInterval(() => {
+                loadLeaderboard();
+            }, 10000);
+        }
+
+        function stopLeaderboardUpdates() {
+            if (leaderboardInterval) {
+                clearInterval(leaderboardInterval);
+                leaderboardInterval = null;
+            }
+        }
+
         // ===== ИНИЦИАЛИЗАЦИЯ =====
         async function init() {
             try {
+                console.log('🔄 Инициализация...');
+                
                 const response = await fetch('/api/init', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: 'Игрок' })
                 });
                 
+                console.log('📡 Ответ сервера:', response.status);
+                
                 if (!response.ok) {
                     const text = await response.text();
-                    console.error('Ответ сервера:', text);
+                    console.error('❌ Ошибка HTTP:', text);
                     throw new Error(`HTTP ${response.status}: ${text}`);
                 }
                 
                 const data = await response.json();
+                console.log('📦 Данные:', data);
+                
                 if (data.success) {
                     playerId = data.player_id;
                     updateUI(data.stats);
@@ -701,15 +912,20 @@
                     
                     if (data.is_vpn) { showVpnBanner(true); }
                     
+                    startLeaderboardUpdates();
+                    
                     console.log('✅ Инициализация успешна!');
                     console.log(`👤 Player ID: ${playerId}`);
                     console.log(`📡 IP: ${data.ip_address}`);
+                    if (data.is_new) { console.log('🎉 Новый игрок!'); }
+                    else { console.log('👋 Добро пожаловать назад!'); }
                     if (data.is_vpn) { console.log('🔒 VPN активирован! Комиссия понижена'); }
                 } else {
+                    console.error('❌ Ошибка сервера:', data.error);
                     showModal('❌ Ошибка: ' + data.error);
                 }
             } catch (error) {
-                console.error('Ошибка инициализации:', error);
+                console.error('💥 Критическая ошибка:', error);
                 showModal('❌ Ошибка подключения к серверу!<br><small>' + error.message + '</small>');
             }
         }
@@ -730,6 +946,11 @@
             document.getElementById(`page-${page}`).classList.add('active');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.querySelector(`.nav-btn[onclick="showPage('${page}')"]`).classList.add('active');
+            
+            if (page === 'lobby') {
+                loadLeaderboard();
+            }
+            
             if (page === 'crash') resetCrashUI();
         }
 
@@ -791,6 +1012,12 @@
         // ===== РУЛЕТКА =====
         async function rouletteSpin() {
             if (isRouletteSpinning) return;
+            
+            if (!playerId) {
+                showModal('❌ Ошибка: игрок не инициализирован! Перезагрузите страницу.');
+                return;
+            }
+            
             const amount = parseFloat(document.getElementById('rouletteBet').value);
             if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
             
@@ -840,6 +1067,12 @@
         // ===== СЛОТЫ =====
         async function slotsSpin() {
             if (spinning) return;
+            
+            if (!playerId) {
+                showModal('❌ Ошибка: игрок не инициализирован! Перезагрузите страницу.');
+                return;
+            }
+            
             const amount = parseFloat(document.getElementById('slotsBet').value);
             if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
             
@@ -905,6 +1138,11 @@
 
         // ===== БЛЭКДЖЕК =====
         async function blackjackStart() {
+            if (!playerId) {
+                showModal('❌ Ошибка: игрок не инициализирован! Перезагрузите страницу.');
+                return;
+            }
+            
             const amount = parseFloat(document.getElementById('blackjackBet').value);
             if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
             blackjackState.amount = amount;
@@ -930,6 +1168,7 @@
 
         async function blackjackHit() {
             if (blackjackState.gameOver) return;
+            if (!playerId) { showModal('❌ Ошибка!'); return; }
             try {
                 const response = await fetch('/api/blackjack/hit', {
                     method: 'POST',
@@ -954,6 +1193,7 @@
 
         async function blackjackStand() {
             if (blackjackState.gameOver) return;
+            if (!playerId) { showModal('❌ Ошибка!'); return; }
             try {
                 const response = await fetch('/api/blackjack/stand', {
                     method: 'POST',
@@ -1018,6 +1258,12 @@
         // ===== AVIATOR =====
         async function crashStart() {
             if (crashState.isActive) return;
+            
+            if (!playerId) {
+                showModal('❌ Ошибка: игрок не инициализирован! Перезагрузите страницу.');
+                return;
+            }
+            
             const amount = parseFloat(document.getElementById('crashBet').value);
             if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
             
