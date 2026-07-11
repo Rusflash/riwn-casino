@@ -15,50 +15,58 @@ app.secret_key = secrets.token_hex(32)
 CORS(app)
 
 # ===== ПОДКЛЮЧЕНИЕ К POSTGRESQL =====
-# Используйте Internal Database URL из Render
-DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://user:password@localhost:5432/ruwin')
+DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://localhost:5432/ruwin')
 
 def get_db():
-    """Подключение к PostgreSQL"""
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+    except Exception as e:
+        print(f"❌ Ошибка подключения к БД: {e}")
+        return None
 
 def init_db():
-    """Инициализация таблиц в PostgreSQL"""
-    conn = get_db()
-    c = conn.cursor()
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        user_id TEXT UNIQUE,
-        username TEXT UNIQUE,
-        password TEXT,
-        email TEXT,
-        ip_address TEXT,
-        balance INTEGER DEFAULT 10000,
-        total_bets INTEGER DEFAULT 0,
-        wins INTEGER DEFAULT 0,
-        level INTEGER DEFAULT 1,
-        xp INTEGER DEFAULT 0,
-        created_at TEXT,
-        last_login TEXT,
-        is_verified INTEGER DEFAULT 0
-    )''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS game_history (
-        id SERIAL PRIMARY KEY,
-        user_id TEXT,
-        game TEXT,
-        bet_amount INTEGER,
-        win_amount INTEGER,
-        result TEXT,
-        timestamp TEXT,
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
-    )''')
-    
-    conn.commit()
-    conn.close()
-    print("✅ База данных PostgreSQL инициализирована")
+    try:
+        conn = get_db()
+        if not conn:
+            print("❌ Не удалось подключиться к БД")
+            return
+        
+        c = conn.cursor()
+        
+        # Таблица пользователей
+        c.execute('''CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            user_id TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            email TEXT,
+            ip_address TEXT,
+            balance INTEGER DEFAULT 10000,
+            total_bets INTEGER DEFAULT 0,
+            wins INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
+            xp INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''')
+        
+        # Таблица истории
+        c.execute('''CREATE TABLE IF NOT EXISTS game_history (
+            id SERIAL PRIMARY KEY,
+            user_id TEXT REFERENCES users(user_id),
+            game TEXT,
+            bet_amount INTEGER,
+            win_amount INTEGER,
+            result TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''')
+        
+        conn.commit()
+        conn.close()
+        print("✅ База данных PostgreSQL инициализирована")
+    except Exception as e:
+        print(f"❌ Ошибка инициализации БД: {e}")
 
 init_db()
 
@@ -77,45 +85,48 @@ class User:
     def load_from_db(self):
         try:
             conn = get_db()
+            if not conn:
+                return False
             c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            c.execute("SELECT username, balance, total_bets, wins, level, xp FROM users WHERE user_id = %s", (self.user_id,))
+            c.execute("""
+                SELECT username, balance, total_bets, wins, level, xp 
+                FROM users WHERE user_id = %s
+            """, (self.user_id,))
             data = c.fetchone()
             conn.close()
             
             if data:
-                self.username = data[0]
-                self.balance = data[1]
-                self.total_bets = data[2]
-                self.wins = data[3]
-                self.level = data[4]
-                self.xp = data[5]
+                self.username = data['username']
+                self.balance = data['balance']
+                self.total_bets = data['total_bets']
+                self.wins = data['wins']
+                self.level = data['level']
+                self.xp = data['xp']
+                print(f"✅ Загружен {self.username}: баланс {self.balance}")
                 return True
             return False
         except Exception as e:
-            print(f"Ошибка загрузки: {e}")
+            print(f"❌ Ошибка загрузки: {e}")
             return False
     
     def save_to_db(self):
         try:
             conn = get_db()
+            if not conn:
+                return False
             c = conn.cursor()
-            c.execute('''UPDATE users 
-                         SET balance=%s, total_bets=%s, wins=%s, level=%s, xp=%s, last_login=%s
-                         WHERE user_id=%s''',
-                      (self.balance, self.total_bets, self.wins, self.level, 
-                       self.xp, datetime.now().isoformat(), self.user_id))
+            c.execute('''
+                UPDATE users 
+                SET balance=%s, total_bets=%s, wins=%s, level=%s, xp=%s, last_login=CURRENT_TIMESTAMP
+                WHERE user_id=%s
+            ''', (self.balance, self.total_bets, self.wins, self.level, self.xp, self.user_id))
             conn.commit()
             conn.close()
-            print(f"💾 Сохранен баланс {self.balance} для {self.username}")
+            print(f"💾 Сохранен {self.username}: баланс {self.balance}")
             return True
         except Exception as e:
-            print(f"Ошибка сохранения: {e}")
+            print(f"❌ Ошибка сохранения: {e}")
             return False
-    
-    def change_balance(self, amount):
-        self.balance += amount
-        self.save_to_db()
-        return self.balance
     
     def get_stats(self):
         return {
@@ -141,29 +152,37 @@ class User:
     def add_history(self, game, bet_amount, win_amount, result):
         try:
             conn = get_db()
+            if not conn:
+                return
             c = conn.cursor()
-            c.execute('''INSERT INTO game_history 
-                         (user_id, game, bet_amount, win_amount, result, timestamp)
-                         VALUES (%s, %s, %s, %s, %s, %s)''',
-                      (self.user_id, game, bet_amount, win_amount, result, datetime.now().isoformat()))
+            c.execute('''
+                INSERT INTO game_history (user_id, game, bet_amount, win_amount, result)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (self.user_id, game, bet_amount, win_amount, result))
             conn.commit()
             conn.close()
         except Exception as e:
-            print(f"Ошибка истории: {e}")
+            print(f"❌ Ошибка истории: {e}")
     
     def get_history(self, limit=50):
         try:
             conn = get_db()
+            if not conn:
+                return []
             c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            c.execute('''SELECT game, bet_amount, win_amount, result, timestamp 
-                         FROM game_history 
-                         WHERE user_id = %s 
-                         ORDER BY id DESC LIMIT %s''', (self.user_id, limit))
-            history = [{'game': row[0], 'bet_amount': row[1], 'win_amount': row[2], 
-                        'result': row[3], 'timestamp': row[4]} for row in c.fetchall()]
+            c.execute('''
+                SELECT game, bet_amount, win_amount, result, created_at 
+                FROM game_history 
+                WHERE user_id = %s 
+                ORDER BY id DESC LIMIT %s
+            ''', (self.user_id, limit))
+            history = [{'game': row['game'], 'bet_amount': row['bet_amount'], 
+                        'win_amount': row['win_amount'], 'result': row['result'],
+                        'timestamp': row['created_at']} for row in c.fetchall()]
             conn.close()
             return history
         except Exception as e:
+            print(f"❌ Ошибка истории: {e}")
             return []
 
 # ===== ХРАНИЛИЩЕ ПОЛЬЗОВАТЕЛЕЙ =====
@@ -191,16 +210,13 @@ def validate_password(password):
 
 def get_client_ip():
     if request.headers.get('X-Forwarded-For'):
-        ip = request.headers.get('X-Forwarded-For').split(',')[0].strip()
+        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
     elif request.headers.get('X-Real-IP'):
-        ip = request.headers.get('X-Real-IP')
-    else:
-        ip = request.remote_addr
-    return ip
+        return request.headers.get('X-Real-IP')
+    return request.remote_addr
 
 def is_vpn_user(ip_address):
-    vpn_ips = ['147.90.14.196']
-    return ip_address in vpn_ips
+    return ip_address in ['147.90.14.196']
 
 # ===== МАРШРУТЫ =====
 @app.route('/')
@@ -216,28 +232,29 @@ def register():
         email = data.get('email', '')
         
         if not validate_username(username):
-            return jsonify({'success': False, 'error': 'Имя пользователя должно содержать 3-20 символов (буквы, цифры, _, -)'})
+            return jsonify({'success': False, 'error': 'Имя пользователя 3-20 символов (буквы, цифры, _, -)'})
         
         if not validate_password(password):
-            return jsonify({'success': False, 'error': 'Пароль должен содержать минимум 6 символов'})
+            return jsonify({'success': False, 'error': 'Пароль минимум 6 символов'})
         
         conn = get_db()
-        c = conn.cursor()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Ошибка подключения к БД'}), 500
         
+        c = conn.cursor()
         c.execute("SELECT username FROM users WHERE username = %s", (username,))
         if c.fetchone():
             conn.close()
-            return jsonify({'success': False, 'error': 'Пользователь с таким именем уже существует'})
+            return jsonify({'success': False, 'error': 'Пользователь уже существует'})
         
         user_id = generate_user_id()
         hashed_password = hash_password(password)
         ip_address = get_client_ip()
         
-        c.execute('''INSERT INTO users 
-                     (user_id, username, password, email, ip_address, balance, created_at, last_login)
-                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''',
-                  (user_id, username, hashed_password, email, ip_address, 10000, 
-                   datetime.now().isoformat(), datetime.now().isoformat()))
+        c.execute('''
+            INSERT INTO users (user_id, username, password, email, ip_address)
+            VALUES (%s, %s, %s, %s, %s)
+        ''', (user_id, username, hashed_password, email, ip_address))
         
         conn.commit()
         conn.close()
@@ -249,6 +266,7 @@ def register():
             'username': username
         })
     except Exception as e:
+        print(f"❌ Ошибка регистрации: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
@@ -259,8 +277,10 @@ def login():
         password = data.get('password', '')
         
         conn = get_db()
-        c = conn.cursor()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Ошибка подключения к БД'}), 500
         
+        c = conn.cursor()
         c.execute("SELECT user_id, password FROM users WHERE username = %s", (username,))
         user = c.fetchone()
         conn.close()
@@ -271,12 +291,13 @@ def login():
         if user[1] != hash_password(password):
             return jsonify({'success': False, 'error': 'Неверный пароль'})
         
+        # Обновляем время входа
         conn = get_db()
-        c = conn.cursor()
-        c.execute("UPDATE users SET last_login = %s WHERE user_id = %s", 
-                  (datetime.now().isoformat(), user[0]))
-        conn.commit()
-        conn.close()
+        if conn:
+            c = conn.cursor()
+            c.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = %s", (user[0],))
+            conn.commit()
+            conn.close()
         
         game = get_user(user[0])
         
@@ -288,6 +309,7 @@ def login():
             'stats': game.get_stats()
         })
     except Exception as e:
+        print(f"❌ Ошибка входа: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/init', methods=['POST'])
@@ -312,48 +334,45 @@ def init_game():
             'is_vpn': is_vpn
         })
     except Exception as e:
+        print(f"❌ Ошибка init: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
     try:
         conn = get_db()
-        c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        c.execute('''SELECT username, balance, level, wins, total_bets 
-                     FROM users 
-                     ORDER BY balance DESC 
-                     LIMIT 10''')
+        if not conn:
+            return jsonify({'success': False, 'error': 'Ошибка БД'}), 500
         
-        leaders = []
-        for idx, row in enumerate(c.fetchall(), 1):
-            leaders.append({
-                'rank': idx,
-                'username': row[0],
-                'balance': row[1],
-                'level': row[2],
-                'wins': row[3],
-                'total_bets': row[4]
-            })
+        c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        c.execute('''
+            SELECT username, balance, level, wins, total_bets 
+            FROM users 
+            ORDER BY balance DESC 
+            LIMIT 10
+        ''')
+        
+        leaders = [{'rank': idx+1, 'username': row['username'], 'balance': row['balance'], 
+                    'level': row['level'], 'wins': row['wins'], 'total_bets': row['total_bets']} 
+                   for idx, row in enumerate(c.fetchall())]
         
         conn.close()
         return jsonify({'success': True, 'leaders': leaders})
     except Exception as e:
+        print(f"❌ Ошибка лидерборда: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ ИГРЫ ============
+# ===== РУЛЕТКА =====
 @app.route('/api/roulette/spin', methods=['POST'])
 def roulette_spin():
     try:
         data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
         game = get_user(user_id)
-        
         bet_type = data.get('bet_type')
         amount = float(data.get('amount', 0))
         number = data.get('number')
@@ -415,15 +434,14 @@ def roulette_spin():
             'history': game.get_history(10)
         })
     except Exception as e:
+        print(f"❌ Ошибка рулетки: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ===== СЛОТЫ =====
 @app.route('/api/slots/spin', methods=['POST'])
 def slots_spin():
     try:
         data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -480,16 +498,14 @@ def slots_spin():
             'history': game.get_history(10)
         })
     except Exception as e:
+        print(f"❌ Ошибка слотов: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ БЛЭКДЖЕК ============
+# ===== БЛЭКДЖЕК =====
 @app.route('/api/blackjack/start', methods=['POST'])
 def blackjack_start():
     try:
         data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -558,9 +574,6 @@ def blackjack_start():
 def blackjack_hit():
     try:
         data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -602,9 +615,6 @@ def blackjack_hit():
 def blackjack_stand():
     try:
         data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -656,14 +666,11 @@ def blackjack_stand():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ AVIATOR ============
+# ===== AVIATOR =====
 @app.route('/api/crash/start', methods=['POST'])
 def crash_start():
     try:
         data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -694,9 +701,6 @@ def crash_start():
 def crash_cashout():
     try:
         data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -727,9 +731,6 @@ def crash_cashout():
 def crash_result():
     try:
         data = request.get_json(force=True)
-        if data is None:
-            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
