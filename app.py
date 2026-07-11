@@ -14,7 +14,6 @@ def init_db():
     conn = sqlite3.connect('ruwin.db')
     c = conn.cursor()
     
-    # Таблица игроков (привязка по IP)
     c.execute('''CREATE TABLE IF NOT EXISTS players
                  (player_id TEXT PRIMARY KEY,
                   ip_address TEXT,
@@ -27,7 +26,6 @@ def init_db():
                   created_at TEXT,
                   last_login TEXT)''')
     
-    # Таблица истории игр
     c.execute('''CREATE TABLE IF NOT EXISTS game_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   player_id TEXT,
@@ -156,6 +154,14 @@ def get_client_ip():
         ip = request.remote_addr
     return ip
 
+def is_vpn_user(ip_address):
+    """Проверяет, является ли IP адресом VPN"""
+    vpn_ips = [
+        '147.90.14.196',
+        '147.90.14.197',  # Добавьте другие IP при необходимости
+    ]
+    return ip_address in vpn_ips
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -167,14 +173,12 @@ def init_game():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
         
-        # Получаем IP-адрес
         ip_address = get_client_ip()
+        is_vpn = is_vpn_user(ip_address)
         
-        # Генерируем уникальный ID на основе IP + случайная соль
         salt = secrets.token_hex(4)
         player_id = f"{ip_address.replace('.', '_')}_{salt}"
         
-        # Проверяем, есть ли уже игрок с таким IP
         conn = sqlite3.connect('ruwin.db')
         c = conn.cursor()
         c.execute("SELECT player_id FROM players WHERE ip_address = ?", (ip_address,))
@@ -182,7 +186,6 @@ def init_game():
         conn.close()
         
         if existing:
-            # Если игрок уже есть, используем его ID
             player_id = existing[0]
         
         username = data.get('username', f'Игрок_{ip_address.split(".")[-1]}')
@@ -198,7 +201,8 @@ def init_game():
             'username': username,
             'stats': game.get_stats(),
             'history': game.get_history(10),
-            'is_new': not existing
+            'is_new': not existing,
+            'is_vpn': is_vpn  # <-- Добавляем флаг VPN
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -212,6 +216,7 @@ def load_game():
         
         player_id = data.get('player_id')
         ip_address = get_client_ip()
+        is_vpn = is_vpn_user(ip_address)
         
         if player_id in players:
             game = players[player_id]
@@ -222,10 +227,15 @@ def load_game():
         return jsonify({
             'success': True,
             'stats': game.get_stats(),
-            'history': game.get_history(10)
+            'history': game.get_history(10),
+            'is_vpn': is_vpn
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============ ВСЕ ИГРЫ (РУЛЕТКА, СЛОТЫ, БЛЭКДЖЕК, AVIATOR) ============
+# ... (весь код игр остаётся без изменений, 
+# только заменяем session_id на player_id в payload)
 
 # ============ РУЛЕТКА ============
 @app.route('/api/roulette/spin', methods=['POST'])
