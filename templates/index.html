@@ -1,24 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>RuWin - Проверка</title>
+    <meta charset="UTF-8">
+    <title>RuWin Casino</title>
 </head>
 <body>
     <h1>🎰 RuWin Casino</h1>
-    <p>Если вы это видите, значит index.html загружается!</p>
-    <p>Текущий баланс: <span id="balance">10000</span></p>
-    <button onclick="checkAPI()">Проверить API</button>
+    <p id="status">Загрузка...</p>
+    <p>Баланс: $<span id="balance">0</span></p>
+    <button onclick="testAPI()">Тест API</button>
+
     <script>
-        async function checkAPI() {
+        let sessionId = null;
+
+        async function testAPI() {
             try {
-                const response = await fetch('/api/init', { method: 'POST' });
+                document.getElementById('status').textContent = '⏳ Отправка запроса...';
+                
+                const response = await fetch('/api/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Проверяем, что ответ - JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    document.getElementById('status').textContent = '❌ Ошибка: сервер вернул HTML вместо JSON';
+                    console.log('Ответ сервера:', text.substring(0, 200));
+                    return;
+                }
+                
                 const data = await response.json();
-                document.getElementById('balance').textContent = data.stats.balance;
-                alert('API работает! Баланс: ' + data.stats.balance);
+                
+                if (data.success) {
+                    sessionId = data.session_id;
+                    document.getElementById('balance').textContent = data.stats.balance;
+                    document.getElementById('status').textContent = '✅ API работает!';
+                } else {
+                    document.getElementById('status').textContent = '❌ Ошибка: ' + data.error;
+                }
             } catch (error) {
-                alert('Ошибка API: ' + error);
+                document.getElementById('status').textContent = '❌ Ошибка: ' + error.message;
+                console.error('Ошибка:', error);
             }
         }
+
+        // Автоматический тест при загрузке
+        testAPI();
     </script>
 </body>
 </html>
