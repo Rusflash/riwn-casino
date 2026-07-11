@@ -1,11 +1,9 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import random
 import secrets
 import sqlite3
-import json
 from datetime import datetime
-import os
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
@@ -16,7 +14,6 @@ def init_db():
     conn = sqlite3.connect('ruwin.db')
     c = conn.cursor()
     
-    # Таблица игроков
     c.execute('''CREATE TABLE IF NOT EXISTS players
                  (session_id TEXT PRIMARY KEY,
                   username TEXT,
@@ -28,7 +25,6 @@ def init_db():
                   created_at TEXT,
                   last_login TEXT)''')
     
-    # Таблица истории игр
     c.execute('''CREATE TABLE IF NOT EXISTS game_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   session_id TEXT,
@@ -66,7 +62,6 @@ class RuWinCasino:
             self.level = data[3]
             self.xp = data[4]
         else:
-            # Создаем нового игрока
             self.balance = 10000
             self.total_bets = 0
             self.wins = 0
@@ -137,7 +132,6 @@ class RuWinCasino:
         conn.close()
         return history
 
-# ===== ХРАНИЛИЩЕ ИГР =====
 games = {}
 
 def get_game(session_id):
@@ -145,7 +139,6 @@ def get_game(session_id):
         games[session_id] = RuWinCasino(session_id)
     return games[session_id]
 
-# ===== МАРШРУТЫ =====
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -153,7 +146,11 @@ def index():
 @app.route('/api/init', methods=['POST'])
 def init_game():
     try:
-        data = request.json
+        # Принудительно читаем JSON
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         username = data.get('username', 'Игрок')
         session_id = secrets.token_hex(16)
         
@@ -173,7 +170,10 @@ def init_game():
 @app.route('/api/load', methods=['POST'])
 def load_game():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         
         if session_id in games:
@@ -194,7 +194,10 @@ def load_game():
 @app.route('/api/roulette/spin', methods=['POST'])
 def roulette_spin():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         bet_type = data.get('bet_type')
         amount = float(data.get('amount', 0))
@@ -265,7 +268,10 @@ def roulette_spin():
 @app.route('/api/slots/spin', methods=['POST'])
 def slots_spin():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         
@@ -326,7 +332,10 @@ def slots_spin():
 @app.route('/api/blackjack/start', methods=['POST'])
 def blackjack_start():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         
@@ -392,7 +401,10 @@ def blackjack_start():
 @app.route('/api/blackjack/hit', methods=['POST'])
 def blackjack_hit():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         deck = data.get('deck')
         player_hand = data.get('player_hand')
@@ -431,7 +443,10 @@ def blackjack_hit():
 @app.route('/api/blackjack/stand', methods=['POST'])
 def blackjack_stand():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         deck = data.get('deck')
         player_hand = data.get('player_hand')
@@ -485,7 +500,10 @@ def blackjack_stand():
 @app.route('/api/crash/start', methods=['POST'])
 def crash_start():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         
@@ -512,7 +530,10 @@ def crash_start():
 @app.route('/api/crash/cashout', methods=['POST'])
 def crash_cashout():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         multiplier = float(data.get('multiplier', 1))
@@ -540,7 +561,10 @@ def crash_cashout():
 @app.route('/api/crash/result', methods=['POST'])
 def crash_result():
     try:
-        data = request.json
+        data = request.get_json(force=True)
+        if data is None:
+            return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
+            
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         
