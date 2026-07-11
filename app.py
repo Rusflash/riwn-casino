@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import random
 import secrets
@@ -24,7 +24,6 @@ def init_db():
     conn = get_db()
     c = conn.cursor()
     
-    # Таблица пользователей
     c.execute('''CREATE TABLE IF NOT EXISTS users
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id TEXT UNIQUE,
@@ -41,7 +40,6 @@ def init_db():
                   last_login TEXT,
                   is_verified INTEGER DEFAULT 0)''')
     
-    # Таблица истории игр
     c.execute('''CREATE TABLE IF NOT EXISTS game_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id TEXT,
@@ -198,6 +196,14 @@ def is_vpn_user(ip_address):
     vpn_ips = ['147.90.14.196']
     return ip_address in vpn_ips
 
+def require_auth():
+    """Проверяет, передан ли user_id в запросе"""
+    data = request.get_json(force=True) or {}
+    user_id = data.get('user_id')
+    if not user_id:
+        return None, jsonify({'success': False, 'error': 'Не авторизован'}), 401
+    return user_id, None, None
+
 # ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
 @app.route('/')
 def index():
@@ -211,7 +217,6 @@ def register():
         password = data.get('password', '')
         email = data.get('email', '')
         
-        # Валидация
         if not validate_username(username):
             return jsonify({'success': False, 'error': 'Имя пользователя должно содержать 3-20 символов (буквы, цифры, _, -)'})
         
@@ -221,13 +226,11 @@ def register():
         conn = get_db()
         c = conn.cursor()
         
-        # Проверка на существование
         c.execute("SELECT username FROM users WHERE username = ?", (username,))
         if c.fetchone():
             conn.close()
             return jsonify({'success': False, 'error': 'Пользователь с таким именем уже существует'})
         
-        # Создание пользователя
         user_id = generate_user_id()
         hashed_password = hash_password(password)
         ip_address = get_client_ip()
@@ -270,7 +273,6 @@ def login():
         if user[1] != hash_password(password):
             return jsonify({'success': False, 'error': 'Неверный пароль'})
         
-        # Обновляем время входа
         conn = get_db()
         c = conn.cursor()
         c.execute("UPDATE users SET last_login = ? WHERE user_id = ?", 
@@ -278,7 +280,6 @@ def login():
         conn.commit()
         conn.close()
         
-        # Загружаем пользователя в кеш
         game = get_user(user[0])
         
         return jsonify({
@@ -342,8 +343,6 @@ def get_leaderboard():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ ИГРЫ ============
-# [ВСЕ ИГРЫ - РУЛЕТКА, СЛОТЫ, БЛЭКДЖЕК, AVIATOR]
-# В каждой игре замените get_player_by_ip на get_user
 
 @app.route('/api/roulette/spin', methods=['POST'])
 def roulette_spin():
@@ -351,7 +350,7 @@ def roulette_spin():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
+        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -427,7 +426,7 @@ def slots_spin():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
+        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -492,7 +491,7 @@ def blackjack_start():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
+        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -563,7 +562,7 @@ def blackjack_hit():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
+        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -607,7 +606,7 @@ def blackjack_stand():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
+        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -665,7 +664,7 @@ def crash_start():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
+        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -698,7 +697,7 @@ def crash_cashout():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
+        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
@@ -731,7 +730,7 @@ def crash_result():
         data = request.get_json(force=True)
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
-            
+        
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
