@@ -592,518 +592,279 @@
         </div>
     </div>
 
-    <script>
-        // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
-        let sessionId = null;
-        let betType = 'number';
-        let selectedNumber = null;
-        let selectedDozen = null;
-        let spinning = false;
-        let isRouletteSpinning = false;
+   <script>
+    // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+    let playerId = null;
+    let betType = 'number';
+    let selectedNumber = null;
+    let selectedDozen = null;
+    let spinning = false;
+    let isRouletteSpinning = false;
 
-        let blackjackState = { deck: [], playerHand: [], dealerHand: [], amount: 0, gameOver: false };
-        let crashState = { multiplier: 1, isActive: false, isBetPlaced: false, crashPoint: 0, amount: 0, interval: null };
+    let blackjackState = { deck: [], playerHand: [], dealerHand: [], amount: 0, gameOver: false };
+    let crashState = { multiplier: 1, isActive: false, isBetPlaced: false, crashPoint: 0, amount: 0, interval: null };
 
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        async function init() {
-            try {
-                const response = await fetch('/api/init', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username: 'Игрок' })
-                });
-                
-                if (!response.ok) {
-                    const text = await response.text();
-                    console.error('Ответ сервера:', text);
-                    throw new Error(`HTTP ${response.status}: ${text}`);
-                }
-                
-                const data = await response.json();
-                if (data.success) {
-                    sessionId = data.session_id;
-                    updateUI(data.stats);
-                    generateRouletteBoard();
-                    generateNumberGrid();
-                    setupEvents();
-                    console.log('✅ Инициализация успешна!');
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    async function init() {
+        try {
+            const response = await fetch('/api/init', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: 'Игрок' })
+            });
+            
+            if (!response.ok) {
+                const text = await response.text();
+                console.error('Ответ сервера:', text);
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                playerId = data.player_id;
+                updateUI(data.stats);
+                generateRouletteBoard();
+                generateNumberGrid();
+                setupEvents();
+                console.log('✅ Инициализация успешна!');
+                console.log(`👤 Player ID: ${playerId}`);
+                console.log(`📡 IP: ${data.ip_address}`);
+                if (data.is_new) {
+                    console.log('🎉 Новый игрок!');
                 } else {
-                    showModal('❌ Ошибка: ' + data.error);
+                    console.log('👋 Добро пожаловать назад!');
                 }
-            } catch (error) {
-                console.error('Ошибка инициализации:', error);
-                showModal('❌ Ошибка подключения к серверу!<br><small>' + error.message + '</small>');
+            } else {
+                showModal('❌ Ошибка: ' + data.error);
             }
+        } catch (error) {
+            console.error('Ошибка инициализации:', error);
+            showModal('❌ Ошибка подключения к серверу!<br><small>' + error.message + '</small>');
         }
+    }
 
-        function updateUI(stats) {
-            if (stats) {
-                document.getElementById('balance').textContent = `$${stats.balance.toLocaleString()}`;
-                document.getElementById('level').textContent = stats.level;
-                document.getElementById('totalBets').textContent = stats.total_bets;
-                document.getElementById('wins').textContent = stats.wins;
-                document.getElementById('losses').textContent = stats.losses;
-                document.getElementById('winrate').textContent = `${stats.winrate}%`;
+    function updateUI(stats) {
+        if (stats) {
+            document.getElementById('balance').textContent = `$${stats.balance.toLocaleString()}`;
+            document.getElementById('level').textContent = stats.level;
+            document.getElementById('totalBets').textContent = stats.total_bets;
+            document.getElementById('wins').textContent = stats.wins;
+            document.getElementById('losses').textContent = stats.losses;
+            document.getElementById('winrate').textContent = `${stats.winrate}%`;
+        }
+    }
+
+    function showPage(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(`page-${page}`).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.nav-btn[onclick="showPage('${page}')"]`).classList.add('active');
+        if (page === 'crash') resetCrashUI();
+    }
+
+    function generateRouletteBoard() {
+        const board = document.getElementById('rouletteBoard');
+        const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+        board.innerHTML = numbers.map(num => {
+            const color = num === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num) ? 'red' : 'black';
+            return `<div class="roulette-number ${color}" onclick="selectNumber(${num})">${num}</div>`;
+        }).join('');
+    }
+
+    function generateNumberGrid() {
+        const grid = document.getElementById('numberGrid');
+        grid.innerHTML = '';
+        for (let i = 0; i <= 36; i++) {
+            const color = i === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i) ? 'red' : 'black';
+            grid.innerHTML += `<button class="number-btn ${color}" onclick="selectNumber(${i})">${i}</button>`;
+        }
+    }
+
+    function selectNumber(num) {
+        selectedNumber = num;
+        document.querySelectorAll('.roulette-number').forEach(n => n.classList.remove('selected'));
+        document.querySelectorAll('.number-btn').forEach(n => n.classList.remove('selected'));
+        document.querySelector(`.roulette-number[data-number="${num}"]`)?.classList.add('selected');
+        document.querySelector(`.number-btn[data-number="${num}"]`)?.classList.add('selected');
+    }
+
+    function selectDozen(num) {
+        selectedDozen = num;
+        document.querySelectorAll('.dozen-btn').forEach(n => n.classList.remove('selected'));
+        document.querySelector(`.dozen-btn[data-dozen="${num}"]`)?.classList.add('selected');
+    }
+
+    function setBetType(type) {
+        betType = type;
+        document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.bet-btn[onclick="setBetType('${type}')"]`).classList.add('active');
+        document.getElementById('numberSelector').style.display = type === 'number' ? 'block' : 'none';
+        document.getElementById('dozenSelector').style.display = type === 'dozen' ? 'block' : 'none';
+    }
+
+    function setupEvents() {
+        document.getElementById('rouletteSpinBtn').addEventListener('click', rouletteSpin);
+        document.getElementById('slotsSpinBtn').addEventListener('click', slotsSpin);
+        document.getElementById('blackjackStart').addEventListener('click', blackjackStart);
+        document.getElementById('blackjackHit').addEventListener('click', blackjackHit);
+        document.getElementById('blackjackStand').addEventListener('click', blackjackStand);
+        document.getElementById('crashStart').addEventListener('click', crashStart);
+        document.getElementById('crashCashout').addEventListener('click', crashCashout);
+    }
+
+    function setResult(element, type, text) {
+        element.className = `game-result ${type}`;
+        element.innerHTML = text;
+    }
+
+    // ===== РУЛЕТКА =====
+    async function rouletteSpin() {
+        if (isRouletteSpinning) return;
+        const amount = parseFloat(document.getElementById('rouletteBet').value);
+        if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
+        
+        let payload = { player_id: playerId, bet_type: betType, amount: amount };
+        if (betType === 'number') {
+            if (selectedNumber === null) { showModal('❌ Выберите число!'); return; }
+            payload.number = selectedNumber;
+        } else if (betType === 'dozen') {
+            if (selectedDozen === null) { showModal('❌ Выберите дюжину!'); return; }
+            payload.number = selectedDozen;
+        }
+        
+        isRouletteSpinning = true;
+        document.getElementById('rouletteSpinBtn').disabled = true;
+        document.getElementById('rouletteBoard').classList.add('spinning');
+        setResult(document.getElementById('rouletteResult'), 'info', '⏳ Крутим...');
+        
+        try {
+            const response = await fetch('/api/roulette/spin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (data.success) {
+                const result = document.getElementById('rouletteResult');
+                const color = data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff';
+                setResult(result, data.win ? 'win' : 'loss', 
+                    `Выпало: <strong style="color:${color}">${data.result}</strong> (${data.color})<br>${data.win ? `🎉 ВЫИГРЫШ +$${data.win_amount}` : `😞 ПРОИГРЫШ $${Math.abs(data.win_amount)}`}`
+                );
+                updateUI(data.stats);
+            } else {
+                setResult(document.getElementById('rouletteResult'), 'error', `❌ ${data.error}`);
             }
+        } catch (error) {
+            console.error(error);
+            setResult(document.getElementById('rouletteResult'), 'error', '❌ Ошибка!');
         }
+        
+        setTimeout(() => {
+            isRouletteSpinning = false;
+            document.getElementById('rouletteSpinBtn').disabled = false;
+            document.getElementById('rouletteBoard').classList.remove('spinning');
+        }, 3000);
+    }
 
-        function showPage(page) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(`page-${page}`).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.nav-btn[onclick="showPage('${page}')"]`).classList.add('active');
-            if (page === 'crash') resetCrashUI();
-        }
-
-        function generateRouletteBoard() {
-            const board = document.getElementById('rouletteBoard');
-            const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
-            board.innerHTML = numbers.map(num => {
-                const color = num === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num) ? 'red' : 'black';
-                return `<div class="roulette-number ${color}" onclick="selectNumber(${num})">${num}</div>`;
-            }).join('');
-        }
-
-        function generateNumberGrid() {
-            const grid = document.getElementById('numberGrid');
-            grid.innerHTML = '';
-            for (let i = 0; i <= 36; i++) {
-                const color = i === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i) ? 'red' : 'black';
-                grid.innerHTML += `<button class="number-btn ${color}" onclick="selectNumber(${i})">${i}</button>`;
-            }
-        }
-
-        function selectNumber(num) {
-            selectedNumber = num;
-            document.querySelectorAll('.roulette-number').forEach(n => n.classList.remove('selected'));
-            document.querySelectorAll('.number-btn').forEach(n => n.classList.remove('selected'));
-            document.querySelector(`.roulette-number[data-number="${num}"]`)?.classList.add('selected');
-            document.querySelector(`.number-btn[data-number="${num}"]`)?.classList.add('selected');
-        }
-
-        function selectDozen(num) {
-            selectedDozen = num;
-            document.querySelectorAll('.dozen-btn').forEach(n => n.classList.remove('selected'));
-            document.querySelector(`.dozen-btn[data-dozen="${num}"]`)?.classList.add('selected');
-        }
-
-        function setBetType(type) {
-            betType = type;
-            document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.bet-btn[onclick="setBetType('${type}')"]`).classList.add('active');
-            document.getElementById('numberSelector').style.display = type === 'number' ? 'block' : 'none';
-            document.getElementById('dozenSelector').style.display = type === 'dozen' ? 'block' : 'none';
-        }
-
-        function setupEvents() {
-            document.getElementById('rouletteSpinBtn').addEventListener('click', rouletteSpin);
-            document.getElementById('slotsSpinBtn').addEventListener('click', slotsSpin);
-            document.getElementById('blackjackStart').addEventListener('click', blackjackStart);
-            document.getElementById('blackjackHit').addEventListener('click', blackjackHit);
-            document.getElementById('blackjackStand').addEventListener('click', blackjackStand);
-            document.getElementById('crashStart').addEventListener('click', crashStart);
-            document.getElementById('crashCashout').addEventListener('click', crashCashout);
-        }
-
-        function setResult(element, type, text) {
-            element.className = `game-result ${type}`;
-            element.innerHTML = text;
-        }
-
-        // ===== РУЛЕТКА =====
-        async function rouletteSpin() {
-            if (isRouletteSpinning) return;
-            const amount = parseFloat(document.getElementById('rouletteBet').value);
-            if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
-            
-            let payload = { session_id: sessionId, bet_type: betType, amount: amount };
-            if (betType === 'number') {
-                if (selectedNumber === null) { showModal('❌ Выберите число!'); return; }
-                payload.number = selectedNumber;
-            } else if (betType === 'dozen') {
-                if (selectedDozen === null) { showModal('❌ Выберите дюжину!'); return; }
-                payload.number = selectedDozen;
-            }
-            
-            isRouletteSpinning = true;
-            document.getElementById('rouletteSpinBtn').disabled = true;
-            document.getElementById('rouletteBoard').classList.add('spinning');
-            setResult(document.getElementById('rouletteResult'), 'info', '⏳ Крутим...');
-            
-            try {
-                const response = await fetch('/api/roulette/spin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+    // ===== СЛОТЫ =====
+    async function slotsSpin() {
+        if (spinning) return;
+        const amount = parseFloat(document.getElementById('slotsBet').value);
+        if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
+        
+        spinning = true;
+        document.getElementById('slotsSpinBtn').disabled = true;
+        const resultEl = document.getElementById('slotsResult');
+        setResult(resultEl, 'info', '⏳ Крутим...');
+        
+        const reels = document.querySelectorAll('.slot-reel');
+        reels.forEach((r, i) => setTimeout(() => r.classList.add('spinning'), i * 100));
+        
+        try {
+            const response = await fetch('/api/slots/spin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player_id: playerId, amount: amount })
+            });
+            const data = await response.json();
+            if (data.success) {
+                reels.forEach((reel, idx) => {
+                    setTimeout(() => {
+                        reel.classList.remove('spinning');
+                        reel.classList.add('stopping');
+                        setTimeout(() => {
+                            const symbols = reel.querySelectorAll('.slot-symbol');
+                            symbols.forEach((sym, row) => {
+                                const pos = idx * 3 + row;
+                                if (data.reels && data.reels[pos]) {
+                                    sym.textContent = data.reels[pos];
+                                }
+                                sym.classList.remove('win-highlight');
+                            });
+                            reel.classList.remove('stopping');
+                            if (data.win) {
+                                setTimeout(() => {
+                                    symbols.forEach(s => s.classList.add('win-highlight'));
+                                }, 200);
+                            }
+                        }, 400);
+                    }, idx * 300 + 800);
                 });
-                const data = await response.json();
-                if (data.success) {
-                    const result = document.getElementById('rouletteResult');
-                    const color = data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff';
-                    setResult(result, data.win ? 'win' : 'loss', 
-                        `Выпало: <strong style="color:${color}">${data.result}</strong> (${data.color})<br>${data.win ? `🎉 ВЫИГРЫШ +$${data.win_amount}` : `😞 ПРОИГРЫШ $${Math.abs(data.win_amount)}`}`
+                setTimeout(() => {
+                    setResult(resultEl, data.win ? 'win' : 'loss', 
+                        data.win ? `🎉 ВЫИГРЫШ +$${data.win_amount}` : `😞 ПРОИГРЫШ $${Math.abs(data.win_amount)}`
                     );
                     updateUI(data.stats);
-                } else {
-                    setResult(document.getElementById('rouletteResult'), 'error', `❌ ${data.error}`);
-                }
-            } catch (error) {
-                console.error(error);
-                setResult(document.getElementById('rouletteResult'), 'error', '❌ Ошибка!');
-            }
-            
-            setTimeout(() => {
-                isRouletteSpinning = false;
-                document.getElementById('rouletteSpinBtn').disabled = false;
-                document.getElementById('rouletteBoard').classList.remove('spinning');
-            }, 3000);
-        }
-
-        // ===== СЛОТЫ =====
-        async function slotsSpin() {
-            if (spinning) return;
-            const amount = parseFloat(document.getElementById('slotsBet').value);
-            if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
-            
-            spinning = true;
-            document.getElementById('slotsSpinBtn').disabled = true;
-            const resultEl = document.getElementById('slotsResult');
-            setResult(resultEl, 'info', '⏳ Крутим...');
-            
-            const reels = document.querySelectorAll('.slot-reel');
-            reels.forEach((r, i) => setTimeout(() => r.classList.add('spinning'), i * 100));
-            
-            try {
-                const response = await fetch('/api/slots/spin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId, amount: amount })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    reels.forEach((reel, idx) => {
-                        setTimeout(() => {
-                            reel.classList.remove('spinning');
-                            reel.classList.add('stopping');
-                            setTimeout(() => {
-                                const symbols = reel.querySelectorAll('.slot-symbol');
-                                symbols.forEach((sym, row) => {
-                                    const pos = idx * 3 + row;
-                                    if (data.reels && data.reels[pos]) {
-                                        sym.textContent = data.reels[pos];
-                                    }
-                                    sym.classList.remove('win-highlight');
-                                });
-                                reel.classList.remove('stopping');
-                                if (data.win) {
-                                    setTimeout(() => {
-                                        symbols.forEach(s => s.classList.add('win-highlight'));
-                                    }, 200);
-                                }
-                            }, 400);
-                        }, idx * 300 + 800);
-                    });
-                    setTimeout(() => {
-                        setResult(resultEl, data.win ? 'win' : 'loss', 
-                            data.win ? `🎉 ВЫИГРЫШ +$${data.win_amount}` : `😞 ПРОИГРЫШ $${Math.abs(data.win_amount)}`
-                        );
-                        updateUI(data.stats);
-                    }, 2500);
-                } else {
-                    setResult(resultEl, 'error', `❌ ${data.error}`);
-                }
-            } catch (error) {
-                console.error(error);
-                setResult(resultEl, 'error', '❌ Ошибка!');
-            }
-            
-            setTimeout(() => {
-                spinning = false;
-                document.getElementById('slotsSpinBtn').disabled = false;
-                document.querySelectorAll('.slot-reel').forEach(r => r.classList.remove('spinning', 'stopping'));
-                document.querySelectorAll('.slot-symbol').forEach(s => s.classList.remove('win-highlight'));
-            }, 4000);
-        }
-
-        // ===== БЛЭКДЖЕК =====
-        async function blackjackStart() {
-            const amount = parseFloat(document.getElementById('blackjackBet').value);
-            if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
-            blackjackState.amount = amount;
-            try {
-                const response = await fetch('/api/blackjack/start', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId, amount: amount })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    blackjackState.deck = data.deck;
-                    blackjackState.playerHand = data.player_hand;
-                    blackjackState.dealerHand = data.dealer_hand;
-                    blackjackState.gameOver = data.game_over || false;
-                    updateBlackjackUI(data);
-                    if (data.game_over) updateUI(data.stats);
-                } else {
-                    showModal(`❌ ${data.error}`);
-                }
-            } catch (error) { console.error(error); showModal('❌ Ошибка!'); }
-        }
-
-        async function blackjackHit() {
-            if (blackjackState.gameOver) return;
-            try {
-                const response = await fetch('/api/blackjack/hit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        session_id: sessionId, 
-                        deck: blackjackState.deck, 
-                        player_hand: blackjackState.playerHand, 
-                        amount: blackjackState.amount 
-                    })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    blackjackState.deck = data.deck;
-                    blackjackState.playerHand = data.player_hand;
-                    blackjackState.gameOver = data.game_over || false;
-                    updateBlackjackUI(data);
-                    if (data.game_over) updateUI(data.stats);
-                }
-            } catch (error) { console.error(error); showModal('❌ Ошибка!'); }
-        }
-
-        async function blackjackStand() {
-            if (blackjackState.gameOver) return;
-            try {
-                const response = await fetch('/api/blackjack/stand', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        session_id: sessionId,
-                        deck: blackjackState.deck,
-                        player_hand: blackjackState.playerHand,
-                        dealer_hand: blackjackState.dealerHand,
-                        amount: blackjackState.amount
-                    })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    blackjackState.gameOver = true;
-                    updateBlackjackUI(data);
-                    updateUI(data.stats);
-                }
-            } catch (error) { console.error(error); showModal('❌ Ошибка!'); }
-        }
-
-        function updateBlackjackUI(data) {
-            const playerCards = document.getElementById('playerCards');
-            const dealerCards = document.getElementById('dealerCards');
-            
-            playerCards.innerHTML = data.player_hand.map(c => {
-                const color = c > 10 ? 'red' : 'black';
-                const value = c === 11 ? 'A' : c === 10 ? '10' : c;
-                return `<div class="blackjack-card ${color}">${value}</div>`;
-            }).join('');
-            document.getElementById('playerSum').textContent = `Сумма: ${sumHand(data.player_hand)}`;
-            
-            if (data.game_over || data.dealer_hand.every(c => c !== '?')) {
-                dealerCards.innerHTML = data.dealer_hand.filter(c => c !== '?').map(c => {
-                    const color = c > 10 ? 'red' : 'black';
-                    const value = c === 11 ? 'A' : c === 10 ? '10' : c;
-                    return `<div class="blackjack-card ${color}">${value}</div>`;
-                }).join('');
-                document.getElementById('dealerSum').textContent = `Сумма: ${sumHand(data.dealer_hand.filter(c => c !== '?'))}`;
-            }
-            
-            document.getElementById('blackjackHit').disabled = data.game_over;
-            document.getElementById('blackjackStand').disabled = data.game_over;
-            
-            const result = document.getElementById('blackjackResult');
-            if (data.game_over) {
-                if (data.win === true) setResult(result, 'win', `🎉 ВЫИГРЫШ +$${data.win_amount}`);
-                else if (data.win === false) setResult(result, 'loss', `😞 ПРОИГРЫШ $${Math.abs(data.win_amount)}`);
-                else setResult(result, 'info', '🤝 НИЧЬЯ');
+                }, 2500);
             } else {
-                setResult(result, 'info', 'Игра продолжается...');
+                setResult(resultEl, 'error', `❌ ${data.error}`);
             }
+        } catch (error) {
+            console.error(error);
+            setResult(resultEl, 'error', '❌ Ошибка!');
         }
+        
+        setTimeout(() => {
+            spinning = false;
+            document.getElementById('slotsSpinBtn').disabled = false;
+            document.querySelectorAll('.slot-reel').forEach(r => r.classList.remove('spinning', 'stopping'));
+            document.querySelectorAll('.slot-symbol').forEach(s => s.classList.remove('win-highlight'));
+        }, 4000);
+    }
 
-        function sumHand(hand) {
-            let sum = hand.reduce((a,b) => a+b, 0);
-            let aces = hand.filter(c => c === 11).length;
-            while (sum > 21 && aces > 0) { sum -= 10; aces--; }
-            return sum;
-        }
-
-        // ===== AVIATOR =====
-        async function crashStart() {
-            if (crashState.isActive) return;
-            const amount = parseFloat(document.getElementById('crashBet').value);
-            if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
-            
-            crashState.amount = amount;
-            crashState.isBetPlaced = true;
-            crashState.isActive = true;
-            crashState.multiplier = 1;
-            
-            document.getElementById('crashStart').disabled = true;
-            document.getElementById('crashCashout').disabled = false;
-            const resultEl = document.getElementById('crashResult');
-            setResult(resultEl, 'info', '🚀 Ракета взлетает...');
-            
-            const rocket = document.getElementById('crashRocket');
-            rocket.classList.remove('crashed');
-            rocket.classList.add('flying');
-            rocket.style.transition = 'none';
-            rocket.style.bottom = '10%';
-            rocket.style.left = '10%';
-            
-            try {
-                const response = await fetch('/api/crash/start', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId, amount: amount })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    crashState.crashPoint = data.crash_point;
-                    updateUI(data.stats);
-                    let startTime = Date.now();
-                    let lastX = 10, lastY = 10;
-                    rocket.style.transition = 'all 0.05s linear';
-                    crashState.interval = setInterval(() => {
-                        const elapsed = (Date.now() - startTime) / 1000;
-                        const progress = Math.min(elapsed / 5, 1);
-                        if (progress < 1) crashState.multiplier = 1 + progress * (crashState.crashPoint - 1);
-                        else crashState.multiplier = crashState.crashPoint;
-                        const targetX = 10 + progress * 75;
-                        const targetY = 10 + progress * 70;
-                        const smoothX = lastX + (targetX - lastX) * 0.3;
-                        const smoothY = lastY + (targetY - lastY) * 0.3;
-                        rocket.style.left = `${smoothX}%`;
-                        rocket.style.bottom = `${smoothY}%`;
-                        document.getElementById('crashMultiplier').textContent = `${crashState.multiplier.toFixed(2)}x`;
-                        if (Math.floor(progress * 100) % 3 === 0) addTrailDot(smoothX, smoothY);
-                        lastX = smoothX; lastY = smoothY;
-                        if (crashState.multiplier >= crashState.crashPoint - 0.01) {
-                            clearInterval(crashState.interval);
-                            crashCrash();
-                        }
-                    }, 50);
-                } else {
-                    showModal(`❌ ${data.error}`);
-                    resetCrash();
-                }
-            } catch (error) { console.error(error); showModal('❌ Ошибка!'); resetCrash(); }
-        }
-
-        function addTrailDot(x, y) {
-            const trail = document.getElementById('crashChart');
-            const dot = document.createElement('div');
-            dot.className = 'crash-trail-dot';
-            dot.style.left = `${x}%`;
-            dot.style.bottom = `${y}%`;
-            trail.appendChild(dot);
-            setTimeout(() => { if (dot.parentNode) dot.remove(); }, 800);
-        }
-
-        async function crashCashout() {
-            if (!crashState.isActive || !crashState.isBetPlaced) return;
-            clearInterval(crashState.interval);
-            crashState.isActive = false;
-            document.getElementById('crashCashout').disabled = true;
-            const rocket = document.getElementById('crashRocket');
-            rocket.classList.remove('flying');
-            try {
-                const response = await fetch('/api/crash/cashout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        session_id: sessionId, 
-                        amount: crashState.amount, 
-                        multiplier: crashState.multiplier 
-                    })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    const resultEl = document.getElementById('crashResult');
-                    setResult(resultEl, 'win', `🎉 ВЫИГРЫШ +$${data.win_amount.toFixed(2)} (${crashState.multiplier.toFixed(2)}x)`);
-                    updateUI(data.stats);
-                    addCrashHistory(crashState.multiplier, true);
-                    setTimeout(() => resetCrash(), 1000);
-                }
-            } catch (error) { console.error(error); showModal('❌ Ошибка!'); resetCrash(); }
-        }
-
-        async function crashCrash() {
-            if (!crashState.isActive || !crashState.isBetPlaced) return;
-            crashState.isActive = false;
-            document.getElementById('crashCashout').disabled = true;
-            const rocket = document.getElementById('crashRocket');
-            rocket.classList.remove('flying');
-            rocket.classList.add('crashed');
-            document.getElementById('crashMultiplier').classList.add('crashed');
-            const resultEl = document.getElementById('crashResult');
-            setResult(resultEl, 'loss', `💥 РАКЕТА УПАЛА! (${crashState.crashPoint.toFixed(2)}x)`);
-            try {
-                const response = await fetch('/api/crash/result', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId, amount: crashState.amount })
-                });
-                const data = await response.json();
-                if (data.success) { updateUI(data.stats); addCrashHistory(crashState.crashPoint, false); }
-            } catch (error) { console.error(error); }
-            setTimeout(() => resetCrash(), 2500);
-        }
-
-        function resetCrash() {
-            crashState.isActive = false;
-            crashState.isBetPlaced = false;
-            crashState.multiplier = 1;
-            const rocket = document.getElementById('crashRocket');
-            rocket.classList.remove('flying', 'crashed');
-            rocket.style.transition = 'all 0.5s ease';
-            rocket.style.bottom = '10%';
-            rocket.style.left = '10%';
-            document.getElementById('crashMultiplier').classList.remove('crashed');
-            document.getElementById('crashMultiplier').textContent = '1.00x';
-            document.getElementById('crashStart').disabled = false;
-            document.getElementById('crashCashout').disabled = true;
-            document.getElementById('crashResult').className = 'game-result info';
-            document.getElementById('crashResult').textContent = 'Сделайте ставку!';
-        }
-
-        function resetCrashUI() { resetCrash(); }
-
-        function addCrashHistory(point, win) {
-            const history = document.getElementById('crashHistory');
-            const item = document.createElement('div');
-            item.className = `crash-history-item ${win ? 'win' : 'loss'}`;
-            item.textContent = `${point.toFixed(2)}x`;
-            history.prepend(item);
-            if (history.children.length > 10) history.removeChild(history.lastChild);
-        }
-
-        // ===== МОДАЛКА =====
-        function showModal(text) {
-            document.getElementById('modalBody').innerHTML = text;
-            document.getElementById('modal').style.display = 'block';
-        }
-
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('modal')) {
-                closeModal();
+    // ===== БЛЭКДЖЕК =====
+    async function blackjackStart() {
+        const amount = parseFloat(document.getElementById('blackjackBet').value);
+        if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
+        blackjackState.amount = amount;
+        try {
+            const response = await fetch('/api/blackjack/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player_id: playerId, amount: amount })
+            });
+            const data = await response.json();
+            if (data.success) {
+                blackjackState.deck = data.deck;
+                blackjackState.playerHand = data.player_hand;
+                blackjackState.dealerHand = data.dealer_hand;
+                blackjackState.gameOver = data.game_over || false;
+                updateBlackjackUI(data);
+                if (data.game_over) updateUI(data.stats);
+            } else {
+                showModal(`❌ ${data.error}`);
             }
-        }
+        } catch (error) { console.error(error); showModal('❌ Ошибка!'); }
+    }
+
+    async function blackjackHit() {
+        if (blackjackState.gameOver) return;
+        try {
+            const response = await fetch('/api/blackjack/hit', {
+                method: 'POST',
+                headers: { 'Content-Type': '
 
         // ===== ЗАПУСК =====
         document.addEventListener('DOMContentLoaded', init);
