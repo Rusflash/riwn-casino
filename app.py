@@ -1,11 +1,12 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 import random
 import secrets
 import sqlite3
 from datetime import datetime
 import threading
-import os
+import hashlib
+import re
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
@@ -23,40 +24,44 @@ def init_db():
     conn = get_db()
     c = conn.cursor()
     
-    c.execute('''CREATE TABLE IF NOT EXISTS players
+    # Таблица пользователей
+    c.execute('''CREATE TABLE IF NOT EXISTS users
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  player_id TEXT UNIQUE,
-                  ip_address TEXT UNIQUE,
-                  username TEXT,
+                  user_id TEXT UNIQUE,
+                  username TEXT UNIQUE,
+                  password TEXT,
+                  email TEXT,
+                  ip_address TEXT,
                   balance INTEGER DEFAULT 10000,
                   total_bets INTEGER DEFAULT 0,
                   wins INTEGER DEFAULT 0,
                   level INTEGER DEFAULT 1,
                   xp INTEGER DEFAULT 0,
                   created_at TEXT,
-                  last_login TEXT)''')
+                  last_login TEXT,
+                  is_verified INTEGER DEFAULT 0)''')
     
+    # Таблица истории игр
     c.execute('''CREATE TABLE IF NOT EXISTS game_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  player_id TEXT,
+                  user_id TEXT,
                   game TEXT,
                   bet_amount INTEGER,
                   win_amount INTEGER,
                   result TEXT,
                   timestamp TEXT,
-                  FOREIGN KEY (player_id) REFERENCES players(player_id))''')
+                  FOREIGN KEY (user_id) REFERENCES users(user_id))''')
     
     conn.commit()
     conn.close()
 
 init_db()
 
-# ===== КЛАСС ИГРОКА =====
-class RuWinCasino:
-    def __init__(self, player_id, ip_address):
-        self.player_id = player_id
-        self.ip_address = ip_address
-        self.username = "Игрок"
+# ===== КЛАСС ПОЛЬЗОВАТЕЛЯ =====
+class User:
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.username = ""
         self.balance = 10000
         self.total_bets = 0
         self.wins = 0
@@ -65,64 +70,53 @@ class RuWinCasino:
         self.load_from_db()
     
     def load_from_db(self):
-        """Загружает данные из БД по IP"""
         try:
             conn = get_db()
             c = conn.cursor()
-            c.execute("""SELECT player_id, username, balance, total_bets, wins, level, xp 
-                         FROM players WHERE ip_address = ?""", (self.ip_address,))
+            c.execute("""SELECT username, balance, total_bets, wins, level, xp 
+                         FROM users WHERE user_id = ?""", (self.user_id,))
             data = c.fetchone()
             conn.close()
             
             if data:
-                self.player_id = data[0]
-                self.username = data[1]
-                self.balance = data[2]
-                self.total_bets = data[3]
-                self.wins = data[4]
-                self.level = data[5]
-                self.xp = data[6]
-                print(f"✅ Загружен баланс для {self.ip_address}: {self.balance}")
+                self.username = data[0]
+                self.balance = data[1]
+                self.total_bets = data[2]
+                self.wins = data[3]
+                self.level = data[4]
+                self.xp = data[5]
                 return True
-            else:
-                # Создаем нового игрока
-                self.player_id = f"player_{self.ip_address.replace('.', '_')}"
-                self.save_to_db()
-                print(f"✅ Создан новый игрок {self.ip_address} с балансом 10000")
-                return False
+            return False
         except Exception as e:
-            print(f"❌ Ошибка загрузки: {e}")
+            print(f"Ошибка загрузки: {e}")
             return False
     
     def save_to_db(self):
-        """Сохраняет данные в БД"""
         try:
             conn = get_db()
             c = conn.cursor()
-            c.execute('''INSERT OR REPLACE INTO players 
-                         (player_id, ip_address, username, balance, total_bets, wins, level, xp, last_login)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (self.player_id, self.ip_address, self.username, self.balance, 
-                       self.total_bets, self.wins, self.level, self.xp, datetime.now().isoformat()))
+            c.execute('''UPDATE users 
+                         SET balance=?, total_bets=?, wins=?, level=?, xp=?, last_login=?
+                         WHERE user_id=?''',
+                      (self.balance, self.total_bets, self.wins, self.level, 
+                       self.xp, datetime.now().isoformat(), self.user_id))
             conn.commit()
             conn.close()
-            print(f"💾 СОХРАНЕН баланс {self.balance} для {self.ip_address}")
             return True
         except Exception as e:
-            print(f"❌ Ошибка сохранения: {e}")
+            print(f"Ошибка сохранения: {e}")
             return False
     
     def change_balance(self, amount):
-        """Изменяет баланс и сразу сохраняет"""
-        old_balance = self.balance
+        old = self.balance
         self.balance += amount
         self.save_to_db()
-        print(f"💰 Баланс изменен: {old_balance} -> {self.balance} ({'+' if amount > 0 else ''}{amount})")
         return self.balance
     
     def get_stats(self):
         return {
-            'player_id': self.player_id,
+            'user_id': self.user_id,
+            'username': self.username,
             'balance': self.balance,
             'total_bets': self.total_bets,
             'wins': self.wins,
@@ -145,13 +139,13 @@ class RuWinCasino:
             conn = get_db()
             c = conn.cursor()
             c.execute('''INSERT INTO game_history 
-                         (player_id, game, bet_amount, win_amount, result, timestamp)
+                         (user_id, game, bet_amount, win_amount, result, timestamp)
                          VALUES (?, ?, ?, ?, ?, ?)''',
-                      (self.player_id, game, bet_amount, win_amount, result, datetime.now().isoformat()))
+                      (self.user_id, game, bet_amount, win_amount, result, datetime.now().isoformat()))
             conn.commit()
             conn.close()
         except Exception as e:
-            print(f"Ошибка записи истории: {e}")
+            print(f"Ошибка истории: {e}")
     
     def get_history(self, limit=50):
         try:
@@ -159,8 +153,8 @@ class RuWinCasino:
             c = conn.cursor()
             c.execute('''SELECT game, bet_amount, win_amount, result, timestamp 
                          FROM game_history 
-                         WHERE player_id = ? 
-                         ORDER BY id DESC LIMIT ?''', (self.player_id, limit))
+                         WHERE user_id = ? 
+                         ORDER BY id DESC LIMIT ?''', (self.user_id, limit))
             history = [{'game': row[0], 'bet_amount': row[1], 'win_amount': row[2], 
                         'result': row[3], 'timestamp': row[4]} for row in c.fetchall()]
             conn.close()
@@ -168,23 +162,28 @@ class RuWinCasino:
         except Exception as e:
             return []
 
-# ===== ХРАНИЛИЩЕ ИГРОКОВ =====
-players = {}
-player_lock = threading.Lock()
+# ===== ХРАНИЛИЩЕ ПОЛЬЗОВАТЕЛЕЙ =====
+users = {}
+user_lock = threading.Lock()
 
-def get_player_by_ip(ip_address):
-    """Получает или создает игрока по IP"""
-    with player_lock:
-        # Ищем в кеше
-        for pid, player in players.items():
-            if player.ip_address == ip_address:
-                return player
-        
-        # Создаем нового
-        player_id = f"player_{ip_address.replace('.', '_')}"
-        player = RuWinCasino(player_id, ip_address)
-        players[player_id] = player
-        return player
+def get_user(user_id):
+    with user_lock:
+        if user_id not in users:
+            users[user_id] = User(user_id)
+        return users[user_id]
+
+# ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def generate_user_id():
+    return f"user_{secrets.token_hex(8)}"
+
+def validate_username(username):
+    return re.match(r'^[a-zA-Z0-9_-]{3,20}$', username) is not None
+
+def validate_password(password):
+    return len(password) >= 6
 
 def get_client_ip():
     if request.headers.get('X-Forwarded-For'):
@@ -199,32 +198,121 @@ def is_vpn_user(ip_address):
     vpn_ips = ['147.90.14.196']
     return ip_address in vpn_ips
 
+# ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    try:
+        data = request.get_json(force=True)
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        email = data.get('email', '')
+        
+        # Валидация
+        if not validate_username(username):
+            return jsonify({'success': False, 'error': 'Имя пользователя должно содержать 3-20 символов (буквы, цифры, _, -)'})
+        
+        if not validate_password(password):
+            return jsonify({'success': False, 'error': 'Пароль должен содержать минимум 6 символов'})
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        # Проверка на существование
+        c.execute("SELECT username FROM users WHERE username = ?", (username,))
+        if c.fetchone():
+            conn.close()
+            return jsonify({'success': False, 'error': 'Пользователь с таким именем уже существует'})
+        
+        # Создание пользователя
+        user_id = generate_user_id()
+        hashed_password = hash_password(password)
+        ip_address = get_client_ip()
+        
+        c.execute('''INSERT INTO users 
+                     (user_id, username, password, email, ip_address, balance, created_at, last_login)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (user_id, username, hashed_password, email, ip_address, 10000, 
+                   datetime.now().isoformat(), datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Регистрация успешна!',
+            'user_id': user_id,
+            'username': username
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json(force=True)
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        
+        conn = get_db()
+        c = conn.cursor()
+        
+        c.execute("SELECT user_id, password FROM users WHERE username = ?", (username,))
+        user = c.fetchone()
+        conn.close()
+        
+        if not user:
+            return jsonify({'success': False, 'error': 'Пользователь не найден'})
+        
+        if user[1] != hash_password(password):
+            return jsonify({'success': False, 'error': 'Неверный пароль'})
+        
+        # Обновляем время входа
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("UPDATE users SET last_login = ? WHERE user_id = ?", 
+                  (datetime.now().isoformat(), user[0]))
+        conn.commit()
+        conn.close()
+        
+        # Загружаем пользователя в кеш
+        game = get_user(user[0])
+        
+        return jsonify({
+            'success': True,
+            'message': 'Вход выполнен!',
+            'user_id': user[0],
+            'username': username,
+            'stats': game.get_stats()
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/init', methods=['POST'])
 def init_game():
     try:
         data = request.get_json(force=True)
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
+        
+        game = get_user(user_id)
         ip_address = get_client_ip()
         is_vpn = is_vpn_user(ip_address)
         
-        game = get_player_by_ip(ip_address)
-        game.username = data.get('username', f'Игрок_{ip_address.split(".")[-1]}')
-        game.save_to_db()
-        
         return jsonify({
             'success': True,
-            'player_id': game.player_id,
-            'ip_address': ip_address,
+            'user_id': game.user_id,
             'username': game.username,
             'stats': game.get_stats(),
             'history': game.get_history(10),
             'is_vpn': is_vpn
         })
     except Exception as e:
-        print(f"❌ Ошибка init: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/leaderboard', methods=['GET'])
@@ -233,7 +321,7 @@ def get_leaderboard():
         conn = get_db()
         c = conn.cursor()
         c.execute('''SELECT username, balance, level, wins, total_bets 
-                     FROM players 
+                     FROM users 
                      ORDER BY balance DESC 
                      LIMIT 10''')
         
@@ -253,7 +341,10 @@ def get_leaderboard():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ РУЛЕТКА ============
+# ============ ИГРЫ ============
+# [ВСЕ ИГРЫ - РУЛЕТКА, СЛОТЫ, БЛЭКДЖЕК, AVIATOR]
+# В каждой игре замените get_player_by_ip на get_user
+
 @app.route('/api/roulette/spin', methods=['POST'])
 def roulette_spin():
     try:
@@ -261,8 +352,11 @@ def roulette_spin():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        ip_address = get_client_ip()
-        game = get_player_by_ip(ip_address)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
+        
+        game = get_user(user_id)
         
         bet_type = data.get('bet_type')
         amount = float(data.get('amount', 0))
@@ -312,7 +406,7 @@ def roulette_spin():
             game.add_history('roulette', amount, -amount, 'loss')
         
         game.total_bets += 1
-        game.save_to_db()  # ПРИНУДИТЕЛЬНОЕ СОХРАНЕНИЕ
+        game.save_to_db()
         
         return jsonify({
             'success': True,
@@ -327,7 +421,6 @@ def roulette_spin():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ СЛОТЫ ============
 @app.route('/api/slots/spin', methods=['POST'])
 def slots_spin():
     try:
@@ -335,9 +428,11 @@ def slots_spin():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        ip_address = get_client_ip()
-        game = get_player_by_ip(ip_address)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
+        game = get_user(user_id)
         amount = float(data.get('amount', 0))
         
         if amount > game.balance:
@@ -377,7 +472,7 @@ def slots_spin():
             game.add_history('slots', amount, -amount, 'loss')
         
         game.total_bets += 1
-        game.save_to_db()  # ПРИНУДИТЕЛЬНОЕ СОХРАНЕНИЕ
+        game.save_to_db()
         
         return jsonify({
             'success': True,
@@ -391,7 +486,6 @@ def slots_spin():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ БЛЭКДЖЕК ============
 @app.route('/api/blackjack/start', methods=['POST'])
 def blackjack_start():
     try:
@@ -399,9 +493,11 @@ def blackjack_start():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        ip_address = get_client_ip()
-        game = get_player_by_ip(ip_address)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
+        game = get_user(user_id)
         amount = float(data.get('amount', 0))
         
         if amount > game.balance:
@@ -468,9 +564,11 @@ def blackjack_hit():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        ip_address = get_client_ip()
-        game = get_player_by_ip(ip_address)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
+        game = get_user(user_id)
         deck = data.get('deck')
         player_hand = data.get('player_hand')
         amount = float(data.get('amount', 0))
@@ -510,9 +608,11 @@ def blackjack_stand():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        ip_address = get_client_ip()
-        game = get_player_by_ip(ip_address)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
+        game = get_user(user_id)
         deck = data.get('deck')
         player_hand = data.get('player_hand')
         dealer_hand = data.get('dealer_hand')
@@ -559,7 +659,6 @@ def blackjack_stand():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ AVIATOR ============
 @app.route('/api/crash/start', methods=['POST'])
 def crash_start():
     try:
@@ -567,9 +666,11 @@ def crash_start():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        ip_address = get_client_ip()
-        game = get_player_by_ip(ip_address)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
+        game = get_user(user_id)
         amount = float(data.get('amount', 0))
         
         if amount > game.balance:
@@ -580,7 +681,7 @@ def crash_start():
             crash_point = 2.0 + random.uniform(0, 1.5)
         
         game.balance -= amount
-        game.save_to_db()  # ПРИНУДИТЕЛЬНОЕ СОХРАНЕНИЕ
+        game.save_to_db()
         
         return jsonify({
             'success': True,
@@ -598,9 +699,11 @@ def crash_cashout():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        ip_address = get_client_ip()
-        game = get_player_by_ip(ip_address)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
+        game = get_user(user_id)
         amount = float(data.get('amount', 0))
         multiplier = float(data.get('multiplier', 1))
         
@@ -629,9 +732,11 @@ def crash_result():
         if data is None:
             return jsonify({'success': False, 'error': 'Неверный формат JSON'}), 400
             
-        ip_address = get_client_ip()
-        game = get_player_by_ip(ip_address)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
+        game = get_user(user_id)
         amount = float(data.get('amount', 0))
         
         game.total_bets += 1
