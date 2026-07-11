@@ -1,20 +1,92 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
 import random
 import secrets
+import sqlite3
+import json
+from datetime import datetime
+import os
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 CORS(app)
 
+# ===== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ =====
+def init_db():
+    conn = sqlite3.connect('ruwin.db')
+    c = conn.cursor()
+    
+    # Таблица игроков
+    c.execute('''CREATE TABLE IF NOT EXISTS players
+                 (session_id TEXT PRIMARY KEY,
+                  username TEXT,
+                  balance INTEGER DEFAULT 10000,
+                  total_bets INTEGER DEFAULT 0,
+                  wins INTEGER DEFAULT 0,
+                  level INTEGER DEFAULT 1,
+                  xp INTEGER DEFAULT 0,
+                  created_at TEXT,
+                  last_login TEXT)''')
+    
+    # Таблица истории игр
+    c.execute('''CREATE TABLE IF NOT EXISTS game_history
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  session_id TEXT,
+                  game TEXT,
+                  bet_amount INTEGER,
+                  win_amount INTEGER,
+                  result TEXT,
+                  timestamp TEXT,
+                  FOREIGN KEY (session_id) REFERENCES players(session_id))''')
+    
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# ===== КЛАСС ИГРОКА С БД =====
 class RuWinCasino:
-    def __init__(self):
-        self.balance = 10000
-        self.total_bets = 0
-        self.wins = 0
-        self.level = 1
-        self.xp = 0
+    def __init__(self, session_id, username="Игрок"):
+        self.session_id = session_id
+        self.username = username
+        self.load_data()
+    
+    def load_data(self):
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
         
+        c.execute("SELECT balance, total_bets, wins, level, xp FROM players WHERE session_id = ?", (self.session_id,))
+        data = c.fetchone()
+        conn.close()
+        
+        if data:
+            self.balance = data[0]
+            self.total_bets = data[1]
+            self.wins = data[2]
+            self.level = data[3]
+            self.xp = data[4]
+        else:
+            # Создаем нового игрока
+            self.balance = 10000
+            self.total_bets = 0
+            self.wins = 0
+            self.level = 1
+            self.xp = 0
+            self.save_to_db()
+    
+    def save_to_db(self):
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
+        
+        c.execute('''INSERT OR REPLACE INTO players 
+                     (session_id, username, balance, total_bets, wins, level, xp, last_login)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (self.session_id, self.username, self.balance, self.total_bets, self.wins, 
+                   self.level, self.xp, datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+    
     def get_stats(self):
         total = self.total_bets
         wins = self.wins
@@ -37,9 +109,43 @@ class RuWinCasino:
         while self.xp >= self.level * 100:
             self.xp -= self.level * 100
             self.level += 1
+        self.save_to_db()
+    
+    def add_history(self, game, bet_amount, win_amount, result):
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
+        
+        c.execute('''INSERT INTO game_history 
+                     (session_id, game, bet_amount, win_amount, result, timestamp)
+                     VALUES (?, ?, ?, ?, ?, ?)''',
+                  (self.session_id, game, bet_amount, win_amount, result, datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+    
+    def get_history(self, limit=50):
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
+        
+        c.execute('''SELECT game, bet_amount, win_amount, result, timestamp 
+                     FROM game_history 
+                     WHERE session_id = ? 
+                     ORDER BY id DESC LIMIT ?''', (self.session_id, limit))
+        
+        history = [{'game': row[0], 'bet_amount': row[1], 'win_amount': row[2], 
+                    'result': row[3], 'timestamp': row[4]} for row in c.fetchall()]
+        conn.close()
+        return history
 
+# ===== ХРАНИЛИЩЕ ИГР =====
 games = {}
 
+def get_game(session_id):
+    if session_id not in games:
+        games[session_id] = RuWinCasino(session_id)
+    return games[session_id]
+
+# ===== МАРШРУТЫ =====
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -47,12 +153,39 @@ def index():
 @app.route('/api/init', methods=['POST'])
 def init_game():
     try:
+        data = request.json
+        username = data.get('username', 'Игрок')
         session_id = secrets.token_hex(16)
-        games[session_id] = RuWinCasino()
+        
+        game = RuWinCasino(session_id, username)
+        games[session_id] = game
+        
         return jsonify({
             'success': True,
             'session_id': session_id,
-            'stats': games[session_id].get_stats()
+            'username': username,
+            'stats': game.get_stats(),
+            'history': game.get_history(10)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/load', methods=['POST'])
+def load_game():
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        
+        if session_id in games:
+            game = games[session_id]
+        else:
+            game = RuWinCasino(session_id)
+            games[session_id] = game
+        
+        return jsonify({
+            'success': True,
+            'stats': game.get_stats(),
+            'history': game.get_history(10)
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -67,9 +200,7 @@ def roulette_spin():
         amount = float(data.get('amount', 0))
         number = data.get('number')
         
-        game = games.get(session_id)
-        if not game:
-            return jsonify({'success': False, 'error': 'Сессия не найдена'})
+        game = get_game(session_id)
         
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -109,10 +240,13 @@ def roulette_spin():
             game.balance += win_amount - amount
             game.wins += 1
             game.add_xp(int(abs(win_amount) / 10))
+            game.add_history('roulette', amount, win_amount - amount, 'win')
         else:
             game.balance -= amount
+            game.add_history('roulette', amount, -amount, 'loss')
         
         game.total_bets += 1
+        game.save_to_db()
         
         return jsonify({
             'success': True,
@@ -121,7 +255,8 @@ def roulette_spin():
             'win': win,
             'win_amount': win_amount - amount if win else -amount,
             'balance': game.balance,
-            'stats': game.get_stats()
+            'stats': game.get_stats(),
+            'history': game.get_history(10)
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -134,9 +269,7 @@ def slots_spin():
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         
-        game = games.get(session_id)
-        if not game:
-            return jsonify({'success': False, 'error': 'Сессия не найдена'})
+        game = get_game(session_id)
         
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -168,11 +301,14 @@ def slots_spin():
             game.balance += win_amount
             game.wins += 1
             game.add_xp(int(win_amount / 5))
+            game.add_history('slots', amount, win_amount, 'win')
         else:
             game.balance -= amount
             win_amount = -amount
+            game.add_history('slots', amount, -amount, 'loss')
         
         game.total_bets += 1
+        game.save_to_db()
         
         return jsonify({
             'success': True,
@@ -180,7 +316,8 @@ def slots_spin():
             'win': win,
             'win_amount': win_amount,
             'balance': game.balance,
-            'stats': game.get_stats()
+            'stats': game.get_stats(),
+            'history': game.get_history(10)
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -193,9 +330,7 @@ def blackjack_start():
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         
-        game = games.get(session_id)
-        if not game:
-            return jsonify({'success': False, 'error': 'Сессия не найдена'})
+        game = get_game(session_id)
         
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -216,15 +351,20 @@ def blackjack_start():
                 win = True
                 win_amount = amount * 1.5
                 game.add_xp(int(amount / 5))
+                game.add_history('blackjack', amount, win_amount, 'win')
             elif dealer_blackjack and not player_blackjack:
                 game.balance -= amount
                 win = False
                 win_amount = -amount
+                game.add_history('blackjack', amount, -amount, 'loss')
             else:
                 win = None
                 win_amount = 0
+                game.add_history('blackjack', amount, 0, 'draw')
             
             game.total_bets += 1
+            game.save_to_db()
+            
             return jsonify({
                 'success': True,
                 'player_hand': player_hand,
@@ -233,7 +373,8 @@ def blackjack_start():
                 'win': win,
                 'win_amount': win_amount,
                 'balance': game.balance,
-                'stats': game.get_stats()
+                'stats': game.get_stats(),
+                'history': game.get_history(10)
             })
         
         return jsonify({
@@ -257,15 +398,16 @@ def blackjack_hit():
         player_hand = data.get('player_hand')
         amount = float(data.get('amount', 0))
         
-        game = games.get(session_id)
-        if not game:
-            return jsonify({'success': False, 'error': 'Сессия не найдена'})
+        game = get_game(session_id)
         
         player_hand.append(deck.pop())
         
         if sum(player_hand) > 21:
             game.balance -= amount
             game.total_bets += 1
+            game.add_history('blackjack', amount, -amount, 'loss')
+            game.save_to_db()
+            
             return jsonify({
                 'success': True,
                 'player_hand': player_hand,
@@ -273,7 +415,8 @@ def blackjack_hit():
                 'win': False,
                 'win_amount': -amount,
                 'balance': game.balance,
-                'stats': game.get_stats()
+                'stats': game.get_stats(),
+                'history': game.get_history(10)
             })
         
         return jsonify({
@@ -295,9 +438,7 @@ def blackjack_stand():
         dealer_hand = data.get('dealer_hand')
         amount = float(data.get('amount', 0))
         
-        game = games.get(session_id)
-        if not game:
-            return jsonify({'success': False, 'error': 'Сессия не найдена'})
+        game = get_game(session_id)
         
         while sum(dealer_hand) < 17:
             dealer_hand.append(deck.pop())
@@ -312,15 +453,19 @@ def blackjack_stand():
             game.balance += win_amount - amount
             game.wins += 1
             game.add_xp(int(amount / 5))
+            game.add_history('blackjack', amount, win_amount - amount, 'win')
         elif player_sum == dealer_sum:
             win = None
             win_amount = 0
+            game.add_history('blackjack', amount, 0, 'draw')
         else:
             win = False
             win_amount = -amount
             game.balance -= amount
+            game.add_history('blackjack', amount, -amount, 'loss')
         
         game.total_bets += 1
+        game.save_to_db()
         
         return jsonify({
             'success': True,
@@ -330,7 +475,8 @@ def blackjack_stand():
             'win': win,
             'win_amount': win_amount,
             'balance': game.balance,
-            'stats': game.get_stats()
+            'stats': game.get_stats(),
+            'history': game.get_history(10)
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -343,9 +489,7 @@ def crash_start():
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         
-        game = games.get(session_id)
-        if not game:
-            return jsonify({'success': False, 'error': 'Сессия не найдена'})
+        game = get_game(session_id)
         
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -373,21 +517,22 @@ def crash_cashout():
         amount = float(data.get('amount', 0))
         multiplier = float(data.get('multiplier', 1))
         
-        game = games.get(session_id)
-        if not game:
-            return jsonify({'success': False, 'error': 'Сессия не найдена'})
+        game = get_game(session_id)
         
         win_amount = amount * multiplier
         game.balance += win_amount
         game.wins += 1
         game.total_bets += 1
         game.add_xp(int(win_amount / 5))
+        game.add_history('crash', amount, win_amount, 'win')
+        game.save_to_db()
         
         return jsonify({
             'success': True,
             'win_amount': win_amount,
             'balance': game.balance,
-            'stats': game.get_stats()
+            'stats': game.get_stats(),
+            'history': game.get_history(10)
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -399,16 +544,17 @@ def crash_result():
         session_id = data.get('session_id')
         amount = float(data.get('amount', 0))
         
-        game = games.get(session_id)
-        if not game:
-            return jsonify({'success': False, 'error': 'Сессия не найдена'})
+        game = get_game(session_id)
         
         game.total_bets += 1
+        game.add_history('crash', amount, -amount, 'loss')
+        game.save_to_db()
         
         return jsonify({
             'success': True,
             'balance': game.balance,
-            'stats': game.get_stats()
+            'stats': game.get_stats(),
+            'history': game.get_history(10)
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
