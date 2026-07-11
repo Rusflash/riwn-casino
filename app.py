@@ -145,7 +145,6 @@ def get_player(player_id, ip_address):
 
 # ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 def get_client_ip():
-    """Получает реальный IP клиента"""
     if request.headers.get('X-Forwarded-For'):
         ip = request.headers.get('X-Forwarded-For').split(',')[0].strip()
     elif request.headers.get('X-Real-IP'):
@@ -155,10 +154,8 @@ def get_client_ip():
     return ip
 
 def is_vpn_user(ip_address):
-    """Проверяет, является ли IP адресом VPN"""
     vpn_ips = [
         '147.90.14.196',
-        '147.90.14.197',  # Добавьте другие IP при необходимости
     ]
     return ip_address in vpn_ips
 
@@ -202,7 +199,7 @@ def init_game():
             'stats': game.get_stats(),
             'history': game.get_history(10),
             'is_new': not existing,
-            'is_vpn': is_vpn  # <-- Добавляем флаг VPN
+            'is_vpn': is_vpn
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -232,10 +229,6 @@ def load_game():
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============ ВСЕ ИГРЫ (РУЛЕТКА, СЛОТЫ, БЛЭКДЖЕК, AVIATOR) ============
-# ... (весь код игр остаётся без изменений, 
-# только заменяем session_id на player_id в payload)
 
 # ============ РУЛЕТКА ============
 @app.route('/api/roulette/spin', methods=['POST'])
