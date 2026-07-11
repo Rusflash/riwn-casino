@@ -26,9 +26,7 @@
             justify-content: center;
             align-items: center;
         }
-        .auth-modal.hidden {
-            display: none;
-        }
+        .auth-modal.hidden { display: none; }
         .auth-box {
             background: linear-gradient(135deg, #1a1a2e, #0a0a1a);
             border: 1px solid rgba(0,240,255,0.2);
@@ -76,15 +74,9 @@
             border-color: #00f0ff;
             color: #00f0ff;
         }
-        .auth-tab:hover {
-            background: rgba(0,240,255,0.05);
-        }
-        .auth-form {
-            display: none;
-        }
-        .auth-form.active {
-            display: block;
-        }
+        .auth-tab:hover { background: rgba(0,240,255,0.05); }
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
         .auth-form input {
             width: 100%;
             padding: 12px 16px;
@@ -100,9 +92,7 @@
             outline: none;
             border-color: #00f0ff;
         }
-        .auth-form input::placeholder {
-            color: #444;
-        }
+        .auth-form input::placeholder { color: #444; }
         .auth-btn {
             width: 100%;
             padding: 14px;
@@ -120,10 +110,7 @@
             transform: scale(1.02);
             box-shadow: 0 0 30px rgba(0,240,255,0.2);
         }
-        .auth-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .auth-error {
             color: #ff0040;
             font-size: 13px;
@@ -139,7 +126,7 @@
             min-height: 20px;
         }
         
-        /* ===== ОСТАЛЬНЫЕ СТИЛИ ===== */
+        /* ===== ХЕДЕР ===== */
         .header {
             background: linear-gradient(135deg, rgba(10,10,15,0.95), rgba(20,20,40,0.95));
             border: 1px solid rgba(0,240,255,0.15);
@@ -152,9 +139,9 @@
             flex-wrap: wrap;
             gap: 15px;
         }
-        .logo { 
-            font-size: 28px; 
-            font-weight: bold; 
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
             background: linear-gradient(45deg, #00f0ff, #8b00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -201,6 +188,7 @@
         .balance-amount { font-size: 22px; color: #00ff88; font-weight: bold; }
         .level-amount { font-size: 22px; color: #00f0ff; font-weight: bold; }
         
+        /* ===== VPN БАННЕР ===== */
         .vpn-banner {
             background: linear-gradient(135deg, rgba(0,240,255,0.08), rgba(0,255,136,0.05));
             border: 1px solid rgba(0,240,255,0.2);
@@ -245,6 +233,7 @@
         }
         .vpn-banner .vpn-close:hover { color: #fff; }
         
+        /* ===== НАВИГАЦИЯ ===== */
         .nav {
             display: flex;
             gap: 8px;
@@ -267,12 +256,13 @@
             font-weight: 600;
         }
         .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
-        .nav-btn.active { 
-            color: #00f0ff; 
-            background: rgba(0,240,255,0.1); 
+        .nav-btn.active {
+            color: #00f0ff;
+            background: rgba(0,240,255,0.1);
             border-color: rgba(0,240,255,0.2);
         }
         
+        /* ===== ОБЩИЕ ===== */
         .page { display: none; animation: fadeIn 0.3s ease; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
@@ -962,6 +952,10 @@
                 
                 if (data.success) {
                     userId = data.user_id;
+                    // СОХРАНЯЕМ В localStorage
+                    localStorage.setItem('ruwin_user_id', userId);
+                    localStorage.setItem('ruwin_username', data.username);
+                    
                     document.getElementById('authModal').classList.add('hidden');
                     document.getElementById('app').style.display = 'block';
                     document.getElementById('usernameDisplay').textContent = data.username;
@@ -1019,12 +1013,39 @@
 
         function handleLogout() {
             userId = null;
+            // Удаляем из localStorage
+            localStorage.removeItem('ruwin_user_id');
+            localStorage.removeItem('ruwin_username');
+            
             document.getElementById('app').style.display = 'none';
             document.getElementById('authModal').classList.remove('hidden');
             document.getElementById('loginUsername').value = '';
             document.getElementById('loginPassword').value = '';
             document.getElementById('loginError').textContent = '';
             stopLeaderboardUpdates();
+        }
+
+        // ===== ПРОВЕРКА СОХРАНЕННОГО USER_ID =====
+        async function checkSavedUser() {
+            const savedUserId = localStorage.getItem('ruwin_user_id');
+            const savedUsername = localStorage.getItem('ruwin_username');
+            
+            if (savedUserId) {
+                userId = savedUserId;
+                document.getElementById('authModal').classList.add('hidden');
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('usernameDisplay').textContent = savedUsername || 'Игрок';
+                
+                // Загружаем данные
+                await initGame();
+                generateRouletteBoard();
+                generateNumberGrid();
+                setupEvents();
+                startLeaderboardUpdates();
+                showPage('lobby');
+                return true;
+            }
+            return false;
         }
 
         // ===== VPN УВЕДОМЛЕНИЕ =====
@@ -1096,7 +1117,10 @@
 
         // ===== ИНИЦИАЛИЗАЦИЯ ИГР =====
         async function initGame() {
-            if (!userId) return;
+            if (!userId) {
+                console.log('❌ Нет user_id');
+                return false;
+            }
             try {
                 const response = await fetch('/api/init', {
                     method: 'POST',
@@ -1107,9 +1131,18 @@
                 if (data.success) {
                     updateUI(data.stats);
                     if (data.is_vpn) showVpnBanner(true);
+                    console.log('✅ Данные загружены для:', data.username);
+                    return true;
+                } else {
+                    if (data.error === 'Не авторизован' || data.error?.includes('не найден')) {
+                        handleLogout();
+                        alert('❌ Сессия истекла. Войдите заново.');
+                    }
+                    return false;
                 }
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
+                return false;
             }
         }
 
@@ -1133,7 +1166,6 @@
             if (page === 'crash') resetCrashUI();
         }
 
-        // ===== ГЕНЕРАЦИЯ ИГР =====
         function generateRouletteBoard() {
             const board = document.getElementById('rouletteBoard');
             const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
@@ -1191,13 +1223,21 @@
 
         // ===== ОБЩАЯ ФУНКЦИЯ ДЛЯ ЗАПРОСОВ =====
         async function apiRequest(url, payload) {
+            if (!userId) {
+                throw new Error('Не авторизован');
+            }
             payload.user_id = userId;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            return await response.json();
+            const data = await response.json();
+            if (!data.success && (data.error === 'Не авторизован' || data.error?.includes('не найден'))) {
+                handleLogout();
+                alert('❌ Сессия истекла. Войдите заново.');
+            }
+            return data;
         }
 
         // ===== РУЛЕТКА =====
@@ -1549,10 +1589,12 @@
             }
         }
 
-        // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
-        // По умолчанию показываем модалку
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('authModal').classList.remove('hidden');
+        // ===== ЗАПУСК =====
+        document.addEventListener('DOMContentLoaded', async function() {
+            const hasSavedUser = await checkSavedUser();
+            if (!hasSavedUser) {
+                document.getElementById('authModal').classList.remove('hidden');
+            }
         });
     </script>
 </body>
