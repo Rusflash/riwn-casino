@@ -21,8 +21,8 @@ CORS(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'  # ЗАМЕНИТЕ
-app.config['MAIL_PASSWORD'] = 'your_app_password'     # ЗАМЕНИТЕ
+app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your_app_password'
 mail = Mail(app)
 
 # ===== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ =====
@@ -59,12 +59,13 @@ def init_db():
                   result TEXT,
                   timestamp TEXT)''')
     
-    # Банк казино
-    c.execute('''CREATE TABLE IF NOT EXISTS casino_bank
+    # Пул казино (общий фонд)
+    c.execute('''CREATE TABLE IF NOT EXISTS casino_pool
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   balance INTEGER DEFAULT 1000000,
                   total_in INTEGER DEFAULT 0,
                   total_out INTEGER DEFAULT 0,
+                  commission INTEGER DEFAULT 0,
                   updated_at TEXT)''')
     
     conn.commit()
@@ -72,29 +73,39 @@ def init_db():
 
 init_db()
 
-# ===== БАНК КАЗИНО =====
-def get_bank_balance():
+# ===== ПУЛ КАЗИНО =====
+def get_pool_balance():
     conn = sqlite3.connect('ruwin.db')
     c = conn.cursor()
-    c.execute("SELECT balance FROM casino_bank ORDER BY id DESC LIMIT 1")
+    c.execute("SELECT balance FROM casino_pool ORDER BY id DESC LIMIT 1")
     row = c.fetchone()
     conn.close()
     return row[0] if row else 1000000
 
-def update_bank(amount):
+def update_pool(amount):
     conn = sqlite3.connect('ruwin.db')
     c = conn.cursor()
-    c.execute("SELECT id, balance FROM casino_bank ORDER BY id DESC LIMIT 1")
+    c.execute("SELECT id, balance FROM casino_pool ORDER BY id DESC LIMIT 1")
     row = c.fetchone()
     if row:
-        c.execute("UPDATE casino_bank SET balance = ?, updated_at = datetime('now') WHERE id = ?", (row[1] + amount, row[0]))
+        c.execute("UPDATE casino_pool SET balance = ?, updated_at = datetime('now') WHERE id = ?", (row[1] + amount, row[0]))
     else:
-        c.execute("INSERT INTO casino_bank (balance, updated_at) VALUES (?, datetime('now'))", (1000000 + amount,))
+        c.execute("INSERT INTO casino_pool (balance, updated_at) VALUES (?, datetime('now'))", (1000000 + amount,))
     conn.commit()
     conn.close()
 
-def check_bank_can_pay(amount):
-    return get_bank_balance() >= amount
+def check_pool_can_pay(amount):
+    return get_pool_balance() >= amount
+
+def get_pool_stats():
+    conn = sqlite3.connect('ruwin.db')
+    c = conn.cursor()
+    c.execute("SELECT balance, total_in, total_out, commission FROM casino_pool ORDER BY id DESC LIMIT 1")
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return {'balance': row[0], 'total_in': row[1], 'total_out': row[2], 'commission': row[3]}
+    return {'balance': 1000000, 'total_in': 0, 'total_out': 0, 'commission': 0}
 
 # ===== КЛАСС ПОЛЬЗОВАТЕЛЯ =====
 class User:
@@ -394,6 +405,7 @@ def init_game():
         game = get_user(user_id)
         ip_address = get_client_ip()
         is_vpn = is_vpn_user(ip_address)
+        pool_stats = get_pool_stats()
         return jsonify({
             'success': True,
             'user_id': game.user_id,
@@ -401,7 +413,10 @@ def init_game():
             'stats': game.get_stats(),
             'history': game.get_history(10),
             'is_vpn': is_vpn,
-            'bank_balance': get_bank_balance()
+            'pool_balance': pool_stats['balance'],
+            'pool_total_in': pool_stats['total_in'],
+            'pool_total_out': pool_stats['total_out'],
+            'pool_commission': pool_stats['commission']
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -435,7 +450,9 @@ def roulette_spin():
         amount = float(data.get('amount', 0))
         number = data.get('number')
         
-        if not check_bank_can_pay(amount * 2):
+        # Проверка пула
+        pool_balance = get_pool_balance()
+        if pool_balance < amount * 10:
             return jsonify({'success': False, 'error': 'Временно недоступно, попробуйте позже'})
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -471,16 +488,25 @@ def roulette_spin():
             win_amount = amount * 3
         
         if win:
-            payout = int(win_amount * 0.95)
+            # Выигрыш из пула (95% от суммы, 5% комиссия казино)
+            commission = int(win_amount * 0.05)
+            payout = win_amount - commission
+            
+            if get_pool_balance() < payout:
+                return jsonify({'success': False, 'error': 'Недостаточно средств в пуле'})
+            
             game.balance += payout
             game.wins += 1
             game.add_xp(int(abs(payout) / 10))
             game.add_history('roulette', amount, payout, 'win')
-            update_bank(-payout)
+            update_pool(-payout)  # Выплата из пула
+            
+            # Комиссия идёт в отдельный счёт казино (можно добавить позже)
         else:
+            # Проигрыш идёт в пул
             game.balance -= amount
             game.add_history('roulette', amount, -amount, 'loss')
-            update_bank(amount)
+            update_pool(amount)
         
         game.total_bets += 1
         game.save_to_db()
@@ -492,7 +518,7 @@ def roulette_spin():
             'win': win,
             'win_amount': payout if win else -amount,
             'balance': game.balance,
-            'bank_balance': get_bank_balance(),
+            'pool_balance': get_pool_balance(),
             'stats': game.get_stats(),
             'history': game.get_history(10)
         })
@@ -510,7 +536,8 @@ def slots_spin():
         game = get_user(user_id)
         amount = float(data.get('amount', 0))
         
-        if not check_bank_can_pay(amount * 5):
+        pool_balance = get_pool_balance()
+        if pool_balance < amount * 5:
             return jsonify({'success': False, 'error': 'Временно недоступно, попробуйте позже'})
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -536,17 +563,21 @@ def slots_spin():
             win_amount += amount * 10
         
         if win:
-            payout = int(win_amount * 0.95)
+            commission = int(win_amount * 0.05)
+            payout = win_amount - commission
+            
+            if get_pool_balance() < payout:
+                return jsonify({'success': False, 'error': 'Недостаточно средств в пуле'})
+            
             game.balance += payout
             game.wins += 1
             game.add_xp(int(payout / 5))
             game.add_history('slots', amount, payout, 'win')
-            update_bank(-payout)
+            update_pool(-payout)
         else:
             game.balance -= amount
-            win_amount = -amount
             game.add_history('slots', amount, -amount, 'loss')
-            update_bank(amount)
+            update_pool(amount)
         
         game.total_bets += 1
         game.save_to_db()
@@ -557,7 +588,7 @@ def slots_spin():
             'win': win,
             'win_amount': payout if win else -amount,
             'balance': game.balance,
-            'bank_balance': get_bank_balance(),
+            'pool_balance': get_pool_balance(),
             'stats': game.get_stats(),
             'history': game.get_history(10)
         })
@@ -575,7 +606,8 @@ def blackjack_start():
         game = get_user(user_id)
         amount = float(data.get('amount', 0))
         
-        if not check_bank_can_pay(amount * 2):
+        pool_balance = get_pool_balance()
+        if pool_balance < amount * 2:
             return jsonify({'success': False, 'error': 'Временно недоступно, попробуйте позже'})
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
@@ -589,23 +621,27 @@ def blackjack_start():
         
         if player_blackjack or dealer_blackjack:
             if player_blackjack and not dealer_blackjack:
-                payout = int(amount * 1.5 * 0.95)
+                win_amount = int(amount * 1.5)
+                commission = int(win_amount * 0.05)
+                payout = win_amount - commission
+                if get_pool_balance() < payout:
+                    return jsonify({'success': False, 'error': 'Недостаточно средств в пуле'})
                 game.balance += payout
                 game.wins += 1
                 win = True
-                win_amount = payout
+                win_amount_display = payout
                 game.add_xp(int(amount / 5))
                 game.add_history('blackjack', amount, payout, 'win')
-                update_bank(-payout)
+                update_pool(-payout)
             elif dealer_blackjack and not player_blackjack:
                 game.balance -= amount
                 win = False
-                win_amount = -amount
+                win_amount_display = -amount
                 game.add_history('blackjack', amount, -amount, 'loss')
-                update_bank(amount)
+                update_pool(amount)
             else:
                 win = None
-                win_amount = 0
+                win_amount_display = 0
                 game.add_history('blackjack', amount, 0, 'draw')
             game.total_bets += 1
             game.save_to_db()
@@ -615,9 +651,9 @@ def blackjack_start():
                 'dealer_hand': dealer_hand,
                 'game_over': True,
                 'win': win,
-                'win_amount': win_amount,
+                'win_amount': win_amount_display,
                 'balance': game.balance,
-                'bank_balance': get_bank_balance(),
+                'pool_balance': get_pool_balance(),
                 'stats': game.get_stats(),
                 'history': game.get_history(10)
             })
@@ -650,7 +686,7 @@ def blackjack_hit():
             game.balance -= amount
             game.total_bets += 1
             game.add_history('blackjack', amount, -amount, 'loss')
-            update_bank(amount)
+            update_pool(amount)
             game.save_to_db()
             return jsonify({
                 'success': True,
@@ -659,7 +695,7 @@ def blackjack_hit():
                 'win': False,
                 'win_amount': -amount,
                 'balance': game.balance,
-                'bank_balance': get_bank_balance(),
+                'pool_balance': get_pool_balance(),
                 'stats': game.get_stats(),
                 'history': game.get_history(10)
             })
@@ -685,23 +721,28 @@ def blackjack_stand():
         dealer_sum = sum(dealer_hand)
         win = False
         if dealer_sum > 21 or player_sum > dealer_sum:
-            win = True
-            win_amount = int(amount * 2 * 0.95)
-            game.balance += win_amount - amount
+            win_amount = int(amount * 2)
+            commission = int(win_amount * 0.05)
+            payout = win_amount - commission
+            if get_pool_balance() < payout:
+                return jsonify({'success': False, 'error': 'Недостаточно средств в пуле'})
+            game.balance += payout
             game.wins += 1
+            win = True
+            win_amount_display = payout
             game.add_xp(int(amount / 5))
-            game.add_history('blackjack', amount, win_amount - amount, 'win')
-            update_bank(-(win_amount - amount))
+            game.add_history('blackjack', amount, payout, 'win')
+            update_pool(-payout)
         elif player_sum == dealer_sum:
             win = None
-            win_amount = 0
+            win_amount_display = 0
             game.add_history('blackjack', amount, 0, 'draw')
         else:
             win = False
-            win_amount = -amount
+            win_amount_display = -amount
             game.balance -= amount
             game.add_history('blackjack', amount, -amount, 'loss')
-            update_bank(amount)
+            update_pool(amount)
         game.total_bets += 1
         game.save_to_db()
         return jsonify({
@@ -710,9 +751,9 @@ def blackjack_stand():
             'dealer_hand': dealer_hand,
             'game_over': True,
             'win': win,
-            'win_amount': win_amount,
+            'win_amount': win_amount_display,
             'balance': game.balance,
-            'bank_balance': get_bank_balance(),
+            'pool_balance': get_pool_balance(),
             'stats': game.get_stats(),
             'history': game.get_history(10)
         })
@@ -729,10 +770,13 @@ def crash_start():
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         game = get_user(user_id)
         amount = float(data.get('amount', 0))
-        if not check_bank_can_pay(amount * 2):
+        
+        pool_balance = get_pool_balance()
+        if pool_balance < amount * 2:
             return jsonify({'success': False, 'error': 'Временно недоступно, попробуйте позже'})
         if amount > game.balance:
             return jsonify({'success': False, 'error': 'Недостаточно средств'})
+        
         crash_point = random.uniform(1.0, 100.0)
         if crash_point > 2.0:
             crash_point = 2.0 + random.uniform(0, 1.5)
@@ -752,19 +796,27 @@ def crash_cashout():
         game = get_user(user_id)
         amount = float(data.get('amount', 0))
         multiplier = float(data.get('multiplier', 1))
-        win_amount = int(amount * multiplier * 0.95)
-        game.balance += win_amount
+        
+        win_amount = int(amount * multiplier)
+        commission = int(win_amount * 0.05)
+        payout = win_amount - commission
+        
+        if get_pool_balance() < payout:
+            return jsonify({'success': False, 'error': 'Недостаточно средств в пуле'})
+        
+        game.balance += payout
         game.wins += 1
         game.total_bets += 1
-        game.add_xp(int(win_amount / 5))
-        game.add_history('crash', amount, win_amount, 'win')
-        update_bank(-win_amount)
+        game.add_xp(int(payout / 5))
+        game.add_history('crash', amount, payout, 'win')
+        update_pool(-payout)
         game.save_to_db()
+        
         return jsonify({
             'success': True,
-            'win_amount': win_amount,
+            'win_amount': payout,
             'balance': game.balance,
-            'bank_balance': get_bank_balance(),
+            'pool_balance': get_pool_balance(),
             'stats': game.get_stats(),
             'history': game.get_history(10)
         })
@@ -782,12 +834,12 @@ def crash_result():
         amount = float(data.get('amount', 0))
         game.total_bets += 1
         game.add_history('crash', amount, -amount, 'loss')
-        update_bank(amount)
+        update_pool(amount)
         game.save_to_db()
         return jsonify({
             'success': True,
             'balance': game.balance,
-            'bank_balance': get_bank_balance(),
+            'pool_balance': get_pool_balance(),
             'stats': game.get_stats(),
             'history': game.get_history(10)
         })
