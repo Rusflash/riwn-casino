@@ -5,50 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RuWin — Казино</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Orbitron', monospace;
             background: #0a0a0f;
             color: #fff;
             min-height: 100vh;
-            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* ===== СКРОЛЛ ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00f0ff;
+            border-radius: 3px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
         }
 
         /* ===== АВТОРИЗАЦИЯ ===== */
         .auth-modal {
             display: flex;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
             z-index: 2000;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
             justify-content: center;
             align-items: center;
         }
-        .auth-modal.hidden { display: none; }
+        .auth-modal.hidden {
+            display: none;
+        }
         .auth-box {
             background: linear-gradient(135deg, #1a1a2e, #0a0a1a);
-            border: 1px solid rgba(0,240,255,0.2);
-            border-radius: 20px;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 24px;
             padding: 40px;
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
+            box-shadow: 0 0 80px rgba(0, 240, 255, 0.05);
+            animation: fadeInUp 0.5s ease;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .auth-box .logo {
             text-align: center;
-            font-size: 32px;
-            font-weight: bold;
+            font-size: 36px;
+            font-weight: 900;
             background: linear-gradient(45deg, #00f0ff, #8b00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
         }
         .auth-box .subtitle {
             text-align: center;
             color: #666;
-            font-size: 14px;
+            font-size: 13px;
             margin-bottom: 25px;
+            letter-spacing: 1px;
         }
         .auth-tabs {
             display: flex;
@@ -57,38 +94,645 @@
         }
         .auth-tab {
             flex: 1;
-            padding: 10px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 10px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
             color: #888;
             cursor: pointer;
             text-align: center;
             transition: all 0.3s;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
         }
         .auth-tab.active {
-            background: rgba(0,240,255,0.1);
+            background: rgba(0, 240, 255, 0.1);
             border-color: #00f0ff;
             color: #00f0ff;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.05);
         }
-        .auth-tab:hover { background: rgba(0,240,255,0.05); }
-        .auth-form { display: none; }
-        .auth-form.active { display: block; }
+        .auth-tab:hover {
+            background: rgba(0, 240, 255, 0.05);
+        }
+        .auth-form {
+            display: none;
+        }
+        .auth-form.active {
+            display: block;
+        }
         .auth-form input {
             width: 100%;
-            padding: 12px 16px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 10px;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+            font-family: 'Orbitron', monospace;
+        }
+        .auth-form input:focus {
+            outline: none;
+            border-color: #00f0ff;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.05);
+        }
+        .auth-form input::placeholder {
+            color: #444;
+        }
+        .auth-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #00f0ff, #8b00ff);
+            border: none;
+            border-radius: 12px;
             color: #fff;
             font-size: 15px;
-            margin-bottom: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            letter-spacing: 1px;
         }
-        .auth-form input:focus { outline: none; border-color: #00f0ff; }
-        .auth-form input::placeholder { color: #444; }
-        .auth-btn {
+        .auth-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.2);
+        }
+        .auth-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .auth-error {
+            color: #ff0040;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+        .auth-success {
+            color: #00ff88;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        /* ===== 2FA МОДАЛКА ===== */
+        .twofa-modal .modal-content {
+            max-width: 400px;
+        }
+        .twofa-code-input {
+            font-size: 32px;
+            letter-spacing: 12px;
+            text-align: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            width: 100%;
+            max-width: 240px;
+            margin: 15px auto;
+            font-family: 'Orbitron', monospace;
+        }
+        .twofa-code-input:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
+
+        /* ===== ОСНОВНОЙ ИНТЕРФЕЙС ===== */
+        #app {
+            display: none;
+        }
+
+        /* ===== ХЕДЕР ===== */
+        .header {
+            background: linear-gradient(135deg, rgba(10, 10, 15, 0.95), rgba(20, 20, 40, 0.95));
+            border-bottom: 1px solid rgba(0, 240, 255, 0.08);
+            padding: 12px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00f0ff, #8b00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+        .header-right {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .user-info {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px 14px 6px 10px;
+            border-radius: 30px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+        }
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .user-name {
+            font-size: 12px;
+            color: #00f0ff;
+            font-weight: 600;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0 4px;
+            transition: color 0.3s;
+        }
+        .logout-btn:hover {
+            color: #ff0040;
+        }
+
+        .balance-box,
+        .level-box,
+        .pool-box {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            text-align: center;
+            min-width: 80px;
+        }
+        .balance-label,
+        .level-label,
+        .pool-label {
+            font-size: 8px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .balance-amount {
+            font-size: 16px;
+            color: #00ff88;
+            font-weight: 700;
+        }
+        .level-amount {
+            font-size: 16px;
+            color: #00f0ff;
+            font-weight: 700;
+        }
+        .pool-amount {
+            font-size: 16px;
+            color: #ffd700;
+            font-weight: 700;
+        }
+
+        /* ===== VPN БАННЕР ===== */
+        .vpn-banner {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.06), rgba(0, 255, 136, 0.03));
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px 16px;
+            margin: 10px 20px 0;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            animation: slideDown 0.5s ease;
+        }
+        .vpn-banner.show {
+            display: flex;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .vpn-banner .vpn-icon {
+            font-size: 18px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        .vpn-banner .vpn-text {
+            flex: 1;
+        }
+        .vpn-banner .vpn-text .vpn-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #00f0ff;
+        }
+        .vpn-banner .vpn-text .vpn-desc {
+            font-size: 10px;
+            color: #88ccdd;
+        }
+        .vpn-banner .vpn-badge {
+            background: linear-gradient(135deg, #00f0ff, #00ff88);
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #0a0a0f;
+            animation: badgeGlow 2s infinite;
+        }
+        @keyframes badgeGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+            }
+        }
+        .vpn-banner .vpn-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .vpn-banner .vpn-close:hover {
+            color: #fff;
+        }
+
+        /* ===== НАВИГАЦИЯ ===== */
+        .nav {
+            display: flex;
+            gap: 4px;
+            padding: 10px 20px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.05);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .nav-btn {
+            padding: 8px 18px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 0.5px;
+        }
+        .nav-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .nav-btn.active {
+            color: #00f0ff;
+            background: rgba(0, 240, 255, 0.08);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.05);
+        }
+
+        /* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== ЛОББИ ===== */
+        .lobby-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .lobby-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .lobby-left {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ===== ПРИВЕТСТВИЕ ===== */
+        .welcome-card {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(139, 0, 255, 0.05));
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.03), transparent);
+            border-radius: 50%;
+        }
+        .welcome-card h1 {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00f0ff, #8b00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        .welcome-card p {
+            color: #666;
+            font-size: 13px;
+            position: relative;
+        }
+        .welcome-card .online-count {
+            display: inline-block;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 20px;
+            padding: 2px 12px;
+            font-size: 11px;
+            color: #00ff88;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        /* ===== БОНУСЫ ===== */
+        .bonus-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        @media (max-width: 600px) {
+            .bonus-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .bonus-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .bonus-card:hover {
+            border-color: rgba(0, 240, 255, 0.2);
+            transform: translateY(-3px);
+        }
+        .bonus-card .bonus-icon {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .bonus-card .bonus-title {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .bonus-card .bonus-amount {
+            font-size: 22px;
+            font-weight: 900;
+            color: #00ff88;
+        }
+
+        /* ===== ПОПУЛЯРНЫЕ ИГРЫ ===== */
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #00f0ff;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+        .popular-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        @media (max-width: 768px) {
+            .popular-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 400px) {
+            .popular-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .popular-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .popular-card:hover {
+            border-color: rgba(0, 240, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        .popular-card .game-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+        .popular-card .game-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .popular-card .game-tag {
+            font-size: 9px;
+            color: #888;
+        }
+
+        /* ===== ЛИДЕРБОРД (ПРАВАЯ КОЛОНКА) ===== */
+        .leaderboard-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            border-radius: 20px;
+            padding: 20px;
+        }
+        .leaderboard-card .lb-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .leaderboard-card .lb-header h3 {
+            font-size: 14px;
+            color: #00f0ff;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .leaderboard-card .lb-header .lb-time {
+            font-size: 10px;
+            color: #666;
+        }
+        .lb-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.3s;
+            cursor: default;
+        }
+        .lb-item:hover {
+            background: rgba(0, 240, 255, 0.03);
+        }
+        .lb-item .lb-rank {
+            font-size: 14px;
+            font-weight: 700;
+            min-width: 30px;
+            color: #666;
+        }
+        .lb-item .lb-rank.gold {
+            color: #ffd700;
+        }
+        .lb-item .lb-rank.silver {
+            color: #c0c0c0;
+        }
+        .lb-item .lb-rank.bronze {
+            color: #cd7f32;
+        }
+        .lb-item .lb-name {
+            flex: 1;
+            font-size: 12px;
+            color: #fff;
+            margin: 0 10px;
+        }
+        .lb-item .lb-balance {
+            font-size: 12px;
+            font-weight: 700;
+            color: #00ff88;
+        }
+
+        /* ===== ИГРЫ ===== */
+        .game-wrapper {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .game-title {
+            text-align: center;
+            font-size: 24px;
+            color: #00f0ff;
+            margin-bottom: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .game-result {
+            text-align: center;
+            padding: 14px 20px;
+            margin: 12px 0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .game-result.win {
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        .game-result.loss {
+            background: rgba(255, 0, 64, 0.08);
+            border: 1px solid rgba(255, 0, 64, 0.2);
+            color: #ff0040;
+        }
+        .game-result.error {
+            background: rgba(255, 200, 0, 0.08);
+            border: 1px solid rgba(255, 200, 0, 0.2);
+            color: #ffcc00;
+        }
+        .game-result.info {
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            color: #888;
+        }
+
+        .game-input {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            width: 100%;
+            margin: 8px 0;
+            font-family: 'Orbitron', monospace;
+        }
+        .game-input:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
+
+        .spin-btn {
             width: 100%;
             padding: 14px;
             background: linear-gradient(135deg, #00f0ff, #8b00ff);
@@ -100,226 +744,415 @@
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 10px;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', monospace;
         }
-        .auth-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(0,240,255,0.2); }
-        .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .auth-error { color: #ff0040; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
-        .auth-success { color: #00ff88; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
-
-        /* ===== ХЕДЕР ===== */
-        .header {
-            background: linear-gradient(135deg, rgba(10,10,15,0.95), rgba(20,20,40,0.95));
-            border: 1px solid rgba(0,240,255,0.15);
-            border-radius: 15px;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+        .spin-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.15);
         }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            background: linear-gradient(45deg, #00f0ff, #8b00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .header-right { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        .user-info {
-            background: rgba(0,0,0,0.6);
-            padding: 5px 12px 5px 8px;
-            border-radius: 30px;
-            border: 1px solid rgba(0,240,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden; }
-        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .user-name { font-size: 13px; color: #00f0ff; font-weight: 600; }
-        .logout-btn { background: none; border: none; color: #666; cursor: pointer; font-size: 14px; padding: 0 5px; }
-        .logout-btn:hover { color: #ff0040; }
-
-        .balance-box, .level-box, .bank-box {
-            background: rgba(0,0,0,0.6);
-            padding: 6px 16px;
-            border-radius: 10px;
-            border: 1px solid rgba(0,240,255,0.1);
-            text-align: center;
-            min-width: 90px;
-        }
-        .balance-label, .level-label, .bank-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-        .balance-amount { font-size: 18px; color: #00ff88; font-weight: bold; }
-        .level-amount { font-size: 18px; color: #00f0ff; font-weight: bold; }
-        .bank-amount { font-size: 18px; color: #ffd700; font-weight: bold; }
-
-        /* ===== VPN БАННЕР ===== */
-        .vpn-banner {
-            background: linear-gradient(135deg, rgba(0,240,255,0.08), rgba(0,255,136,0.05));
-            border: 1px solid rgba(0,240,255,0.2);
-            border-radius: 12px;
-            padding: 10px 16px;
-            margin-bottom: 12px;
-            display: none;
-            align-items: center;
-            gap: 12px;
-            animation: slideDown 0.5s ease;
-        }
-        .vpn-banner.show { display: flex; }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .vpn-banner .vpn-icon { font-size: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        .vpn-banner .vpn-text { flex: 1; }
-        .vpn-banner .vpn-text .vpn-title { font-size: 13px; font-weight: 600; color: #00f0ff; }
-        .vpn-banner .vpn-text .vpn-desc { font-size: 11px; color: #88ccdd; }
-        .vpn-banner .vpn-badge {
-            background: linear-gradient(135deg, #00f0ff, #00ff88);
-            padding: 2px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-            color: #0a0a0f;
-            animation: badgeGlow 2s infinite;
-        }
-        @keyframes badgeGlow { 0%,100% { box-shadow: 0 0 10px rgba(0,240,255,0.2); } 50% { box-shadow: 0 0 25px rgba(0,240,255,0.5); } }
-        .vpn-banner .vpn-close { background: none; border: none; color: rgba(255,255,255,0.3); font-size: 18px; cursor: pointer; }
-        .vpn-banner .vpn-close:hover { color: #fff; }
-
-        /* ===== НАВИГАЦИЯ ===== */
-        .nav {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            background: rgba(255,255,255,0.02);
-            padding: 8px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.03);
-        }
-        .nav-btn {
-            padding: 8px 16px;
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 8px;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
-        .nav-btn.active {
-            color: #00f0ff;
-            background: rgba(0,240,255,0.1);
-            border-color: rgba(0,240,255,0.2);
+        .spin-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        /* ===== ОБЩИЕ БЛОКИ ===== */
-        .page { display: none; animation: fadeIn 0.3s ease; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-
-        .game-wrapper {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(0,240,255,0.08);
-            border-radius: 16px;
-            padding: 20px;
+        /* ===== РУЛЕТКА ===== */
+        .roulette-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
         }
-        .game-title { text-align: center; font-size: 22px; color: #00f0ff; margin-bottom: 15px; font-weight: 300; letter-spacing: 2px; }
-
-        .game-result {
-            text-align: center;
-            padding: 12px 16px;
-            margin: 12px 0;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            min-height: 48px;
+        @media (max-width: 768px) {
+            .roulette-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .roulette-board {
+            background: radial-gradient(circle, #1a1a1a, #0a0a0a);
+            border-radius: 50%;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+            border: 2px solid rgba(0, 240, 255, 0.1);
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            padding: 14px;
+            gap: 3px;
+            position: relative;
+        }
+        .roulette-board.spinning {
+            animation: rouletteSpin 3s cubic-bezier(0.17, 0.67, 0.12, 1) forwards;
+        }
+        @keyframes rouletteSpin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(1440deg);
+            }
+        }
+        .roulette-number {
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        .game-result.win { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); color: #00ff88; }
-        .game-result.loss { background: rgba(255,0,64,0.08); border: 1px solid rgba(255,0,64,0.2); color: #ff0040; }
-        .game-result.error { background: rgba(255,200,0,0.08); border: 1px solid rgba(255,200,0,0.2); color: #ffcc00; }
-        .game-result.info { background: rgba(0,240,255,0.05); border: 1px solid rgba(0,240,255,0.1); color: #888; }
-
-        .game-input {
-            padding: 10px 14px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-            width: 100%;
-            margin: 6px 0;
-        }
-        .game-input:focus { outline: none; border-color: #00f0ff; }
-
-        .spin-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #00f0ff, #8b00ff);
-            border: none;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 16px;
+            border-radius: 50%;
+            font-size: 10px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 8px;
+            aspect-ratio: 1;
         }
-        .spin-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(0,240,255,0.15); }
-        .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-        /* ===== ЛОББИ ===== */
-        .lobby-header { text-align: center; margin-bottom: 25px; }
-        .lobby-header h1 { font-size: 30px; margin-bottom: 8px; }
-        .lobby-header h1 span { background: linear-gradient(45deg, #00f0ff, #8b00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .lobby-subtitle { color: #666; font-size: 14px; }
-
-        .game-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
+        .roulette-number:hover {
+            transform: scale(1.1);
         }
-        .game-card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(0,240,255,0.08);
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
+        .roulette-number.selected {
+            transform: scale(1.2);
+            border: 2px solid #00f0ff;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
         }
-        .game-card:hover { transform: translateY(-5px); border-color: rgba(0,240,255,0.2); box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-        .game-icon { font-size: 32px; margin-bottom: 8px; display: block; }
-        .game-card h3 { font-size: 14px; margin-bottom: 4px; }
-        .game-card p { color: #666; font-size: 11px; }
-        .game-tag { display: inline-block; padding: 2px 10px; background: rgba(0,240,255,0.1); border-radius: 20px; font-size: 9px; color: #00f0ff; margin-top: 6px; }
+        .roulette-number.red {
+            background: #ff0040;
+            color: #fff;
+        }
+        .roulette-number.black {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #333;
+        }
+        .roulette-number.green {
+            background: #00cc44;
+            color: #fff;
+        }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        .roulette-controls {
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
-        .stat-item {
-            background: rgba(255,255,255,0.02);
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.03);
+        .bet-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
         }
-        .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-value { font-size: 16px; font-weight: bold; margin-top: 3px; }
-        .stat-value.win { color: #00ff88; }
-        .stat-value.loss { color: #ff0040; }
+        .bet-btn {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 10px;
+            font-weight: 600;
+            font-family: 'Orbitron', monospace;
+        }
+        .bet-btn:hover {
+            background: rgba(0, 240, 255, 0.05);
+            color: #fff;
+        }
+        .bet-btn.active {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: #00f0ff;
+            color: #00f0ff;
+        }
+
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            margin: 8px 0;
+        }
+        .number-btn {
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s;
+        }
+        .number-btn:hover {
+            background: rgba(0, 240, 255, 0.05);
+        }
+        .number-btn.selected {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: #00f0ff;
+        }
+        .number-btn.red {
+            color: #ff0040;
+        }
+        .number-btn.black {
+            color: #fff;
+        }
+        .number-btn.green {
+            color: #00cc44;
+        }
+
+        .dozen-btn {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s;
+        }
+        .dozen-btn:hover {
+            background: rgba(0, 240, 255, 0.05);
+        }
+        .dozen-btn.selected {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: #00f0ff;
+        }
+
+        /* ===== СЛОТЫ ===== */
+        .slots-machine {
+            background: radial-gradient(ellipse at center, #1a1a2e, #0a0a1a);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            border-radius: 20px;
+            padding: 25px;
+        }
+        .slots-reels {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .slot-reel {
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 14px;
+            padding: 12px;
+            display: grid;
+            grid-template-rows: repeat(3, 1fr);
+            gap: 6px;
+            border: 1px solid rgba(0, 240, 255, 0.05);
+            min-height: 140px;
+        }
+        .slot-symbol {
+            font-size: 36px;
+            text-align: center;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .slot-symbol.win-highlight {
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.2);
+            transform: scale(1.05);
+        }
+        @keyframes spin {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-33.33%);
+            }
+        }
+        .slot-reel.spinning {
+            animation: spin 0.15s linear infinite;
+        }
+        @keyframes stop {
+            0% {
+                transform: translateY(-33.33%);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+        .slot-reel.stopping {
+            animation: stop 0.4s ease-out forwards;
+        }
+
+        /* ===== БЛЭКДЖЕК ===== */
+        .blackjack-table {
+            background: radial-gradient(circle, #1a4a1a, #0a2a0a);
+            border: 1px solid #2a6a2a;
+            border-radius: 24px;
+            padding: 25px;
+        }
+        .blackjack-hand {
+            margin: 12px 0;
+        }
+        .blackjack-hand h4 {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        .blackjack-cards {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .blackjack-card {
+            background: #fff;
+            color: #000;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: 700;
+            min-width: 40px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .blackjack-card.red {
+            color: #ff0040;
+        }
+        .blackjack-card.black {
+            color: #000;
+        }
+        .blackjack-sum {
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .blackjack-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .blackjack-action {
+            padding: 10px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: 600;
+            flex: 1;
+            min-width: 70px;
+            font-family: 'Orbitron', monospace;
+        }
+        .blackjack-action:hover {
+            background: rgba(0, 240, 255, 0.1);
+        }
+        .blackjack-action:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* ===== AVIATOR ===== */
+        .crash-chart {
+            background: radial-gradient(ellipse at bottom, #0a0a2a, #050510);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            border-radius: 16px;
+            height: 280px;
+            margin: 12px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .crash-rocket {
+            position: absolute;
+            bottom: 10%;
+            left: 10%;
+            font-size: 40px;
+            z-index: 2;
+            transition: all 0.05s linear;
+        }
+        .crash-rocket.flying {
+            animation: rocketShake 0.05s infinite;
+        }
+        @keyframes rocketShake {
+            0%,
+            100% {
+                transform: rotate(-2deg);
+            }
+            50% {
+                transform: rotate(2deg);
+            }
+        }
+        .crash-rocket.crashed {
+            animation: rocketCrash 0.8s ease forwards;
+        }
+        @keyframes rocketCrash {
+            0% {
+                transform: rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: rotate(360deg) scale(0);
+                opacity: 0;
+            }
+        }
+        .crash-multiplier {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 900;
+            color: #00f0ff;
+            text-shadow: 0 0 40px rgba(0, 240, 255, 0.3);
+            z-index: 3;
+        }
+        .crash-multiplier.crashed {
+            color: #ff0040;
+        }
+        .crash-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .crash-btn {
+            padding: 10px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            flex: 1;
+            font-family: 'Orbitron', monospace;
+        }
+        .crash-btn.bet {
+            background: linear-gradient(135deg, #ff6a00, #ff4500);
+            color: #fff;
+        }
+        .crash-btn.bet:hover {
+            transform: scale(1.03);
+        }
+        .crash-btn.cashout {
+            background: linear-gradient(135deg, #00ff88, #00cc44);
+            color: #fff;
+        }
+        .crash-btn.cashout:hover {
+            transform: scale(1.03);
+        }
+        .crash-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .crash-history {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .crash-history-item {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 11px;
+        }
+        .crash-history-item.win {
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+        }
+        .crash-history-item.loss {
+            background: rgba(255, 0, 64, 0.15);
+            color: #ff0040;
+        }
 
         /* ===== ПРОФИЛЬ ===== */
         .profile-container {
@@ -334,7 +1167,7 @@
             height: 100px;
             border-radius: 50%;
             background: #222;
-            border: 2px solid rgba(0,240,255,0.3);
+            border: 2px solid rgba(0, 240, 255, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -342,13 +1175,27 @@
             overflow: hidden;
             cursor: pointer;
             transition: all 0.3s;
-            position: relative;
         }
-        .profile-avatar:hover { border-color: #00f0ff; }
-        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-avatar input { display: none; }
-        .profile-name { font-size: 22px; font-weight: 700; color: #00f0ff; }
-        .profile-email { color: #666; font-size: 14px; }
+        .profile-avatar:hover {
+            border-color: #00f0ff;
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-avatar input {
+            display: none;
+        }
+        .profile-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #00f0ff;
+        }
+        .profile-email {
+            color: #666;
+            font-size: 14px;
+        }
         .profile-field {
             width: 100%;
             max-width: 350px;
@@ -356,16 +1203,25 @@
             flex-direction: column;
             gap: 4px;
         }
-        .profile-field label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .profile-field label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
         .profile-field input {
             padding: 10px 14px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(0,240,255,0.1);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.1);
             border-radius: 8px;
             color: #fff;
             font-size: 14px;
+            font-family: 'Orbitron', monospace;
         }
-        .profile-field input:focus { outline: none; border-color: #00f0ff; }
+        .profile-field input:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
         .profile-save-btn {
             padding: 10px 30px;
             background: linear-gradient(135deg, #00f0ff, #8b00ff);
@@ -373,11 +1229,15 @@
             border-radius: 10px;
             color: #fff;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
         }
-        .profile-save-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(0,240,255,0.15); }
+        .profile-save-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+        }
         .profile-2fa {
             display: flex;
             align-items: center;
@@ -393,7 +1253,9 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        .toggle-2fa.active { background: #00f0ff; }
+        .toggle-2fa.active {
+            background: #00f0ff;
+        }
         .toggle-2fa::after {
             content: '';
             position: absolute;
@@ -405,316 +1267,85 @@
             border-radius: 50%;
             transition: all 0.3s;
         }
-        .toggle-2fa.active::after { left: 27px; }
-
-        /* ===== ЛИДЕРБОРД ===== */
-        .leaderboard-section {
-            margin-top: 25px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(0,240,255,0.08);
-            border-radius: 14px;
-            padding: 16px;
+        .toggle-2fa.active::after {
+            left: 27px;
         }
-        .leaderboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .leaderboard-header h3 { color: #00f0ff; font-size: 16px; font-weight: 700; }
-        .leaderboard-header .update-time { font-size: 10px; color: #666; }
-        .leaderboard-table { width: 100%; border-collapse: collapse; }
-        .leaderboard-table th {
-            text-align: left;
-            padding: 6px 10px;
-            font-size: 10px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid rgba(0,240,255,0.05);
-        }
-        .leaderboard-table td {
-            padding: 6px 10px;
-            font-size: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.02);
-        }
-        .leaderboard-table .rank-1 td { color: #ffd700; }
-        .leaderboard-table .rank-2 td { color: #c0c0c0; }
-        .leaderboard-table .rank-3 td { color: #cd7f32; }
-        .leaderboard-table .rank-number { font-weight: 700; font-size: 12px; min-width: 25px; }
-        .leaderboard-table .player-balance { font-weight: 700; color: #00ff88; }
-        .leaderboard-empty { text-align: center; padding: 20px; color: #666; font-size: 13px; }
-
-        /* ===== СЛОТЫ ===== */
-        .slots-machine {
-            background: radial-gradient(ellipse at center, #1a1a2e, #0a0a1a);
-            border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 16px;
-            padding: 20px;
-        }
-        .slots-reels {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
-        .slot-reel {
-            background: rgba(0,0,0,0.8);
-            border-radius: 12px;
-            padding: 10px;
-            display: grid;
-            grid-template-rows: repeat(3, 1fr);
-            gap: 6px;
-            border: 1px solid rgba(0,240,255,0.05);
-            min-height: 130px;
-        }
-        .slot-symbol {
-            font-size: 34px;
-            text-align: center;
-            padding: 4px;
-            background: rgba(255,255,255,0.02);
-            border-radius: 8px;
-        }
-        .slot-symbol.win-highlight {
-            background: rgba(0,255,136,0.15);
-            box-shadow: 0 0 20px rgba(0,255,136,0.2);
-            transform: scale(1.05);
-        }
-        @keyframes spin { 0% { transform: translateY(0); } 100% { transform: translateY(-33.33%); } }
-        .slot-reel.spinning { animation: spin 0.15s linear infinite; }
-        @keyframes stop { 0% { transform: translateY(-33.33%); } 100% { transform: translateY(0); } }
-        .slot-reel.stopping { animation: stop 0.4s ease-out forwards; }
-
-        /* ===== РУЛЕТКА ===== */
-        .roulette-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width:768px) { .roulette-layout { grid-template-columns:1fr; } }
-        .roulette-board {
-            background: radial-gradient(circle, #1a1a1a, #0a0a0a);
-            border-radius: 50%;
-            width: 260px;
-            height: 260px;
-            margin: 0 auto;
-            border: 2px solid rgba(0,240,255,0.1);
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            padding: 12px;
-            gap: 3px;
-        }
-        .roulette-board.spinning { animation: rouletteSpin 3s cubic-bezier(0.17,0.67,0.12,1) forwards; }
-        @keyframes rouletteSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(1440deg); } }
-        .roulette-number {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            aspect-ratio: 1;
-        }
-        .roulette-number:hover { transform: scale(1.1); }
-        .roulette-number.selected { transform: scale(1.2); border: 2px solid #00f0ff; }
-        .roulette-number.red { background: #ff0040; color: #fff; }
-        .roulette-number.black { background: #1a1a1a; color: #fff; border: 1px solid #333; }
-        .roulette-number.green { background: #00cc44; color: #fff; }
-
-        .roulette-controls { display: flex; flex-direction: column; gap: 8px; }
-        .bet-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
-        .bet-btn {
-            padding: 6px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 6px;
-            color: #888;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 10px;
-            font-weight: 600;
-        }
-        .bet-btn:hover { background: rgba(0,240,255,0.05); color: #fff; }
-        .bet-btn.active { background: rgba(0,240,255,0.1); border-color: #00f0ff; color: #00f0ff; }
-
-        .number-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 3px; margin: 8px 0; }
-        .number-btn {
-            padding: 4px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 4px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 11px;
-        }
-        .number-btn:hover { background: rgba(0,240,255,0.05); }
-        .number-btn.selected { background: rgba(0,240,255,0.15); border-color: #00f0ff; }
-        .number-btn.red { color: #ff0040; }
-        .number-btn.black { color: #fff; }
-        .number-btn.green { color: #00cc44; }
-        .dozen-btn {
-            padding: 6px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 4px;
-            color: #fff;
-            cursor: pointer;
-        }
-        .dozen-btn:hover { background: rgba(0,240,255,0.05); }
-        .dozen-btn.selected { background: rgba(0,240,255,0.15); border-color: #00f0ff; }
-
-        /* ===== БЛЭКДЖЕК ===== */
-        .blackjack-table {
-            background: radial-gradient(circle, #1a4a1a, #0a2a0a);
-            border: 1px solid #2a6a2a;
-            border-radius: 20px;
-            padding: 20px;
-        }
-        .blackjack-hand { margin: 10px 0; }
-        .blackjack-hand h4 { color: #888; font-size: 12px; margin-bottom: 6px; }
-        .blackjack-cards { display: flex; gap: 8px; flex-wrap: wrap; }
-        .blackjack-card {
-            background: #fff;
-            color: #000;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            min-width: 36px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .blackjack-card.red { color: #ff0040; }
-        .blackjack-card.black { color: #000; }
-        .blackjack-sum { font-size: 16px; font-weight: bold; margin-top: 4px; }
-        .blackjack-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-        .blackjack-action {
-            padding: 8px 20px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 8px;
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 13px;
-            font-weight: 600;
-            flex: 1;
-            min-width: 70px;
-        }
-        .blackjack-action:hover { background: rgba(0,240,255,0.1); }
-        .blackjack-action:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        /* ===== AVIATOR ===== */
-        .crash-chart {
-            background: radial-gradient(ellipse at bottom, #0a0a2a, #050510);
-            border: 1px solid rgba(0,240,255,0.08);
-            border-radius: 16px;
-            height: 280px;
-            margin: 12px 0;
-            position: relative;
-            overflow: hidden;
-        }
-        .crash-rocket {
-            position: absolute;
-            bottom: 10%;
-            left: 10%;
-            font-size: 40px;
-            z-index: 2;
-            transition: all 0.05s linear;
-        }
-        .crash-rocket.flying { animation: rocketShake 0.05s infinite; }
-        @keyframes rocketShake { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
-        .crash-rocket.crashed { animation: rocketCrash 0.8s ease forwards; }
-        @keyframes rocketCrash { 0% { transform: rotate(0deg) scale(1); opacity:1; } 100% { transform: rotate(360deg) scale(0); opacity:0; } }
-        .crash-multiplier {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 48px;
-            font-weight: bold;
-            color: #00f0ff;
-            text-shadow: 0 0 40px rgba(0,240,255,0.3);
-            z-index: 3;
-        }
-        .crash-multiplier.crashed { color: #ff0040; }
-        .crash-controls { display: flex; gap: 12px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
-        .crash-btn {
-            padding: 10px 28px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            flex: 1;
-        }
-        .crash-btn.bet { background: linear-gradient(135deg, #ff6a00, #ff4500); color: #fff; }
-        .crash-btn.bet:hover { transform: scale(1.03); }
-        .crash-btn.cashout { background: linear-gradient(135deg, #00ff88, #00cc44); color: #fff; }
-        .crash-btn.cashout:hover { transform: scale(1.03); }
-        .crash-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
-        .crash-history { display: flex; gap: 5px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
-        .crash-history-item { padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .crash-history-item.win { background: rgba(0,255,136,0.15); color: #00ff88; }
-        .crash-history-item.loss { background: rgba(255,0,64,0.15); color: #ff0040; }
 
         /* ===== АДМИН-ПАНЕЛЬ ===== */
         .admin-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12px;
         }
         .admin-table th {
             padding: 8px 10px;
             text-align: left;
             color: #666;
-            border-bottom: 1px solid rgba(0,240,255,0.1);
-            font-size: 11px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .admin-table td {
             padding: 8px 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
         .admin-table .btn-reset {
-            background: rgba(255,200,0,0.1);
-            border: 1px solid rgba(255,200,0,0.2);
+            background: rgba(255, 200, 0, 0.1);
+            border: 1px solid rgba(255, 200, 0, 0.2);
             color: #ffcc00;
             padding: 4px 10px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10px;
             margin-right: 5px;
+            font-family: 'Orbitron', monospace;
         }
-        .admin-table .btn-reset:hover { background: rgba(255,200,0,0.2); }
+        .admin-table .btn-reset:hover {
+            background: rgba(255, 200, 0, 0.2);
+        }
         .admin-table .btn-ban {
-            background: rgba(255,0,64,0.1);
-            border: 1px solid rgba(255,0,64,0.2);
+            background: rgba(255, 0, 64, 0.1);
+            border: 1px solid rgba(255, 0, 64, 0.2);
             color: #ff0040;
             padding: 4px 10px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10px;
+            font-family: 'Orbitron', monospace;
         }
-        .admin-table .btn-ban:hover { background: rgba(255,0,64,0.2); }
+        .admin-table .btn-ban:hover {
+            background: rgba(255, 0, 64, 0.2);
+        }
 
         .admin-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }
         .admin-stat {
-            background: rgba(255,255,255,0.03);
+            background: rgba(255, 255, 255, 0.03);
             padding: 15px;
             border-radius: 10px;
             text-align: center;
         }
-        .admin-stat .label { font-size: 12px; color: #666; }
-        .admin-stat .value { font-size: 24px; font-weight: 700; }
-        .admin-stat .value.gold { color: #ffd700; }
-        .admin-stat .value.cyan { color: #00f0ff; }
+        .admin-stat .label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .admin-stat .value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .admin-stat .value.gold {
+            color: #ffd700;
+        }
+        .admin-stat .value.cyan {
+            color: #00f0ff;
+        }
 
         .admin-pool-input {
             display: flex;
@@ -726,13 +1357,17 @@
             flex: 2;
             min-width: 150px;
             padding: 10px 14px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(0,240,255,0.1);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.1);
             border-radius: 8px;
             color: #fff;
             font-size: 14px;
+            font-family: 'Orbitron', monospace;
         }
-        .admin-pool-input input:focus { outline: none; border-color: #00f0ff; }
+        .admin-pool-input input:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
         .admin-pool-input button {
             flex: 1;
             min-width: 120px;
@@ -745,12 +1380,16 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
         }
-        .admin-pool-input button:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(255,215,0,0.3); }
+        .admin-pool-input button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
 
         .admin-restart-btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background: linear-gradient(135deg, #ff0040, #8b00ff);
             border: none;
             border-radius: 10px;
@@ -760,62 +1399,193 @@
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 20px;
+            font-family: 'Orbitron', monospace;
         }
-        .admin-restart-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(255,0,64,0.3); }
+        .admin-restart-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(255, 0, 64, 0.3);
+        }
 
-        /* ===== МОДАЛКИ ===== */
+        /* ===== ЧАТ ===== */
+        .chat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .chat-card .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .chat-card .chat-header h3 {
+            font-size: 14px;
+            color: #00f0ff;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .chat-card .chat-header .chat-rain {
+            font-size: 10px;
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+            padding: 2px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        .chat-messages {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        .chat-message {
+            padding: 6px 10px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .chat-message .chat-user {
+            color: #00f0ff;
+            font-weight: 600;
+        }
+        .chat-message .chat-text {
+            color: #aaa;
+        }
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input-row input {
+            flex: 1;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'Orbitron', monospace;
+        }
+        .chat-input-row input:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
+        .chat-input-row button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #00f0ff, #8b00ff);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', monospace;
+        }
+        .chat-input-row button:hover {
+            transform: scale(1.02);
+        }
+
+        /* ===== МОДАЛКА ===== */
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
             z-index: 1000;
             backdrop-filter: blur(5px);
         }
         .modal-content {
-            max-width: 400px;
-            margin: 80px auto;
+            max-width: 420px;
+            margin: 100px auto;
             background: #0a0a0f;
-            border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 16px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 20px;
             padding: 25px;
             text-align: center;
         }
-        .modal-close { float: right; font-size: 24px; color: #666; cursor: pointer; }
-        .modal-close:hover { color: #fff; }
-        .modal-body { padding: 15px 0; font-size: 16px; line-height: 1.6; }
-
-        /* ===== 2FA МОДАЛКА ===== */
-        .twofa-modal .modal-content { max-width: 360px; }
-        .twofa-code-input {
-            font-size: 28px;
-            letter-spacing: 8px;
-            text-align: center;
-            padding: 12px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 10px;
-            color: #fff;
-            width: 100%;
-            max-width: 200px;
-            margin: 10px auto;
+        .modal-close {
+            float: right;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
         }
-        .twofa-code-input:focus { outline: none; border-color: #00f0ff; }
+        .modal-close:hover {
+            color: #fff;
+        }
+        .modal-body {
+            padding: 15px 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
 
         /* ===== АДАПТИВ ===== */
-        @media (max-width:600px) {
-            .roulette-board { width: 200px; height: 200px; padding: 10px; }
-            .roulette-number { font-size: 8px; }
-            .slot-symbol { font-size: 26px; }
-            .lobby-header h1 { font-size: 22px; }
-            .crash-multiplier { font-size: 32px; }
-            .crash-rocket { font-size: 30px; }
-            .game-wrapper { padding: 12px; }
-            .header { padding: 10px; }
-            .auth-box { padding: 20px; margin: 10px; }
-            .profile-avatar { width: 70px; height: 70px; font-size: 32px; }
-            .admin-stats { grid-template-columns: 1fr; }
+        @media (max-width: 600px) {
+            .roulette-board {
+                width: 200px;
+                height: 200px;
+                padding: 10px;
+            }
+            .roulette-number {
+                font-size: 8px;
+            }
+            .slot-symbol {
+                font-size: 28px;
+            }
+            .header {
+                padding: 10px 14px;
+            }
+            .logo {
+                font-size: 18px;
+            }
+            .balance-amount,
+            .level-amount,
+            .pool-amount {
+                font-size: 13px;
+            }
+            .balance-box,
+            .level-box,
+            .pool-box {
+                padding: 4px 10px;
+                min-width: 60px;
+            }
+            .lobby-grid {
+                grid-template-columns: 1fr;
+            }
+            .popular-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .bonus-grid {
+                grid-template-columns: 1fr;
+            }
+            .welcome-card h1 {
+                font-size: 20px;
+            }
+            .nav-btn {
+                font-size: 9px;
+                padding: 6px 12px;
+            }
+            .game-wrapper {
+                padding: 15px;
+            }
+            .crash-multiplier {
+                font-size: 32px;
+            }
+            .crash-rocket {
+                font-size: 30px;
+            }
+            .blackjack-card {
+                font-size: 16px;
+                padding: 8px 12px;
+                min-width: 30px;
+            }
+            .admin-stats {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -860,8 +1630,10 @@
     </div>
 
     <!-- ===== ОСНОВНОЙ ИНТЕРФЕЙС ===== -->
-    <div id="app" style="display:none;">
-        <div class="header">
+    <div id="app">
+
+        <!-- ХЕДЕР -->
+        <header class="header">
             <div class="logo">🎰 RuWin</div>
             <div class="header-right">
                 <div class="user-info">
@@ -877,13 +1649,14 @@
                     <div class="level-label">🏆 УРОВЕНЬ</div>
                     <div class="level-amount" id="level">1</div>
                 </div>
-                <div class="bank-box">
-                    <div class="bank-label">🏦 ПУЛ</div>
-                    <div class="bank-amount" id="poolBalance">1 000 000 ₽</div>
+                <div class="pool-box">
+                    <div class="pool-label">🏦 ПУЛ</div>
+                    <div class="pool-amount" id="poolBalance">1 000 000 ₽</div>
                 </div>
             </div>
-        </div>
+        </header>
 
+        <!-- VPN БАННЕР -->
         <div class="vpn-banner" id="vpnBanner">
             <span class="vpn-icon">🔒</span>
             <div class="vpn-text">
@@ -894,6 +1667,7 @@
             <button class="vpn-close" onclick="closeVpnBanner()">×</button>
         </div>
 
+        <!-- НАВИГАЦИЯ -->
         <nav class="nav">
             <button class="nav-btn active" onclick="showPage('lobby')">🏠 Лобби</button>
             <button class="nav-btn" onclick="showPage('roulette')">🎰 Рулетка</button>
@@ -904,53 +1678,122 @@
             <button class="nav-btn" onclick="showPage('admin')" id="adminNavBtn" style="display:none;">👑 Админ</button>
         </nav>
 
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div class="main">
 
             <!-- ===== ЛОББИ ===== -->
             <div id="page-lobby" class="page active">
-                <div class="lobby-header">
-                    <h1><span>Добро пожаловать в RuWin!</span></h1>
-                    <p class="lobby-subtitle">Выбирай игру и выигрывай 🎉</p>
-                </div>
-                <div class="game-grid">
-                    <div class="game-card" onclick="showPage('roulette')">
-                        <span class="game-icon">🎰</span>
-                        <h3>Рулетка</h3>
-                        <p>Европейская рулетка</p>
-                        <span class="game-tag">🔥 Популярная</span>
-                    </div>
-                    <div class="game-card" onclick="showPage('slots')">
-                        <span class="game-icon">🎲</span>
-                        <h3>Слоты</h3>
-                        <p>Крути барабаны</p>
-                        <span class="game-tag">💎 Джекпот</span>
-                    </div>
-                    <div class="game-card" onclick="showPage('blackjack')">
-                        <span class="game-icon">🃏</span>
-                        <h3>Блэкджек</h3>
-                        <p>Победи дилера</p>
-                        <span class="game-tag">♠️ Классика</span>
-                    </div>
-                    <div class="game-card" onclick="showPage('crash')">
-                        <span class="game-icon">🚀</span>
-                        <h3>Aviator</h3>
-                        <p>Забери деньги вовремя</p>
-                        <span class="game-tag">⚡ Быстрая</span>
-                    </div>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-item"><div class="stat-label">Всего ставок</div><div class="stat-value" id="totalBets">0</div></div>
-                    <div class="stat-item"><div class="stat-label">Выигрыши</div><div class="stat-value win" id="wins">0</div></div>
-                    <div class="stat-item"><div class="stat-label">Проигрыши</div><div class="stat-value loss" id="losses">0</div></div>
-                    <div class="stat-item"><div class="stat-label">Winrate</div><div class="stat-value" id="winrate">0%</div></div>
-                </div>
+                <div class="lobby-grid">
+                    <div class="lobby-left">
+                        <!-- Приветствие -->
+                        <div class="welcome-card">
+                            <h1>Добро пожаловать!</h1>
+                            <p>Выбирай игру и выигрывай 🎉</p>
+                            <span class="online-count">🟢 2,000 онлайн</span>
+                        </div>
 
-                <div class="leaderboard-section">
-                    <div class="leaderboard-header">
-                        <h3>🏆 ТОП ИГРОКОВ</h3>
-                        <span class="update-time" id="leaderboardTime">Обновлено: сейчас</span>
+                        <!-- Бонусы -->
+                        <div>
+                            <div class="section-title">🎁 Бонусы</div>
+                            <div class="bonus-grid">
+                                <div class="bonus-card">
+                                    <div class="bonus-icon">🎰</div>
+                                    <div class="bonus-title">Первый депозит</div>
+                                    <div class="bonus-amount">+1 500 ₽</div>
+                                </div>
+                                <div class="bonus-card">
+                                    <div class="bonus-icon">💎</div>
+                                    <div class="bonus-title">Второй депозит</div>
+                                    <div class="bonus-amount">+1 200 ₽</div>
+                                </div>
+                                <div class="bonus-card">
+                                    <div class="bonus-icon">🔥</div>
+                                    <div class="bonus-title">Третий депозит</div>
+                                    <div class="bonus-amount">+1 000 ₽</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Популярные игры -->
+                        <div>
+                            <div class="section-title">🔥 Популярные игры</div>
+                            <div class="popular-grid">
+                                <div class="popular-card" onclick="showPage('roulette')">
+                                    <div class="game-icon">🎰</div>
+                                    <div class="game-name">Рулетка</div>
+                                    <div class="game-tag">🔥 Популярная</div>
+                                </div>
+                                <div class="popular-card" onclick="showPage('slots')">
+                                    <div class="game-icon">🎲</div>
+                                    <div class="game-name">Слоты</div>
+                                    <div class="game-tag">💎 Джекпот</div>
+                                </div>
+                                <div class="popular-card" onclick="showPage('blackjack')">
+                                    <div class="game-icon">🃏</div>
+                                    <div class="game-name">Блэкджек</div>
+                                    <div class="game-tag">♠️ Классика</div>
+                                </div>
+                                <div class="popular-card" onclick="showPage('crash')">
+                                    <div class="game-icon">🚀</div>
+                                    <div class="game-name">Aviator</div>
+                                    <div class="game-tag">⚡ Быстрая</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Статистика -->
+                        <div>
+                            <div class="section-title">📊 Статистика</div>
+                            <div class="bonus-grid">
+                                <div class="bonus-card">
+                                    <div class="bonus-title">Всего ставок</div>
+                                    <div class="bonus-amount" id="totalBets">0</div>
+                                </div>
+                                <div class="bonus-card">
+                                    <div class="bonus-title">Выигрыши</div>
+                                    <div class="bonus-amount" id="wins" style="color:#00ff88;">0</div>
+                                </div>
+                                <div class="bonus-card">
+                                    <div class="bonus-title">Winrate</div>
+                                    <div class="bonus-amount" id="winrate" style="color:#00f0ff;">0%</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div id="leaderboardContainer"><div class="leaderboard-empty">Загрузка...</div></div>
+
+                    <!-- Правая колонка: Лидерборд + Чат -->
+                    <div>
+                        <!-- Лидерборд -->
+                        <div class="leaderboard-card">
+                            <div class="lb-header">
+                                <h3>🏆 Топ игроков</h3>
+                                <span class="lb-time" id="leaderboardTime">Обновлено: сейчас</span>
+                            </div>
+                            <div id="leaderboardContainer"></div>
+                        </div>
+
+                        <!-- Чат -->
+                        <div class="chat-card">
+                            <div class="chat-header">
+                                <h3>💬 Чат</h3>
+                                <span class="chat-rain">🎰 Дождь каждые 5ч</span>
+                            </div>
+                            <div class="chat-messages" id="chatMessages">
+                                <div class="chat-message">
+                                    <span class="chat-user">Ultrahero92:</span>
+                                    <span class="chat-text">Кто сегодня выигрывает? 🍀</span>
+                                </div>
+                                <div class="chat-message">
+                                    <span class="chat-user">Mured:</span>
+                                    <span class="chat-text">Удача на моей стороне! 🚀</span>
+                                </div>
+                            </div>
+                            <div class="chat-input-row">
+                                <input type="text" id="chatInput" placeholder="Сообщение...">
+                                <button onclick="sendChat()">➤</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -959,7 +1802,9 @@
                 <div class="game-wrapper">
                     <h2 class="game-title">🎰 ЕВРОПЕЙСКАЯ РУЛЕТКА</h2>
                     <div class="roulette-layout">
-                        <div><div class="roulette-board" id="rouletteBoard"></div></div>
+                        <div>
+                            <div class="roulette-board" id="rouletteBoard"></div>
+                        </div>
                         <div class="roulette-controls">
                             <div class="game-result info" id="rouletteResult">Сделайте ставку!</div>
                             <div class="bet-grid">
@@ -972,8 +1817,18 @@
                                 <button class="bet-btn" onclick="setBetType('half2')">⬇ 19-36</button>
                                 <button class="bet-btn" onclick="setBetType('dozen')">📊 Дюжина</button>
                             </div>
-                            <div id="numberSelector"><label style="font-size:11px;color:#666;">Выберите число:</label><div class="number-grid" id="numberGrid"></div></div>
-                            <div id="dozenSelector" style="display:none;"><label style="font-size:11px;color:#666;">Выберите дюжину:</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0;"><button class="dozen-btn" onclick="selectDozen(1)">1-12</button><button class="dozen-btn" onclick="selectDozen(2)">13-24</button><button class="dozen-btn" onclick="selectDozen(3)">25-36</button></div></div>
+                            <div id="numberSelector">
+                                <label style="font-size:11px;color:#666;">Выберите число:</label>
+                                <div class="number-grid" id="numberGrid"></div>
+                            </div>
+                            <div id="dozenSelector" style="display:none;">
+                                <label style="font-size:11px;color:#666;">Выберите дюжину:</label>
+                                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0;">
+                                    <button class="dozen-btn" onclick="selectDozen(1)">1-12</button>
+                                    <button class="dozen-btn" onclick="selectDozen(2)">13-24</button>
+                                    <button class="dozen-btn" onclick="selectDozen(3)">25-36</button>
+                                </div>
+                            </div>
                             <input type="number" id="rouletteBet" class="game-input" value="100" min="1">
                             <button class="spin-btn" id="rouletteSpinBtn">🎰 СПИН</button>
                         </div>
@@ -1067,7 +1922,7 @@
             <div id="page-admin" class="page">
                 <div class="game-wrapper">
                     <h2 class="game-title">👑 АДМИН-ПАНЕЛЬ</h2>
-                    
+
                     <div class="admin-stats">
                         <div class="admin-stat">
                             <div class="label">💰 ПУЛ КАЗИНО</div>
@@ -1078,12 +1933,12 @@
                             <div class="value cyan" id="adminTotalUsers">0</div>
                         </div>
                     </div>
-                    
+
                     <div class="admin-pool-input">
                         <input type="number" id="adminAddPool" placeholder="Сумма для пополнения пула" value="100000">
                         <button onclick="adminAddPool()">💰 Пополнить</button>
                     </div>
-                    
+
                     <div style="overflow-x:auto;">
                         <table class="admin-table">
                             <thead>
@@ -1099,7 +1954,7 @@
                             <tbody id="adminUsersList"></tbody>
                         </table>
                     </div>
-                    
+
                     <button class="admin-restart-btn" onclick="adminRestart()">🔄 ПЕРЕЗАГРУЗИТЬ САЙТ</button>
                 </div>
             </div>
@@ -1126,7 +1981,6 @@
         let spinning = false;
         let isRouletteSpinning = false;
         let leaderboardInterval = null;
-        let twofaPending = false;
 
         let blackjackState = { deck: [], playerHand: [], dealerHand: [], amount: 0, gameOver: false };
         let crashState = { multiplier: 1, isActive: false, isBetPlaced: false, crashPoint: 0, amount: 0, interval: null };
@@ -1160,7 +2014,6 @@
 
                 if (data.success) {
                     if (data.need_2fa) {
-                        twofaPending = true;
                         document.getElementById('authModal').classList.add('hidden');
                         document.getElementById('twofaModal').style.display = 'block';
                         return;
@@ -1390,7 +2243,7 @@
                     adminUsers = data.users;
                     renderAdminUsers();
                     document.getElementById('adminTotalUsers').textContent = adminUsers.length;
-                    
+
                     const poolRes = await fetch('/api/admin/pool_stats', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1521,7 +2374,6 @@
                 document.getElementById('level').textContent = stats.level;
                 document.getElementById('totalBets').textContent = stats.total_bets;
                 document.getElementById('wins').textContent = stats.wins;
-                document.getElementById('losses').textContent = stats.losses;
                 document.getElementById('winrate').textContent = stats.winrate + '%';
             }
         }
@@ -1557,16 +2409,21 @@
         function renderLeaderboard(leaders) {
             const container = document.getElementById('leaderboardContainer');
             if (!leaders || leaders.length === 0) {
-                container.innerHTML = '<div class="leaderboard-empty">📊 Пока нет игроков</div>';
+                container.innerHTML = '<div class="leaderboard-empty" style="text-align:center;padding:20px;color:#666;">📊 Пока нет игроков</div>';
                 return;
             }
-            let html = `<table class="leaderboard-table"><thead><tr><th>#</th><th>Игрок</th><th>💰 Баланс</th><th>🏆 Уровень</th><th class="player-stats">🏅 Победы</th><th class="player-stats">🎯 Ставок</th></tr></thead><tbody>`;
+            let html = '';
             leaders.forEach(p => {
-                const rankClass = p.rank <= 3 ? `rank-${p.rank}` : '';
+                const rankClass = p.rank === 1 ? 'gold' : p.rank === 2 ? 'silver' : p.rank === 3 ? 'bronze' : '';
                 const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : '';
-                html += `<tr class="${rankClass}"><td class="rank-number">${medal || '#' + p.rank}</td><td class="player-name">${p.username}</td><td class="player-balance">${p.balance.toLocaleString()} ₽</td><td class="player-level">${p.level}</td><td class="player-stats">${p.wins}</td><td class="player-stats">${p.total_bets}</td></tr>`;
+                html += `
+                    <div class="lb-item">
+                        <span class="lb-rank ${rankClass}">${medal || '#' + p.rank}</span>
+                        <span class="lb-name">${p.username}</span>
+                        <span class="lb-balance">${p.balance.toLocaleString()} ₽</span>
+                    </div>
+                `;
             });
-            html += '</tbody></table>';
             container.innerHTML = html;
         }
 
@@ -1577,7 +2434,8 @@
         }
 
         function stopLeaderboardUpdates() {
-            if (leaderboardInterval) { clearInterval(leaderboardInterval); leaderboardInterval = null; }
+            if (leaderboardInterval) { clearInterval(leaderboardInterval);
+                leaderboardInterval = null; }
         }
 
         // ============================================================
@@ -1623,9 +2481,12 @@
         // ============================================================
         function generateRouletteBoard() {
             const board = document.getElementById('rouletteBoard');
-            const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+            const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9,
+                22, 18, 29, 7, 28, 12, 35, 3, 26
+            ];
             board.innerHTML = numbers.map(num => {
-                const color = num === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num) ? 'red' : 'black';
+                const color = num === 0 ? 'green' : [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+                    .includes(num) ? 'red' : 'black';
                 return `<div class="roulette-number ${color}" onclick="selectNumber(${num})">${num}</div>`;
             }).join('');
         }
@@ -1634,7 +2495,8 @@
             const grid = document.getElementById('numberGrid');
             grid.innerHTML = '';
             for (let i = 0; i <= 36; i++) {
-                const color = i === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i) ? 'red' : 'black';
+                const color = i === 0 ? 'green' : [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+                    .includes(i) ? 'red' : 'black';
                 grid.innerHTML += `<button class="number-btn ${color}" onclick="selectNumber(${i})">${i}</button>`;
             }
         }
@@ -1705,7 +2567,7 @@
             if (isRouletteSpinning || !userId) return;
             const amount = parseFloat(document.getElementById('rouletteBet').value);
             if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
-            
+
             let payload = { bet_type: betType, amount: amount };
             if (betType === 'number') {
                 if (selectedNumber === null) { showModal('❌ Выберите число!'); return; }
@@ -1714,20 +2576,20 @@
                 if (selectedDozen === null) { showModal('❌ Выберите дюжину!'); return; }
                 payload.number = selectedDozen;
             }
-            
+
             isRouletteSpinning = true;
             document.getElementById('rouletteSpinBtn').disabled = true;
             document.getElementById('rouletteBoard').classList.add('spinning');
             setResult(document.getElementById('rouletteResult'), 'info', '⏳ Крутим...');
-            
+
             try {
                 const data = await apiRequest('/api/roulette/spin', payload);
                 if (data.success) {
                     const result = document.getElementById('rouletteResult');
                     const color = data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff';
-                    setResult(result, data.win ? 'win' : 'loss', 
+                    setResult(result, data.win ? 'win' : 'loss',
                         `Выпало: <strong style="color:${color}">${data.result}</strong> (${data.color})<br>${data.win ? `🎉 ВЫИГРЫШ +${data.win_amount} ₽` : `😞 ПРОИГРЫШ ${Math.abs(data.win_amount)} ₽`}`
-                    );
+                        );
                     updateUI(data.stats);
                 } else {
                     setResult(document.getElementById('rouletteResult'), 'error', `❌ ${data.error}`);
@@ -1735,7 +2597,7 @@
             } catch (error) {
                 setResult(document.getElementById('rouletteResult'), 'error', '❌ Ошибка!');
             }
-            
+
             setTimeout(() => {
                 isRouletteSpinning = false;
                 document.getElementById('rouletteSpinBtn').disabled = false;
@@ -1750,15 +2612,15 @@
             if (spinning || !userId) return;
             const amount = parseFloat(document.getElementById('slotsBet').value);
             if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
-            
+
             spinning = true;
             document.getElementById('slotsSpinBtn').disabled = true;
             const resultEl = document.getElementById('slotsResult');
             setResult(resultEl, 'info', '⏳ Крутим...');
-            
+
             const reels = document.querySelectorAll('.slot-reel');
             reels.forEach((r, i) => setTimeout(() => r.classList.add('spinning'), i * 100));
-            
+
             try {
                 const data = await apiRequest('/api/slots/spin', { amount: amount });
                 if (data.success) {
@@ -1785,9 +2647,9 @@
                         }, idx * 300 + 800);
                     });
                     setTimeout(() => {
-                        setResult(resultEl, data.win ? 'win' : 'loss', 
+                        setResult(resultEl, data.win ? 'win' : 'loss',
                             data.win ? `🎉 ВЫИГРЫШ +${data.win_amount} ₽` : `😞 ПРОИГРЫШ ${Math.abs(data.win_amount)} ₽`
-                        );
+                            );
                         updateUI(data.stats);
                     }, 2500);
                 } else {
@@ -1796,7 +2658,7 @@
             } catch (error) {
                 setResult(resultEl, 'error', '❌ Ошибка!');
             }
-            
+
             setTimeout(() => {
                 spinning = false;
                 document.getElementById('slotsSpinBtn').disabled = false;
@@ -1831,10 +2693,10 @@
         async function blackjackHit() {
             if (blackjackState.gameOver || !userId) return;
             try {
-                const data = await apiRequest('/api/blackjack/hit', { 
-                    deck: blackjackState.deck, 
-                    player_hand: blackjackState.playerHand, 
-                    amount: blackjackState.amount 
+                const data = await apiRequest('/api/blackjack/hit', {
+                    deck: blackjackState.deck,
+                    player_hand: blackjackState.playerHand,
+                    amount: blackjackState.amount
                 });
                 if (data.success) {
                     blackjackState.deck = data.deck;
@@ -1866,14 +2728,14 @@
         function updateBlackjackUI(data) {
             const playerCards = document.getElementById('playerCards');
             const dealerCards = document.getElementById('dealerCards');
-            
+
             playerCards.innerHTML = data.player_hand.map(c => {
                 const color = c > 10 ? 'red' : 'black';
                 const value = c === 11 ? 'A' : c === 10 ? '10' : c;
                 return `<div class="blackjack-card ${color}">${value}</div>`;
             }).join('');
             document.getElementById('playerSum').textContent = `Сумма: ${sumHand(data.player_hand)}`;
-            
+
             if (data.game_over || data.dealer_hand.every(c => c !== '?')) {
                 dealerCards.innerHTML = data.dealer_hand.filter(c => c !== '?').map(c => {
                     const color = c > 10 ? 'red' : 'black';
@@ -1882,10 +2744,10 @@
                 }).join('');
                 document.getElementById('dealerSum').textContent = `Сумма: ${sumHand(data.dealer_hand.filter(c => c !== '?'))}`;
             }
-            
+
             document.getElementById('blackjackHit').disabled = data.game_over;
             document.getElementById('blackjackStand').disabled = data.game_over;
-            
+
             const result = document.getElementById('blackjackResult');
             if (data.game_over) {
                 if (data.win === true) setResult(result, 'win', `🎉 ВЫИГРЫШ +${data.win_amount} ₽`);
@@ -1897,9 +2759,10 @@
         }
 
         function sumHand(hand) {
-            let sum = hand.reduce((a,b) => a+b, 0);
+            let sum = hand.reduce((a, b) => a + b, 0);
             let aces = hand.filter(c => c === 11).length;
-            while (sum > 21 && aces > 0) { sum -= 10; aces--; }
+            while (sum > 21 && aces > 0) { sum -= 10;
+                aces--; }
             return sum;
         }
 
@@ -1910,31 +2773,32 @@
             if (crashState.isActive || !userId) return;
             const amount = parseFloat(document.getElementById('crashBet').value);
             if (isNaN(amount) || amount <= 0) { showModal('❌ Введите сумму!'); return; }
-            
+
             crashState.amount = amount;
             crashState.isBetPlaced = true;
             crashState.isActive = true;
             crashState.multiplier = 1;
-            
+
             document.getElementById('crashStart').disabled = true;
             document.getElementById('crashCashout').disabled = false;
             const resultEl = document.getElementById('crashResult');
             setResult(resultEl, 'info', '🚀 Ракета взлетает...');
-            
+
             const rocket = document.getElementById('crashRocket');
             rocket.classList.remove('crashed');
             rocket.classList.add('flying');
             rocket.style.transition = 'none';
             rocket.style.bottom = '10%';
             rocket.style.left = '10%';
-            
+
             try {
                 const data = await apiRequest('/api/crash/start', { amount: amount });
                 if (data.success) {
                     crashState.crashPoint = data.crash_point;
                     updateUI(data.stats);
                     let startTime = Date.now();
-                    let lastX = 10, lastY = 10;
+                    let lastX = 10,
+                        lastY = 10;
                     rocket.style.transition = 'all 0.05s linear';
                     crashState.interval = setInterval(() => {
                         const elapsed = (Date.now() - startTime) / 1000;
@@ -1949,7 +2813,8 @@
                         rocket.style.bottom = `${smoothY}%`;
                         document.getElementById('crashMultiplier').textContent = `${crashState.multiplier.toFixed(2)}x`;
                         if (Math.floor(progress * 100) % 3 === 0) addTrailDot(smoothX, smoothY);
-                        lastX = smoothX; lastY = smoothY;
+                        lastX = smoothX;
+                        lastY = smoothY;
                         if (crashState.multiplier >= crashState.crashPoint - 0.01) {
                             clearInterval(crashState.interval);
                             crashCrash();
@@ -1959,7 +2824,8 @@
                     showModal(`❌ ${data.error}`);
                     resetCrash();
                 }
-            } catch (error) { showModal('❌ Ошибка!'); resetCrash(); }
+            } catch (error) { showModal('❌ Ошибка!');
+                resetCrash(); }
         }
 
         function addTrailDot(x, y) {
@@ -1980,9 +2846,9 @@
             const rocket = document.getElementById('crashRocket');
             rocket.classList.remove('flying');
             try {
-                const data = await apiRequest('/api/crash/cashout', { 
-                    amount: crashState.amount, 
-                    multiplier: crashState.multiplier 
+                const data = await apiRequest('/api/crash/cashout', {
+                    amount: crashState.amount,
+                    multiplier: crashState.multiplier
                 });
                 if (data.success) {
                     const resultEl = document.getElementById('crashResult');
@@ -1991,7 +2857,8 @@
                     addCrashHistory(crashState.multiplier, true);
                     setTimeout(() => resetCrash(), 1000);
                 }
-            } catch (error) { showModal('❌ Ошибка!'); resetCrash(); }
+            } catch (error) { showModal('❌ Ошибка!');
+                resetCrash(); }
         }
 
         async function crashCrash() {
@@ -2006,7 +2873,8 @@
             setResult(resultEl, 'loss', `💥 РАКЕТА УПАЛА! (${crashState.crashPoint.toFixed(2)}x)`);
             try {
                 const data = await apiRequest('/api/crash/result', { amount: crashState.amount });
-                if (data.success) { updateUI(data.stats); addCrashHistory(crashState.crashPoint, false); }
+                if (data.success) { updateUI(data.stats);
+                    addCrashHistory(crashState.crashPoint, false); }
             } catch (error) {}
             setTimeout(() => resetCrash(), 2500);
         }
@@ -2038,6 +2906,26 @@
             history.prepend(item);
             if (history.children.length > 10) history.removeChild(history.lastChild);
         }
+
+        // ============================================================
+        // ===== ЧАТ =====
+        // ============================================================
+        function sendChat() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            div.innerHTML = `<span class="chat-user">${document.getElementById('headerUsername').textContent}:</span><span class="chat-text"> ${msg}</span>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            input.value = '';
+        }
+
+        document.getElementById('chatInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') sendChat();
+        });
 
         // ============================================================
         // ===== МОДАЛКА =====
