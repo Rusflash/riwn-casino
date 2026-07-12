@@ -3,28 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RuWin — Премиум Казино</title>
+    <title>RuWin — Неоновое Казино</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
-        /* ===== ВСЕ СТИЛИ ПРЯМО ЗДЕСЬ (ЧТОБЫ НЕ БЫЛО ПРОБЛЕМ С ПУТЯМИ) ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* ============================================================
+           НЕОНОВЫЙ ТЁМНЫЙ ДИЗАЙН
+           ============================================================ */
         
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
-            --bg-primary: #0d0d1a;
-            --bg-secondary: #16162a;
-            --bg-card: #1a1a2e;
-            --bg-card-hover: #222244;
+            --neon-cyan: #00f0ff;
+            --neon-pink: #ff00a0;
+            --neon-purple: #8b00ff;
+            --neon-gold: #ffd700;
+            --neon-green: #00ff88;
+            --neon-red: #ff0040;
+            --neon-blue: #0066ff;
+            --neon-cyan-glow: rgba(0, 240, 255, 0.15);
+            --neon-pink-glow: rgba(255, 0, 160, 0.15);
+            --neon-purple-glow: rgba(139, 0, 255, 0.15);
+            --bg-primary: #08080f;
+            --bg-secondary: #0d0d1a;
+            --bg-card: rgba(255, 255, 255, 0.02);
+            --bg-card-hover: rgba(255, 255, 255, 0.04);
             --text-primary: #ffffff;
-            --text-secondary: #8a8aad;
-            --text-muted: #5a5a7a;
-            --accent-gold: #ffd700;
-            --accent-gold-dim: rgba(255, 215, 0, 0.15);
-            --accent-green: #00ff88;
-            --accent-red: #ff0040;
-            --accent-blue: #00d4ff;
-            --accent-purple: #8b00ff;
-            --border-color: rgba(255, 255, 255, 0.06);
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --text-secondary: #8888bb;
+            --text-muted: #555577;
+            --border-color: rgba(255, 255, 255, 0.04);
+            --border-glow: rgba(0, 240, 255, 0.08);
+            --shadow-glow: 0 0 40px rgba(0, 240, 255, 0.02);
             --radius: 12px;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -39,24 +52,111 @@
 
         body {
             background-image: 
-                radial-gradient(ellipse at 20% 50%, rgba(139, 0, 255, 0.04) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 50%, rgba(0, 212, 255, 0.04) 0%, transparent 60%);
+                radial-gradient(ellipse at 10% 20%, rgba(0, 240, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 80%, rgba(139, 0, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 0, 160, 0.02) 0%, transparent 60%);
         }
 
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
-        ::-webkit-scrollbar-thumb { background: var(--accent-gold); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--neon-cyan); 
+            border-radius: 4px;
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        /* ===== ЗАГРУЗКА ===== */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            z-index: 99999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #loadingOverlay.active { display: flex; }
+        
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0, 240, 255, 0.05);
+            border-top: 3px solid var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            box-shadow: 0 0 40px var(--neon-cyan-glow);
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .loader-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            color: var(--neon-cyan);
+            letter-spacing: 4px;
+            animation: textPulse 1.5s ease-in-out infinite;
+            text-shadow: 0 0 30px var(--neon-cyan-glow);
+        }
+        @keyframes textPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        /* ===== УВЕДОМЛЕНИЯ ===== */
+        .notifications {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 340px;
+            width: 100%;
+        }
+        .notification {
+            padding: 12px 18px;
+            background: rgba(8, 8, 15, 0.95);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            backdrop-filter: blur(20px);
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: var(--shadow-glow);
+        }
+        .notification.show { transform: translateX(0); }
+        .notification.success { border-left: 4px solid var(--neon-green); }
+        .notification.error { border-left: 4px solid var(--neon-red); }
+        .notification.info { border-left: 4px solid var(--neon-cyan); }
+        .notification.warning { border-left: 4px solid var(--neon-gold); }
 
         /* ===== ХЕДЕР ===== */
         .header {
             position: sticky;
             top: 0;
             z-index: 1000;
-            background: rgba(13, 13, 26, 0.92);
+            background: rgba(8, 8, 15, 0.92);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-glow);
             padding: 10px 0;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), var(--neon-pink), transparent);
+            background-size: 200% 100%;
+            animation: shimmerBorder 3s linear infinite;
+        }
+        @keyframes shimmerBorder { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
         .header-content {
             max-width: 1440px;
             margin: 0 auto;
@@ -67,42 +167,57 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        .logo-icon { font-size: 28px; }
+        .logo-icon { font-size: 28px; animation: floatIcon 3s ease-in-out infinite; }
+        @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        
         .logo-text {
             font-family: 'Orbitron', monospace;
             font-size: 22px;
             font-weight: 900;
-            background: linear-gradient(45deg, var(--accent-gold), #ffaa00);
+            background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+            background-size: 200% 100%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            animation: shimmerText 3s linear infinite;
         }
+        @keyframes shimmerText { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        
         .logo-badge {
             font-size: 8px;
-            background: var(--accent-gold);
-            color: #000;
+            background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple));
+            color: #fff;
             padding: 2px 10px;
             border-radius: 12px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            text-shadow: 0 0 20px var(--neon-cyan-glow);
         }
+
         .header-right {
             display: flex;
             align-items: center;
             gap: 14px;
             flex-wrap: wrap;
         }
+
         .balance-box {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: 10px;
             padding: 4px 16px;
             text-align: center;
+            transition: var(--transition);
+        }
+        .balance-box:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px var(--neon-cyan-glow);
         }
         .balance-box .label {
             font-size: 8px;
@@ -114,31 +229,44 @@
             font-family: 'Orbitron', monospace;
             font-size: 16px;
             font-weight: 700;
-            color: var(--accent-green);
+            color: var(--neon-green);
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
         }
-        .balance-box .amount.blue { color: var(--accent-blue); }
+        .balance-box .amount.blue { 
+            color: var(--neon-cyan);
+            text-shadow: 0 0 20px var(--neon-cyan-glow);
+        }
+        .balance-box .amount.gold { 
+            color: var(--neon-gold);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        }
+
         .user-btn {
             display: flex;
             align-items: center;
             gap: 8px;
             padding: 4px 12px 4px 4px;
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: 30px;
             cursor: pointer;
             transition: var(--transition);
         }
-        .user-btn:hover { border-color: var(--accent-gold); }
+        .user-btn:hover { 
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px var(--neon-cyan-glow);
+        }
         .user-btn .avatar {
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            background: linear-gradient(45deg, var(--accent-purple), var(--accent-blue));
+            background: linear-gradient(45deg, var(--neon-purple), var(--neon-cyan));
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 14px;
             font-weight: 600;
+            box-shadow: 0 0 20px var(--neon-purple-glow);
         }
         .user-btn .name { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
 
@@ -154,13 +282,15 @@
             gap: 6px;
             font-size: 11px;
             color: var(--text-secondary);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-glow);
         }
         .status-bar .stat-item { display: flex; align-items: center; gap: 6px; }
         .status-bar .stat-item .value { font-weight: 700; color: var(--text-primary); }
-        .status-bar .stat-item .value.gold { color: var(--accent-gold); }
-        .status-bar .stat-item .value.green { color: var(--accent-green); }
-        .status-bar .stat-item .value.red { color: var(--accent-red); }
+        .status-bar .stat-item .value.gold { color: var(--neon-gold); }
+        .status-bar .stat-item .value.green { color: var(--neon-green); }
+        .status-bar .stat-item .value.red { color: var(--neon-red); }
+        .status-bar .stat-item .value.cyan { color: var(--neon-cyan); }
+        
         .status-dot {
             width: 6px;
             height: 6px;
@@ -168,10 +298,11 @@
             display: inline-block;
         }
         .status-dot.online {
-            background: var(--accent-green);
-            animation: pulse-dot 1.5s infinite;
+            background: var(--neon-green);
+            animation: pulseDot 1.5s infinite;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
-        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         /* ===== НАВИГАЦИЯ ===== */
         .nav {
@@ -194,11 +325,28 @@
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            position: relative;
         }
-        .nav-btn:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.03); }
+        .nav-btn:hover { 
+            color: var(--text-primary); 
+            background: rgba(255, 255, 255, 0.02);
+        }
         .nav-btn.active {
-            color: var(--accent-gold);
-            background: var(--accent-gold-dim);
+            color: var(--neon-cyan);
+            background: var(--neon-cyan-glow);
+            text-shadow: 0 0 20px var(--neon-cyan-glow);
+        }
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: var(--neon-cyan);
+            border-radius: 2px;
+            box-shadow: 0 0 20px var(--neon-cyan);
         }
         .nav-btn .icon { margin-right: 4px; }
 
@@ -217,8 +365,8 @@
         .games-area { display: flex; flex-direction: column; gap: 20px; }
 
         .banner {
-            background: linear-gradient(135deg, rgba(139, 0, 255, 0.08), rgba(0, 212, 255, 0.04));
-            border: 1px solid var(--border-color);
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.04), rgba(139, 0, 255, 0.04));
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 24px 30px;
             display: flex;
@@ -226,17 +374,35 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 16px;
+            position: relative;
+            overflow: hidden;
         }
+        .banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.02), transparent 70%);
+            animation: bannerGlow 8s ease-in-out infinite;
+        }
+        @keyframes bannerGlow { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } }
         .banner h2 {
             font-family: 'Orbitron', monospace;
             font-size: 22px;
             font-weight: 700;
+            position: relative;
         }
-        .banner h2 span { color: var(--accent-gold); }
-        .banner p { color: var(--text-secondary); font-size: 14px; }
+        .banner h2 span { 
+            color: var(--neon-gold);
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+        .banner p { color: var(--text-secondary); font-size: 14px; position: relative; }
+        
         .btn-bonus {
             padding: 10px 28px;
-            background: linear-gradient(45deg, var(--accent-gold), #ffaa00);
+            background: linear-gradient(45deg, var(--neon-gold), #ffaa00);
             border: none;
             border-radius: 10px;
             color: #000;
@@ -244,8 +410,13 @@
             font-size: 14px;
             cursor: pointer;
             transition: var(--transition);
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
         }
-        .btn-bonus:hover { transform: scale(1.03); box-shadow: 0 0 40px rgba(255, 215, 0, 0.15); }
+        .btn-bonus:hover { 
+            transform: scale(1.03); 
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.2);
+        }
 
         .section-header {
             display: flex;
@@ -265,7 +436,7 @@
             cursor: pointer;
             transition: var(--transition);
         }
-        .section-header .see-all:hover { color: var(--accent-gold); }
+        .section-header .see-all:hover { color: var(--neon-cyan); }
 
         .game-grid {
             display: grid;
@@ -274,7 +445,7 @@
         }
         .game-card {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 20px 16px;
             text-align: center;
@@ -283,26 +454,52 @@
             position: relative;
             overflow: hidden;
         }
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.02), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
         .game-card:hover {
             transform: translateY(-4px);
-            border-color: var(--accent-gold);
+            border-color: var(--neon-cyan);
             background: var(--bg-card-hover);
-            box-shadow: var(--shadow);
+            box-shadow: 0 0 40px var(--neon-cyan-glow);
         }
+        .game-card:hover::before { opacity: 1; }
         .game-card .icon { font-size: 40px; display: block; margin-bottom: 8px; }
-        .game-card .name { font-size: 13px; font-weight: 600; display: block; }
-        .game-card .tag { font-size: 9px; color: var(--text-secondary); display: block; margin-top: 4px; }
+        .game-card .name { 
+            font-size: 13px; 
+            font-weight: 600; 
+            display: block;
+            color: var(--text-primary);
+        }
+        .game-card .tag { 
+            font-size: 9px; 
+            color: var(--text-secondary); 
+            display: block; 
+            margin-top: 4px; 
+        }
         .game-card .badge-hot {
             position: absolute; top: 8px; right: 8px;
-            background: var(--accent-red); color: #fff;
+            background: var(--neon-red);
+            color: #fff;
             font-size: 7px; padding: 2px 8px; border-radius: 10px;
             font-weight: 700; text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(255, 0, 64, 0.3);
         }
         .game-card .badge-new {
             position: absolute; top: 8px; right: 8px;
-            background: var(--accent-green); color: #000;
+            background: var(--neon-green);
+            color: #000;
             font-size: 7px; padding: 2px 8px; border-radius: 10px;
             font-weight: 700; text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
 
         .stats-grid {
@@ -313,10 +510,15 @@
         }
         .stat-card {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 14px 16px;
             text-align: center;
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px var(--neon-cyan-glow);
         }
         .stat-card .stat-value {
             font-family: 'Orbitron', monospace;
@@ -324,54 +526,96 @@
             font-weight: 700;
             display: block;
         }
-        .stat-card .stat-value.gold { color: var(--accent-gold); }
-        .stat-card .stat-value.green { color: var(--accent-green); }
-        .stat-card .stat-value.blue { color: var(--accent-blue); }
-        .stat-card .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .stat-value.gold { color: var(--neon-gold); text-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+        .stat-card .stat-value.green { color: var(--neon-green); text-shadow: 0 0 20px rgba(0, 255, 136, 0.2); }
+        .stat-card .stat-value.blue { color: var(--neon-cyan); text-shadow: 0 0 20px var(--neon-cyan-glow); }
+        .stat-card .stat-value.pink { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink-glow); }
+        .stat-card .stat-label { 
+            font-size: 10px; 
+            color: var(--text-secondary); 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
 
         /* ===== САЙДБАР ===== */
         .sidebar { display: flex; flex-direction: column; gap: 16px; }
 
         .online-box {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 14px 18px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: var(--transition);
         }
-        .online-box .online-label { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .online-box:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px var(--neon-cyan-glow);
+        }
+        .online-box .online-label { 
+            font-size: 13px; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
         .online-box .online-count {
             font-family: 'Orbitron', monospace;
             font-size: 20px;
             font-weight: 700;
-            color: var(--accent-green);
+            color: var(--neon-green);
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
         }
 
         .rain-box {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 14px 18px;
             text-align: center;
+            transition: var(--transition);
         }
-        .rain-box .rain-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
-        .rain-box .rain-title span { color: var(--accent-gold); }
+        .rain-box:hover {
+            border-color: var(--neon-gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.05);
+        }
+        .rain-box .rain-title { 
+            font-size: 12px; 
+            font-weight: 600; 
+            color: var(--text-secondary); 
+        }
+        .rain-box .rain-title span { 
+            color: var(--neon-gold);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        }
         .rain-box .timer {
             font-family: 'Orbitron', monospace;
             font-size: 28px;
             font-weight: 700;
-            color: var(--accent-gold);
+            color: var(--neon-gold);
             margin: 6px 0;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
         }
-        .rain-box .timer span { background: rgba(255, 215, 0, 0.06); padding: 2px 10px; border-radius: 6px; margin: 0 2px; }
+        .rain-box .timer span {
+            background: rgba(255, 215, 0, 0.03);
+            padding: 2px 10px;
+            border-radius: 6px;
+            margin: 0 2px;
+            border: 1px solid rgba(255, 215, 0, 0.05);
+        }
 
         .bets-box {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 14px 16px;
+            transition: var(--transition);
+        }
+        .bets-box:hover {
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 30px var(--neon-purple-glow);
         }
         .bets-box .bets-header {
             display: flex;
@@ -379,7 +623,11 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .bets-box .bets-header h4 { font-size: 13px; font-weight: 600; }
+        .bets-box .bets-header h4 { 
+            font-size: 13px; 
+            font-weight: 600;
+            color: var(--text-primary);
+        }
         .bets-box .bets-header .filter { display: flex; gap: 4px; }
         .bets-box .bets-header .filter button {
             padding: 2px 10px; background: transparent;
@@ -388,9 +636,9 @@
             transition: var(--transition); font-weight: 600;
         }
         .bets-box .bets-header .filter button.active {
-            background: var(--accent-gold-dim);
-            border-color: var(--accent-gold);
-            color: var(--accent-gold);
+            background: var(--neon-cyan-glow);
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
         }
         .bets-box .bets-header .filter button:hover { color: var(--text-primary); }
 
@@ -402,23 +650,30 @@
             border-bottom: 1px solid var(--border-color);
             font-size: 11px;
             align-items: center;
+            transition: var(--transition);
         }
+        .bet-row:hover { background: rgba(255, 255, 255, 0.01); }
         .bet-row .bet-user { font-weight: 600; color: var(--text-primary); }
         .bet-row .bet-game { color: var(--text-secondary); font-size: 10px; }
         .bet-row .bet-amount { font-weight: 700; font-family: 'Orbitron', monospace; }
-        .bet-row .bet-amount.win { color: var(--accent-green); }
-        .bet-row .bet-amount.loss { color: var(--accent-red); }
+        .bet-row .bet-amount.win { color: var(--neon-green); text-shadow: 0 0 20px rgba(0, 255, 136, 0.1); }
+        .bet-row .bet-amount.loss { color: var(--neon-red); text-shadow: 0 0 20px rgba(255, 0, 64, 0.1); }
         .bet-row .bet-time { color: var(--text-muted); font-size: 9px; }
 
         .chat-box {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 14px 16px;
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 320px;
+            transition: var(--transition);
+        }
+        .chat-box:hover {
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 30px var(--neon-pink-glow);
         }
         .chat-box .chat-header {
             display: flex;
@@ -426,8 +681,15 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .chat-box .chat-header h4 { font-size: 14px; font-weight: 700; }
-        .chat-box .chat-header .online-badge { font-size: 10px; color: var(--text-secondary); }
+        .chat-box .chat-header h4 { 
+            font-size: 14px; 
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .chat-box .chat-header .online-badge { 
+            font-size: 10px; 
+            color: var(--text-secondary); 
+        }
         .chat-box .chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -440,11 +702,21 @@
             font-size: 12px;
             padding: 4px 8px;
             border-radius: 6px;
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.01);
+            transition: var(--transition);
         }
-        .chat-box .chat-messages .msg .user { color: var(--accent-blue); font-weight: 600; }
+        .chat-box .chat-messages .msg:hover { background: rgba(255, 255, 255, 0.02); }
+        .chat-box .chat-messages .msg .user { 
+            color: var(--neon-cyan); 
+            font-weight: 600;
+            text-shadow: 0 0 20px var(--neon-cyan-glow);
+        }
         .chat-box .chat-messages .msg .text { color: var(--text-secondary); }
-        .chat-box .chat-messages .msg .time { font-size: 9px; color: var(--text-muted); margin-left: 8px; }
+        .chat-box .chat-messages .msg .time { 
+            font-size: 9px; 
+            color: var(--text-muted); 
+            margin-left: 8px; 
+        }
         .chat-box .chat-input {
             display: flex;
             gap: 6px;
@@ -453,26 +725,35 @@
         .chat-box .chat-input input {
             flex: 1;
             padding: 8px 14px;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             color: var(--text-primary);
             font-size: 12px;
             font-family: 'Inter', sans-serif;
+            transition: var(--transition);
         }
-        .chat-box .chat-input input:focus { outline: none; border-color: var(--accent-gold); }
+        .chat-box .chat-input input:focus { 
+            outline: none; 
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px var(--neon-cyan-glow);
+        }
         .chat-box .chat-input button {
             padding: 8px 16px;
-            background: var(--accent-gold);
+            background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple));
             border: none;
             border-radius: 8px;
-            color: #000;
+            color: #fff;
             font-weight: 700;
             cursor: pointer;
             font-size: 13px;
             transition: var(--transition);
+            box-shadow: 0 0 30px var(--neon-cyan-glow);
         }
-        .chat-box .chat-input button:hover { transform: scale(1.02); }
+        .chat-box .chat-input button:hover { 
+            transform: scale(1.02);
+            box-shadow: 0 0 50px var(--neon-cyan-glow);
+        }
 
         /* ===== МОДАЛКА ===== */
         .modal {
@@ -480,8 +761,8 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
             z-index: 2000;
             justify-content: center;
             align-items: center;
@@ -489,13 +770,14 @@
         .modal.active { display: flex; }
         .modal-content {
             background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 30px;
             max-width: 460px;
             width: 90%;
             position: relative;
             animation: modalIn 0.3s ease;
+            box-shadow: 0 0 60px var(--neon-cyan-glow);
         }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .modal-close {
@@ -506,62 +788,13 @@
         }
         .modal-close:hover { color: var(--text-primary); }
 
-        .notifications {
-            position: fixed; top: 80px; right: 20px;
-            z-index: 9999;
-            display: flex; flex-direction: column;
-            gap: 8px; max-width: 340px; width: 100%;
-        }
-        .notification {
-            padding: 12px 18px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            backdrop-filter: blur(20px);
-            transform: translateX(120%);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: var(--shadow);
-        }
-        .notification.show { transform: translateX(0); }
-        .notification.success { border-left: 4px solid var(--accent-green); }
-        .notification.error { border-left: 4px solid var(--accent-red); }
-        .notification.info { border-left: 4px solid var(--accent-blue); }
-        .notification.warning { border-left: 4px solid var(--accent-gold); }
-
+        /* ===== КОНТЕЙНЕР ИГР ===== */
         .game-container { display: none; animation: fadeIn 0.4s ease; }
         .game-container.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .game-section { display: block; }
 
-        #loadingOverlay {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: var(--bg-primary);
-            z-index: 99999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            gap: 20px;
-        }
-        #loadingOverlay.active { display: flex; }
-        .loader {
-            width: 50px; height: 50px;
-            border: 3px solid var(--border-color);
-            border-top: 3px solid var(--accent-gold);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .loader-text {
-            font-family: 'Orbitron', monospace;
-            font-size: 14px;
-            color: var(--text-secondary);
-            letter-spacing: 3px;
-        }
-
+        /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
             .header-content { flex-wrap: wrap; gap: 8px; }
             .logo-text { font-size: 18px; }
@@ -602,7 +835,7 @@
             <div class="logo">
                 <span class="logo-icon">🎰</span>
                 <span class="logo-text">RuWin</span>
-                <span class="logo-badge">✦ PREMIUM</span>
+                <span class="logo-badge">✦ НЕОН</span>
             </div>
             <div class="header-right">
                 <div class="balance-box">
@@ -628,7 +861,7 @@
                 🏦 Банк: <span class="value gold" id="bankBalance">1 000 000 ₽</span>
             </div>
             <div class="stat-item">
-                🎯 Преимущество: <span class="value" id="houseEdge">5.0%</span>
+                🎯 Преимущество: <span class="value cyan" id="houseEdge">5.0%</span>
             </div>
             <div class="stat-item">
                 💰 Прибыль: <span class="value green" id="bankProfit">0 ₽</span>
@@ -741,7 +974,7 @@
                         <span class="stat-label">Winrate</span>
                     </div>
                     <div class="stat-card">
-                        <span class="stat-value blue" id="levelStat">1</span>
+                        <span class="stat-value pink" id="levelStat">1</span>
                         <span class="stat-label">Уровень</span>
                     </div>
                 </div>
@@ -815,6 +1048,7 @@
         </div>
     </div>
 
+    <!-- СКРИПТЫ -->
     <script>
         // ============================================================
         // ПОЛНЫЙ JAVASCRIPT
@@ -897,8 +1131,8 @@
             };
             const gameInfo = games[game] || { icon: '🎮', name: game.toUpperCase() };
             container.innerHTML = `
-                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius);padding:30px;max-width:920px;margin:0 auto;">
-                    <h2 style="font-family:'Orbitron',monospace;font-size:26px;text-align:center;background:linear-gradient(45deg,var(--accent-gold),var(--accent-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:24px;">
+                <div style="background:var(--bg-card);border:1px solid var(--border-glow);border-radius:var(--radius);padding:30px;max-width:920px;margin:0 auto;">
+                    <h2 style="font-family:'Orbitron',monospace;font-size:26px;text-align:center;background:linear-gradient(45deg,var(--neon-cyan),var(--neon-purple),var(--neon-pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:24px;">
                         ${gameInfo.icon} ${gameInfo.name}
                     </h2>
                     <div style="text-align:center;padding:40px 20px;">
@@ -906,7 +1140,7 @@
                         <h3 style="margin-bottom:10px;color:var(--text-primary);">Игра в разработке</h3>
                         <p style="color:var(--text-secondary);margin-bottom:20px;">Скоро появится! 🚀</p>
                         <button onclick="document.querySelector('.nav-btn[data-game=\\'lobby\\']').click()" 
-                                style="padding:10px 30px;background:var(--accent-gold);border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer;font-size:14px;">
+                                style="padding:10px 30px;background:linear-gradient(45deg,var(--neon-cyan),var(--neon-purple));border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:14px;box-shadow:0 0 30px var(--neon-cyan-glow);">
                             🏠 Вернуться в лобби
                         </button>
                     </div>
@@ -952,7 +1186,7 @@
                 setTimeout(() => {
                     const botDiv = document.createElement('div');
                     botDiv.className = 'msg';
-                    botDiv.innerHTML = `<span class="user" style="color:var(--accent-gold);">🎰 Бот:</span><span class="text">🎉 Вы участвуете в дожде! Удачи!</span><span class="time">только что</span>`;
+                    botDiv.innerHTML = `<span class="user" style="color:var(--neon-gold);">🎰 Бот:</span><span class="text">🎉 Вы участвуете в дожде! Удачи!</span><span class="time">только что</span>`;
                     container.appendChild(botDiv);
                     container.scrollTop = container.scrollHeight;
                 }, 1000);
@@ -965,10 +1199,10 @@
             showModal(`
                 <div style="text-align:center;">
                     <div style="font-size:64px;margin-bottom:10px;">🎁</div>
-                    <h3 style="margin-bottom:8px;">Бонус получен!</h3>
+                    <h3 style="margin-bottom:8px;color:var(--text-primary);">Бонус получен!</h3>
                     <p style="color:var(--text-secondary);margin-bottom:16px;">+80 ₽ зачислено на ваш баланс</p>
                     <button onclick="closeModal();showNotification('✅ Бонус +80 ₽ зачислен!','success')" 
-                            style="padding:10px 30px;background:var(--accent-gold);border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer;font-size:14px;">
+                            style="padding:10px 30px;background:linear-gradient(45deg,var(--neon-gold),#ffaa00);border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer;font-size:14px;box-shadow:0 0 30px rgba(255,215,0,0.2);">
                         🎉 Забрать
                     </button>
                 </div>
@@ -979,11 +1213,11 @@
             showModal(`
                 <div style="text-align:center;">
                     <div style="font-size:48px;margin-bottom:10px;">👤</div>
-                    <h3 style="margin-bottom:4px;">${document.getElementById('username').textContent || 'Игрок'}</h3>
+                    <h3 style="margin-bottom:4px;color:var(--text-primary);">${document.getElementById('username').textContent || 'Игрок'}</h3>
                     <p style="color:var(--text-secondary);margin-bottom:4px;">💰 Баланс: ${userBalance.toLocaleString()} ₽</p>
                     <p style="color:var(--text-secondary);margin-bottom:16px;">🏆 Уровень: ${userLevel}</p>
                     <button onclick="closeModal()" 
-                            style="padding:10px 30px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;color:var(--text-primary);cursor:pointer;font-size:14px;">
+                            style="padding:10px 30px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:10px;color:var(--text-primary);cursor:pointer;font-size:14px;transition:var(--transition);">
                         Закрыть
                     </button>
                 </div>
