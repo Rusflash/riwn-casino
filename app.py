@@ -236,7 +236,7 @@ def get_client_ip():
 def is_vpn_user(ip_address):
     return ip_address in ['147.90.14.196']
 
-# ===== АВТОРИЗАЦИЯ =====
+# ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -305,7 +305,7 @@ def login():
             session['2fa_code'] = code
             session['2fa_user_id'] = user[0]
             try:
-                msg = Message('Код подтверждения RuWin', sender='your_email@gmail.com', recipients=[user[3]])
+                msg = Message('Код подтверждения RuWin', sender=app.config['MAIL_USERNAME'], recipients=[user[3]])
                 msg.body = f'Ваш код для входа: {code}'
                 mail.send(msg)
             except Exception as e:
@@ -384,7 +384,45 @@ def toggle_2fa():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ===== ИГРЫ =====
+@app.route('/api/init', methods=['POST'])
+def init_game():
+    try:
+        data = request.get_json(force=True)
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
+        game = get_user(user_id)
+        ip_address = get_client_ip()
+        is_vpn = is_vpn_user(ip_address)
+        return jsonify({
+            'success': True,
+            'user_id': game.user_id,
+            'username': game.username,
+            'stats': game.get_stats(),
+            'history': game.get_history(10),
+            'is_vpn': is_vpn,
+            'bank_balance': get_bank_balance()
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/leaderboard', methods=['GET'])
+def get_leaderboard():
+    try:
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
+        c.execute('''SELECT username, balance, level, wins, total_bets FROM users ORDER BY balance DESC LIMIT 10''')
+        leaders = []
+        for idx, row in enumerate(c.fetchall(), 1):
+            leaders.append({'rank': idx, 'username': row[0], 'balance': row[1], 'level': row[2], 'wins': row[3], 'total_bets': row[4]})
+        conn.close()
+        return jsonify({'success': True, 'leaders': leaders})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============ ИГРЫ ============
+
+# ===== РУЛЕТКА =====
 @app.route('/api/roulette/spin', methods=['POST'])
 def roulette_spin():
     try:
@@ -461,6 +499,7 @@ def roulette_spin():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ===== СЛОТЫ =====
 @app.route('/api/slots/spin', methods=['POST'])
 def slots_spin():
     try:
@@ -525,6 +564,7 @@ def slots_spin():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ===== БЛЭКДЖЕК =====
 @app.route('/api/blackjack/start', methods=['POST'])
 def blackjack_start():
     try:
@@ -679,6 +719,7 @@ def blackjack_stand():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ===== AVIATOR =====
 @app.route('/api/crash/start', methods=['POST'])
 def crash_start():
     try:
@@ -749,42 +790,6 @@ def crash_result():
             'bank_balance': get_bank_balance(),
             'stats': game.get_stats(),
             'history': game.get_history(10)
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/leaderboard', methods=['GET'])
-def get_leaderboard():
-    try:
-        conn = sqlite3.connect('ruwin.db')
-        c = conn.cursor()
-        c.execute('''SELECT username, balance, level, wins, total_bets FROM users ORDER BY balance DESC LIMIT 10''')
-        leaders = []
-        for idx, row in enumerate(c.fetchall(), 1):
-            leaders.append({'rank': idx, 'username': row[0], 'balance': row[1], 'level': row[2], 'wins': row[3], 'total_bets': row[4]})
-        conn.close()
-        return jsonify({'success': True, 'leaders': leaders})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/init', methods=['POST'])
-def init_game():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('user_id')
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
-        game = get_user(user_id)
-        ip_address = get_client_ip()
-        is_vpn = is_vpn_user(ip_address)
-        return jsonify({
-            'success': True,
-            'user_id': game.user_id,
-            'username': game.username,
-            'stats': game.get_stats(),
-            'history': game.get_history(10),
-            'is_vpn': is_vpn,
-            'bank_balance': get_bank_balance()
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
