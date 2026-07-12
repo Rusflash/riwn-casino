@@ -321,49 +321,6 @@
         .stat-value.win { color: #00ff88; }
         .stat-value.loss { color: #ff0040; }
 
-        <!-- ===== АДМИН-ПАНЕЛЬ ===== -->
-<div id="page-admin" class="page">
-    <div class="game-wrapper">
-        <h2 class="game-title">👑 АДМИН-ПАНЕЛЬ</h2>
-        
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:20px;">
-            <div style="background:rgba(255,255,255,0.03);padding:15px;border-radius:10px;text-align:center;">
-                <div style="font-size:12px;color:#666;">💰 ПУЛ КАЗИНО</div>
-                <div style="font-size:24px;color:#ffd700;" id="adminPoolBalance">0 ₽</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.03);padding:15px;border-radius:10px;text-align:center;">
-                <div style="font-size:12px;color:#666;">👥 ВСЕГО ИГРОКОВ</div>
-                <div style="font-size:24px;color:#00f0ff;" id="adminTotalUsers">0</div>
-            </div>
-        </div>
-        
-        <div style="margin-bottom:15px;">
-            <input type="number" id="adminAddPool" class="game-input" placeholder="Сумма для пополнения пула" value="100000">
-            <button class="spin-btn" onclick="adminAddPool()">💰 Пополнить пул</button>
-        </div>
-        
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <thead>
-                    <tr style="border-bottom:1px solid rgba(0,240,255,0.1);">
-                        <th style="padding:8px 10px;text-align:left;color:#666;">#</th>
-                        <th style="padding:8px 10px;text-align:left;color:#666;">Игрок</th>
-                        <th style="padding:8px 10px;text-align:left;color:#666;">💰 Баланс</th>
-                        <th style="padding:8px 10px;text-align:left;color:#666;">🏆 Уровень</th>
-                        <th style="padding:8px 10px;text-align:left;color:#666;">🏅 Победы</th>
-                        <th style="padding:8px 10px;text-align:left;color:#666;">🎯 Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="adminUsersList"></tbody>
-            </table>
-        </div>
-        
-        <button class="spin-btn" onclick="adminRestart()" style="background:linear-gradient(135deg,#ff0040,#8b00ff);margin-top:20px;">
-            🔄 ПЕРЕЗАГРУЗИТЬ САЙТ
-        </button>
-    </div>
-</div>
-
         /* ===== ПРОФИЛЬ ===== */
         .profile-container {
             display: flex;
@@ -701,6 +658,111 @@
         .crash-history-item.win { background: rgba(0,255,136,0.15); color: #00ff88; }
         .crash-history-item.loss { background: rgba(255,0,64,0.15); color: #ff0040; }
 
+        /* ===== АДМИН-ПАНЕЛЬ ===== */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .admin-table th {
+            padding: 8px 10px;
+            text-align: left;
+            color: #666;
+            border-bottom: 1px solid rgba(0,240,255,0.1);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .admin-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .admin-table .btn-reset {
+            background: rgba(255,200,0,0.1);
+            border: 1px solid rgba(255,200,0,0.2);
+            color: #ffcc00;
+            padding: 4px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+        .admin-table .btn-reset:hover { background: rgba(255,200,0,0.2); }
+        .admin-table .btn-ban {
+            background: rgba(255,0,64,0.1);
+            border: 1px solid rgba(255,0,64,0.2);
+            color: #ff0040;
+            padding: 4px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .admin-table .btn-ban:hover { background: rgba(255,0,64,0.2); }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .admin-stat {
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .admin-stat .label { font-size: 12px; color: #666; }
+        .admin-stat .value { font-size: 24px; font-weight: 700; }
+        .admin-stat .value.gold { color: #ffd700; }
+        .admin-stat .value.cyan { color: #00f0ff; }
+
+        .admin-pool-input {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .admin-pool-input input {
+            flex: 2;
+            min-width: 150px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(0,240,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .admin-pool-input input:focus { outline: none; border-color: #00f0ff; }
+        .admin-pool-input button {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            border: none;
+            border-radius: 8px;
+            color: #0a0a0f;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .admin-pool-input button:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(255,215,0,0.3); }
+
+        .admin-restart-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ff0040, #8b00ff);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        .admin-restart-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(255,0,64,0.3); }
+
         /* ===== МОДАЛКИ ===== */
         .modal {
             display: none;
@@ -753,6 +815,7 @@
             .header { padding: 10px; }
             .auth-box { padding: 20px; margin: 10px; }
             .profile-avatar { width: 70px; height: 70px; font-size: 32px; }
+            .admin-stats { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -815,8 +878,8 @@
                     <div class="level-amount" id="level">1</div>
                 </div>
                 <div class="bank-box">
-                    <div class="bank-label">🏦 БАНК</div>
-                    <div class="bank-amount" id="bankBalance">1 000 000 ₽</div>
+                    <div class="bank-label">🏦 ПУЛ</div>
+                    <div class="bank-amount" id="poolBalance">1 000 000 ₽</div>
                 </div>
             </div>
         </div>
@@ -838,6 +901,7 @@
             <button class="nav-btn" onclick="showPage('blackjack')">🃏 Блэкджек</button>
             <button class="nav-btn" onclick="showPage('crash')">🚀 Aviator</button>
             <button class="nav-btn" onclick="showPage('profile')">👤 Профиль</button>
+            <button class="nav-btn" onclick="showPage('admin')" id="adminNavBtn" style="display:none;">👑 Админ</button>
         </nav>
 
         <div class="main">
@@ -999,6 +1063,47 @@
                 </div>
             </div>
 
+            <!-- ===== АДМИН-ПАНЕЛЬ ===== -->
+            <div id="page-admin" class="page">
+                <div class="game-wrapper">
+                    <h2 class="game-title">👑 АДМИН-ПАНЕЛЬ</h2>
+                    
+                    <div class="admin-stats">
+                        <div class="admin-stat">
+                            <div class="label">💰 ПУЛ КАЗИНО</div>
+                            <div class="value gold" id="adminPoolBalance">0 ₽</div>
+                        </div>
+                        <div class="admin-stat">
+                            <div class="label">👥 ВСЕГО ИГРОКОВ</div>
+                            <div class="value cyan" id="adminTotalUsers">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-pool-input">
+                        <input type="number" id="adminAddPool" placeholder="Сумма для пополнения пула" value="100000">
+                        <button onclick="adminAddPool()">💰 Пополнить</button>
+                    </div>
+                    
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Игрок</th>
+                                    <th>💰 Баланс</th>
+                                    <th>🏆 Уровень</th>
+                                    <th>🏅 Победы</th>
+                                    <th>🎯 Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersList"></tbody>
+                        </table>
+                    </div>
+                    
+                    <button class="admin-restart-btn" onclick="adminRestart()">🔄 ПЕРЕЗАГРУЗИТЬ САЙТ</button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -1011,7 +1116,9 @@
     </div>
 
     <script>
+        // ============================================================
         // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+        // ============================================================
         let userId = null;
         let betType = 'number';
         let selectedNumber = null;
@@ -1024,7 +1131,9 @@
         let blackjackState = { deck: [], playerHand: [], dealerHand: [], amount: 0, gameOver: false };
         let crashState = { multiplier: 1, isActive: false, isBetPlaced: false, crashPoint: 0, amount: 0, interval: null };
 
+        // ============================================================
         // ===== АВТОРИЗАЦИЯ =====
+        // ============================================================
         function switchAuthTab(tab) {
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`.auth-tab[data-tab="${tab}"]`).classList.add('active');
@@ -1069,6 +1178,7 @@
                     startLeaderboardUpdates();
                     showPage('lobby');
                     loadProfile();
+                    checkAdmin();
                 } else {
                     errorEl.textContent = '❌ ' + data.error;
                 }
@@ -1143,6 +1253,7 @@
                     startLeaderboardUpdates();
                     showPage('lobby');
                     loadProfile();
+                    checkAdmin();
                 } else {
                     errorEl.textContent = '❌ ' + data.error;
                 }
@@ -1160,7 +1271,9 @@
             stopLeaderboardUpdates();
         }
 
+        // ============================================================
         // ===== ПРОФИЛЬ =====
+        // ============================================================
         async function loadProfile() {
             if (!userId) return;
             try {
@@ -1259,7 +1372,149 @@
             } catch (err) { showModal('❌ Ошибка'); }
         }
 
+        // ============================================================
+        // ===== АДМИН-ПАНЕЛЬ =====
+        // ============================================================
+        let adminUsers = [];
+
+        async function loadAdminPanel() {
+            if (!userId) return;
+            try {
+                const res = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    adminUsers = data.users;
+                    renderAdminUsers();
+                    document.getElementById('adminTotalUsers').textContent = adminUsers.length;
+                    
+                    const poolRes = await fetch('/api/admin/pool_stats', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ admin_id: userId })
+                    });
+                    const poolData = await poolRes.json();
+                    if (poolData.success) {
+                        document.getElementById('adminPoolBalance').textContent = poolData.pool.balance.toLocaleString() + ' ₽';
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function renderAdminUsers() {
+            const tbody = document.getElementById('adminUsersList');
+            tbody.innerHTML = adminUsers.map((u, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td style="color:#00f0ff;">${u.username}</td>
+                    <td style="color:#00ff88;">${u.balance.toLocaleString()} ₽</td>
+                    <td>${u.level}</td>
+                    <td>${u.wins}</td>
+                    <td>
+                        <button class="btn-reset" onclick="adminResetBalance('${u.user_id}')">🔄 Обнулить</button>
+                        <button class="btn-ban" onclick="adminBanUser('${u.user_id}')">🚫 Забанить</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function adminResetBalance(targetUserId) {
+            if (!confirm('Обнулить баланс этого игрока?')) return;
+            try {
+                const res = await fetch('/api/admin/reset_balance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_id: userId, target_user_id: targetUserId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Баланс обнулён!');
+                    loadAdminPanel();
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            } catch (err) { alert('❌ Ошибка'); }
+        }
+
+        async function adminBanUser(targetUserId) {
+            if (!confirm('Забанить этого игрока?')) return;
+            try {
+                const res = await fetch('/api/admin/ban_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_id: userId, target_user_id: targetUserId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Игрок забанен!');
+                    loadAdminPanel();
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            } catch (err) { alert('❌ Ошибка'); }
+        }
+
+        async function adminAddPool() {
+            const amount = parseInt(document.getElementById('adminAddPool').value);
+            if (!amount || amount <= 0) {
+                alert('Введите сумму!');
+                return;
+            }
+            try {
+                const res = await fetch('/api/admin/add_to_pool', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_id: userId, amount: amount })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    loadAdminPanel();
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            } catch (err) { alert('❌ Ошибка'); }
+        }
+
+        async function adminRestart() {
+            if (!confirm('Перезагрузить сайт?')) return;
+            try {
+                const res = await fetch('/api/admin/restart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_id: userId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ ' + data.message + ' Страница будет перезагружена через 5 секунд...');
+                    setTimeout(() => location.reload(), 5000);
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            } catch (err) { alert('❌ Ошибка'); }
+        }
+
+        async function checkAdmin() {
+            if (!userId) return;
+            try {
+                const res = await fetch('/api/init', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await res.json();
+                if (data.success && data.username === 'mrdante') {
+                    document.getElementById('adminNavBtn').style.display = 'block';
+                }
+            } catch (err) {}
+        }
+
+        // ============================================================
         // ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
+        // ============================================================
         function updateUI(stats) {
             if (stats) {
                 document.getElementById('balance').textContent = stats.balance.toLocaleString() + ' ₽';
@@ -1271,6 +1526,12 @@
             }
         }
 
+        function updatePoolUI(poolBalance) {
+            if (poolBalance !== undefined) {
+                document.getElementById('poolBalance').textContent = poolBalance.toLocaleString() + ' ₽';
+            }
+        }
+
         function showPage(page) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(`page-${page}`).classList.add('active');
@@ -1279,9 +1540,12 @@
             if (page === 'lobby') loadLeaderboard();
             if (page === 'crash') resetCrashUI();
             if (page === 'profile') loadProfile();
+            if (page === 'admin') loadAdminPanel();
         }
 
+        // ============================================================
         // ===== ЛИДЕРБОРД =====
+        // ============================================================
         async function loadLeaderboard() {
             try {
                 const res = await fetch('/api/leaderboard');
@@ -1316,7 +1580,9 @@
             if (leaderboardInterval) { clearInterval(leaderboardInterval); leaderboardInterval = null; }
         }
 
+        // ============================================================
         // ===== ИНИЦИАЛИЗАЦИЯ =====
+        // ============================================================
         async function init() {
             const savedId = localStorage.getItem('ruwin_user_id');
             if (savedId) {
@@ -1333,12 +1599,16 @@
                     if (data.success) {
                         document.getElementById('headerUsername').textContent = data.username;
                         updateUI(data.stats);
+                        if (data.pool_balance !== undefined) {
+                            updatePoolUI(data.pool_balance);
+                        }
                         generateRouletteBoard();
                         generateNumberGrid();
                         setupEvents();
                         startLeaderboardUpdates();
                         showPage('lobby');
                         loadProfile();
+                        checkAdmin();
                     } else {
                         handleLogout();
                     }
@@ -1348,7 +1618,9 @@
             }
         }
 
+        // ============================================================
         // ===== ИГРЫ (ГЕНЕРАЦИЯ) =====
+        // ============================================================
         function generateRouletteBoard() {
             const board = document.getElementById('rouletteBoard');
             const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
@@ -1404,7 +1676,9 @@
             element.innerHTML = text;
         }
 
+        // ============================================================
         // ===== API =====
+        // ============================================================
         async function apiRequest(url, payload) {
             if (!userId) throw new Error('Не авторизован');
             payload.user_id = userId;
@@ -1418,10 +1692,15 @@
                 handleLogout();
                 alert('❌ Сессия истекла. Войдите заново.');
             }
+            if (data.pool_balance !== undefined) {
+                updatePoolUI(data.pool_balance);
+            }
             return data;
         }
 
+        // ============================================================
         // ===== РУЛЕТКА =====
+        // ============================================================
         async function rouletteSpin() {
             if (isRouletteSpinning || !userId) return;
             const amount = parseFloat(document.getElementById('rouletteBet').value);
@@ -1464,7 +1743,9 @@
             }, 3000);
         }
 
+        // ============================================================
         // ===== СЛОТЫ =====
+        // ============================================================
         async function slotsSpin() {
             if (spinning || !userId) return;
             const amount = parseFloat(document.getElementById('slotsBet').value);
@@ -1524,7 +1805,9 @@
             }, 4000);
         }
 
+        // ============================================================
         // ===== БЛЭКДЖЕК =====
+        // ============================================================
         async function blackjackStart() {
             if (!userId) return;
             const amount = parseFloat(document.getElementById('blackjackBet').value);
@@ -1620,7 +1903,9 @@
             return sum;
         }
 
+        // ============================================================
         // ===== AVIATOR =====
+        // ============================================================
         async function crashStart() {
             if (crashState.isActive || !userId) return;
             const amount = parseFloat(document.getElementById('crashBet').value);
@@ -1754,7 +2039,9 @@
             if (history.children.length > 10) history.removeChild(history.lastChild);
         }
 
+        // ============================================================
         // ===== МОДАЛКА =====
+        // ============================================================
         function showModal(text) {
             document.getElementById('modalBody').innerHTML = text;
             document.getElementById('modal').style.display = 'block';
@@ -1770,7 +2057,9 @@
             }
         }
 
+        // ============================================================
         // ===== ЗАПУСК =====
+        // ============================================================
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
