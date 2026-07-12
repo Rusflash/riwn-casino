@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RuWin - Казино</title>
+    <title>RuWin — Казино</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -13,8 +13,8 @@
             min-height: 100vh;
             padding: 20px;
         }
-        
-        /* ===== МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ ===== */
+
+        /* ===== АВТОРИЗАЦИЯ ===== */
         .auth-modal {
             display: flex;
             position: fixed;
@@ -34,7 +34,6 @@
             padding: 40px;
             width: 100%;
             max-width: 400px;
-            box-shadow: 0 0 60px rgba(0,240,255,0.05);
         }
         .auth-box .logo {
             text-align: center;
@@ -86,12 +85,8 @@
             color: #fff;
             font-size: 15px;
             margin-bottom: 12px;
-            transition: border-color 0.3s;
         }
-        .auth-form input:focus {
-            outline: none;
-            border-color: #00f0ff;
-        }
+        .auth-form input:focus { outline: none; border-color: #00f0ff; }
         .auth-form input::placeholder { color: #444; }
         .auth-btn {
             width: 100%;
@@ -106,153 +101,115 @@
             transition: all 0.3s;
             margin-top: 10px;
         }
-        .auth-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 30px rgba(0,240,255,0.2);
-        }
+        .auth-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(0,240,255,0.2); }
         .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .auth-error {
-            color: #ff0040;
-            font-size: 13px;
-            text-align: center;
-            margin-top: 10px;
-            min-height: 20px;
-        }
-        .auth-success {
-            color: #00ff88;
-            font-size: 13px;
-            text-align: center;
-            margin-top: 10px;
-            min-height: 20px;
-        }
-        
+        .auth-error { color: #ff0040; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
+        .auth-success { color: #00ff88; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
+
         /* ===== ХЕДЕР ===== */
         .header {
             background: linear-gradient(135deg, rgba(10,10,15,0.95), rgba(20,20,40,0.95));
             border: 1px solid rgba(0,240,255,0.15);
             border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
         }
         .logo {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             background: linear-gradient(45deg, #00f0ff, #8b00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .logo-icon { font-size: 32px; -webkit-text-fill-color: initial; }
-        .header-right { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .header-right { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .user-info {
             background: rgba(0,0,0,0.6);
-            padding: 8px 16px;
-            border-radius: 10px;
+            padding: 5px 12px 5px 8px;
+            border-radius: 30px;
             border: 1px solid rgba(0,240,255,0.1);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
-        .user-info .username {
-            color: #00f0ff;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .user-info .logout-btn {
-            background: none;
-            border: none;
-            color: #666;
-            cursor: pointer;
-            font-size: 12px;
-            transition: color 0.3s;
-            padding: 2px 8px;
-            border-radius: 5px;
-        }
-        .user-info .logout-btn:hover {
-            color: #ff0040;
-            background: rgba(255,0,64,0.1);
-        }
-        .balance-box, .level-box {
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-name { font-size: 13px; color: #00f0ff; font-weight: 600; }
+        .logout-btn { background: none; border: none; color: #666; cursor: pointer; font-size: 14px; padding: 0 5px; }
+        .logout-btn:hover { color: #ff0040; }
+
+        .balance-box, .level-box, .bank-box {
             background: rgba(0,0,0,0.6);
-            padding: 10px 20px;
-            border-radius: 12px;
+            padding: 6px 16px;
+            border-radius: 10px;
             border: 1px solid rgba(0,240,255,0.1);
-            min-width: 120px;
             text-align: center;
+            min-width: 90px;
         }
-        .balance-label, .level-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-        .balance-amount { font-size: 22px; color: #00ff88; font-weight: bold; }
-        .level-amount { font-size: 22px; color: #00f0ff; font-weight: bold; }
-        
+        .balance-label, .level-label, .bank-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .balance-amount { font-size: 18px; color: #00ff88; font-weight: bold; }
+        .level-amount { font-size: 18px; color: #00f0ff; font-weight: bold; }
+        .bank-amount { font-size: 18px; color: #ffd700; font-weight: bold; }
+
         /* ===== VPN БАННЕР ===== */
         .vpn-banner {
             background: linear-gradient(135deg, rgba(0,240,255,0.08), rgba(0,255,136,0.05));
             border: 1px solid rgba(0,240,255,0.2);
             border-radius: 12px;
-            padding: 12px 20px;
-            margin-bottom: 15px;
+            padding: 10px 16px;
+            margin-bottom: 12px;
             display: none;
             align-items: center;
             gap: 12px;
             animation: slideDown 0.5s ease;
-            backdrop-filter: blur(10px);
         }
         .vpn-banner.show { display: flex; }
         @keyframes slideDown {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .vpn-banner .vpn-icon { font-size: 24px; animation: pulse 2s infinite; }
+        .vpn-banner .vpn-icon { font-size: 20px; animation: pulse 2s infinite; }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
         .vpn-banner .vpn-text { flex: 1; }
-        .vpn-banner .vpn-text .vpn-title { font-size: 14px; font-weight: 600; color: #00f0ff; }
-        .vpn-banner .vpn-text .vpn-desc { font-size: 12px; color: #88ccdd; margin-top: 2px; }
+        .vpn-banner .vpn-text .vpn-title { font-size: 13px; font-weight: 600; color: #00f0ff; }
+        .vpn-banner .vpn-text .vpn-desc { font-size: 11px; color: #88ccdd; }
         .vpn-banner .vpn-badge {
             background: linear-gradient(135deg, #00f0ff, #00ff88);
-            padding: 4px 14px;
+            padding: 2px 12px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             color: #0a0a0f;
-            white-space: nowrap;
             animation: badgeGlow 2s infinite;
         }
         @keyframes badgeGlow { 0%,100% { box-shadow: 0 0 10px rgba(0,240,255,0.2); } 50% { box-shadow: 0 0 25px rgba(0,240,255,0.5); } }
-        .vpn-banner .vpn-close {
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.3);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 0 5px;
-            transition: color 0.3s;
-        }
+        .vpn-banner .vpn-close { background: none; border: none; color: rgba(255,255,255,0.3); font-size: 18px; cursor: pointer; }
         .vpn-banner .vpn-close:hover { color: #fff; }
-        
+
         /* ===== НАВИГАЦИЯ ===== */
         .nav {
             display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
+            gap: 6px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
             background: rgba(255,255,255,0.02);
-            padding: 10px;
+            padding: 8px;
             border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.03);
         }
         .nav-btn {
-            padding: 10px 20px;
+            padding: 8px 16px;
             background: transparent;
             border: 1px solid transparent;
-            border-radius: 10px;
+            border-radius: 8px;
             color: #666;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
         }
         .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
@@ -261,28 +218,28 @@
             background: rgba(0,240,255,0.1);
             border-color: rgba(0,240,255,0.2);
         }
-        
-        /* ===== ОБЩИЕ ===== */
+
+        /* ===== ОБЩИЕ БЛОКИ ===== */
         .page { display: none; animation: fadeIn 0.3s ease; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        
+
         .game-wrapper {
             background: rgba(255,255,255,0.02);
             border: 1px solid rgba(0,240,255,0.08);
-            border-radius: 20px;
-            padding: 30px;
+            border-radius: 16px;
+            padding: 20px;
         }
-        .game-title { text-align: center; font-size: 26px; color: #00f0ff; margin-bottom: 20px; font-weight: 300; letter-spacing: 2px; }
-        
+        .game-title { text-align: center; font-size: 22px; color: #00f0ff; margin-bottom: 15px; font-weight: 300; letter-spacing: 2px; }
+
         .game-result {
             text-align: center;
-            padding: 15px 20px;
-            margin: 15px 0;
-            border-radius: 12px;
-            font-size: 18px;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: 600;
-            min-height: 55px;
+            min-height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -291,210 +248,268 @@
         .game-result.loss { background: rgba(255,0,64,0.08); border: 1px solid rgba(255,0,64,0.2); color: #ff0040; }
         .game-result.error { background: rgba(255,200,0,0.08); border: 1px solid rgba(255,200,0,0.2); color: #ffcc00; }
         .game-result.info { background: rgba(0,240,255,0.05); border: 1px solid rgba(0,240,255,0.1); color: #888; }
-        
+
         .game-input {
-            padding: 12px 16px;
+            padding: 10px 14px;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(0,240,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            width: 100%;
+            margin: 6px 0;
+        }
+        .game-input:focus { outline: none; border-color: #00f0ff; }
+
+        .spin-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00f0ff, #8b00ff);
+            border: none;
             border-radius: 10px;
             color: #fff;
             font-size: 16px;
-            width: 100%;
-            margin: 8px 0;
-        }
-        .game-input:focus { outline: none; border-color: #00f0ff; }
-        
-        .spin-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #00f0ff, #8b00ff);
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 18px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 10px;
-            letter-spacing: 1px;
+            margin-top: 8px;
         }
-        .spin-btn:hover { transform: scale(1.02); box-shadow: 0 0 40px rgba(0,240,255,0.2); }
+        .spin-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(0,240,255,0.15); }
         .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-        
-        /* ===== ЛИДЕРБОРД ===== */
-        .leaderboard-section {
-            margin-top: 30px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(0,240,255,0.08);
-            border-radius: 16px;
-            padding: 20px;
-        }
-        .leaderboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .leaderboard-header h3 {
-            color: #00f0ff;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-        .leaderboard-header .update-time {
-            font-size: 11px;
-            color: #666;
-        }
-        .leaderboard-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .leaderboard-table th {
-            text-align: left;
-            padding: 10px 15px;
-            font-size: 11px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid rgba(0,240,255,0.05);
-        }
-        .leaderboard-table td {
-            padding: 10px 15px;
-            font-size: 13px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            transition: all 0.3s;
-        }
-        .leaderboard-table tr:hover td { background: rgba(0,240,255,0.03); }
-        .leaderboard-table .rank-1 td { color: #ffd700; }
-        .leaderboard-table .rank-2 td { color: #c0c0c0; }
-        .leaderboard-table .rank-3 td { color: #cd7f32; }
-        .leaderboard-table .rank-number { font-weight: 700; font-size: 14px; min-width: 30px; }
-        .leaderboard-table .rank-1 .rank-number { color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.3); }
-        .leaderboard-table .rank-2 .rank-number { color: #c0c0c0; text-shadow: 0 0 20px rgba(192,192,192,0.3); }
-        .leaderboard-table .rank-3 .rank-number { color: #cd7f32; text-shadow: 0 0 20px rgba(205,127,50,0.3); }
-        .leaderboard-table .player-name { font-weight: 600; }
-        .leaderboard-table .player-balance { font-weight: 700; color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.1); }
-        .leaderboard-table .player-level { color: #00f0ff; font-weight: 600; }
-        .leaderboard-table .player-stats { color: #888; font-size: 12px; }
-        .leaderboard-table tr { animation: rowAppear 0.5s ease; }
-        @keyframes rowAppear { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-        .leaderboard-table .rank-1 { background: rgba(255,215,0,0.03); border-left: 2px solid rgba(255,215,0,0.3); }
-        .leaderboard-table .rank-2 { background: rgba(192,192,192,0.02); border-left: 2px solid rgba(192,192,192,0.2); }
-        .leaderboard-table .rank-3 { background: rgba(205,127,50,0.02); border-left: 2px solid rgba(205,127,50,0.2); }
-        .leaderboard-empty { text-align: center; padding: 30px; color: #666; font-size: 14px; }
-        
+
         /* ===== ЛОББИ ===== */
-        .lobby-header { text-align: center; margin-bottom: 30px; }
-        .lobby-header h1 { font-size: 36px; margin-bottom: 10px; }
+        .lobby-header { text-align: center; margin-bottom: 25px; }
+        .lobby-header h1 { font-size: 30px; margin-bottom: 8px; }
         .lobby-header h1 span { background: linear-gradient(45deg, #00f0ff, #8b00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .lobby-subtitle { color: #666; font-size: 16px; }
-        
+        .lobby-subtitle { color: #666; font-size: 14px; }
+
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
         }
         .game-card {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(0,240,255,0.08);
-            border-radius: 16px;
-            padding: 25px;
+            border-radius: 14px;
+            padding: 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
         }
         .game-card:hover { transform: translateY(-5px); border-color: rgba(0,240,255,0.2); box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-        .game-icon { font-size: 40px; margin-bottom: 12px; display: block; }
-        .game-card h3 { font-size: 16px; margin-bottom: 5px; }
-        .game-card p { color: #666; font-size: 12px; }
-        .game-tag { display: inline-block; padding: 2px 12px; background: rgba(0,240,255,0.1); border-radius: 20px; font-size: 10px; color: #00f0ff; margin-top: 8px; }
-        
+        .game-icon { font-size: 32px; margin-bottom: 8px; display: block; }
+        .game-card h3 { font-size: 14px; margin-bottom: 4px; }
+        .game-card p { color: #666; font-size: 11px; }
+        .game-tag { display: inline-block; padding: 2px 10px; background: rgba(0,240,255,0.1); border-radius: 20px; font-size: 9px; color: #00f0ff; margin-top: 6px; }
+
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
         }
         .stat-item {
             background: rgba(255,255,255,0.02);
-            padding: 15px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 10px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.03);
         }
-        .stat-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-value { font-size: 20px; font-weight: bold; margin-top: 5px; }
+        .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 16px; font-weight: bold; margin-top: 3px; }
         .stat-value.win { color: #00ff88; }
         .stat-value.loss { color: #ff0040; }
-        
+
+        /* ===== ПРОФИЛЬ ===== */
+        .profile-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+        }
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #222;
+            border: 2px solid rgba(0,240,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .profile-avatar:hover { border-color: #00f0ff; }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-avatar input { display: none; }
+        .profile-name { font-size: 22px; font-weight: 700; color: #00f0ff; }
+        .profile-email { color: #666; font-size: 14px; }
+        .profile-field {
+            width: 100%;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .profile-field label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .profile-field input {
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(0,240,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .profile-field input:focus { outline: none; border-color: #00f0ff; }
+        .profile-save-btn {
+            padding: 10px 30px;
+            background: linear-gradient(135deg, #00f0ff, #8b00ff);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .profile-save-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(0,240,255,0.15); }
+        .profile-2fa {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .toggle-2fa {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #333;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .toggle-2fa.active { background: #00f0ff; }
+        .toggle-2fa::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .toggle-2fa.active::after { left: 27px; }
+
+        /* ===== ЛИДЕРБОРД ===== */
+        .leaderboard-section {
+            margin-top: 25px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(0,240,255,0.08);
+            border-radius: 14px;
+            padding: 16px;
+        }
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .leaderboard-header h3 { color: #00f0ff; font-size: 16px; font-weight: 700; }
+        .leaderboard-header .update-time { font-size: 10px; color: #666; }
+        .leaderboard-table { width: 100%; border-collapse: collapse; }
+        .leaderboard-table th {
+            text-align: left;
+            padding: 6px 10px;
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(0,240,255,0.05);
+        }
+        .leaderboard-table td {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        .leaderboard-table .rank-1 td { color: #ffd700; }
+        .leaderboard-table .rank-2 td { color: #c0c0c0; }
+        .leaderboard-table .rank-3 td { color: #cd7f32; }
+        .leaderboard-table .rank-number { font-weight: 700; font-size: 12px; min-width: 25px; }
+        .leaderboard-table .player-balance { font-weight: 700; color: #00ff88; }
+        .leaderboard-empty { text-align: center; padding: 20px; color: #666; font-size: 13px; }
+
         /* ===== СЛОТЫ ===== */
         .slots-machine {
             background: radial-gradient(ellipse at center, #1a1a2e, #0a0a1a);
             border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 20px;
-            padding: 30px;
+            border-radius: 16px;
+            padding: 20px;
         }
         .slots-reels {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 20px 0;
+            gap: 10px;
+            margin: 15px 0;
         }
         .slot-reel {
             background: rgba(0,0,0,0.8);
-            border-radius: 15px;
-            padding: 15px;
+            border-radius: 12px;
+            padding: 10px;
             display: grid;
             grid-template-rows: repeat(3, 1fr);
-            gap: 8px;
+            gap: 6px;
             border: 1px solid rgba(0,240,255,0.05);
-            min-height: 170px;
+            min-height: 130px;
         }
         .slot-symbol {
-            font-size: 44px;
+            font-size: 34px;
             text-align: center;
-            padding: 5px;
+            padding: 4px;
             background: rgba(255,255,255,0.02);
-            border-radius: 10px;
-            transition: all 0.3s;
+            border-radius: 8px;
         }
         .slot-symbol.win-highlight {
             background: rgba(0,255,136,0.15);
-            box-shadow: 0 0 30px rgba(0,255,136,0.2);
+            box-shadow: 0 0 20px rgba(0,255,136,0.2);
             transform: scale(1.05);
         }
         @keyframes spin { 0% { transform: translateY(0); } 100% { transform: translateY(-33.33%); } }
         .slot-reel.spinning { animation: spin 0.15s linear infinite; }
         @keyframes stop { 0% { transform: translateY(-33.33%); } 100% { transform: translateY(0); } }
         .slot-reel.stopping { animation: stop 0.4s ease-out forwards; }
-        
+
         /* ===== РУЛЕТКА ===== */
-        .roulette-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .roulette-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width:768px) { .roulette-layout { grid-template-columns:1fr; } }
-        
         .roulette-board {
             background: radial-gradient(circle, #1a1a1a, #0a0a0a);
             border-radius: 50%;
-            width: 300px;
-            height: 300px;
+            width: 260px;
+            height: 260px;
             margin: 0 auto;
             border: 2px solid rgba(0,240,255,0.1);
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            padding: 15px;
-            gap: 4px;
+            padding: 12px;
+            gap: 3px;
         }
         .roulette-board.spinning { animation: rouletteSpin 3s cubic-bezier(0.17,0.67,0.12,1) forwards; }
         @keyframes rouletteSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(1440deg); } }
-        
         .roulette-number {
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
@@ -505,35 +520,32 @@
         .roulette-number.red { background: #ff0040; color: #fff; }
         .roulette-number.black { background: #1a1a1a; color: #fff; border: 1px solid #333; }
         .roulette-number.green { background: #00cc44; color: #fff; }
-        
-        .roulette-controls { display: flex; flex-direction: column; gap: 10px; }
-        .bet-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+
+        .roulette-controls { display: flex; flex-direction: column; gap: 8px; }
+        .bet-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
         .bet-btn {
-            padding: 8px;
+            padding: 6px;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
+            border-radius: 6px;
             color: #888;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
         }
         .bet-btn:hover { background: rgba(0,240,255,0.05); color: #fff; }
         .bet-btn.active { background: rgba(0,240,255,0.1); border-color: #00f0ff; color: #00f0ff; }
-        .bet-btn.red { border-color: rgba(255,0,64,0.3); }
-        .bet-btn.black { border-color: rgba(255,255,255,0.1); }
-        
-        .number-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 4px; margin: 10px 0; }
+
+        .number-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 3px; margin: 8px 0; }
         .number-btn {
-            padding: 6px;
+            padding: 4px;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 5px;
+            border-radius: 4px;
             color: #fff;
             cursor: pointer;
-            transition: all 0.3s;
-            font-size: 12px;
+            font-size: 11px;
         }
         .number-btn:hover { background: rgba(0,240,255,0.05); }
         .number-btn.selected { background: rgba(0,240,255,0.15); border-color: #00f0ff; }
@@ -541,65 +553,64 @@
         .number-btn.black { color: #fff; }
         .number-btn.green { color: #00cc44; }
         .dozen-btn {
-            padding: 8px;
+            padding: 6px;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 5px;
+            border-radius: 4px;
             color: #fff;
             cursor: pointer;
-            transition: all 0.3s;
         }
         .dozen-btn:hover { background: rgba(0,240,255,0.05); }
         .dozen-btn.selected { background: rgba(0,240,255,0.15); border-color: #00f0ff; }
-        
+
         /* ===== БЛЭКДЖЕК ===== */
         .blackjack-table {
             background: radial-gradient(circle, #1a4a1a, #0a2a0a);
             border: 1px solid #2a6a2a;
-            border-radius: 25px;
-            padding: 25px;
+            border-radius: 20px;
+            padding: 20px;
         }
-        .blackjack-hand { margin: 12px 0; }
-        .blackjack-hand h4 { color: #888; font-size: 13px; margin-bottom: 8px; letter-spacing: 1px; }
-        .blackjack-cards { display: flex; gap: 10px; flex-wrap: wrap; }
+        .blackjack-hand { margin: 10px 0; }
+        .blackjack-hand h4 { color: #888; font-size: 12px; margin-bottom: 6px; }
+        .blackjack-cards { display: flex; gap: 8px; flex-wrap: wrap; }
         .blackjack-card {
             background: #fff;
             color: #000;
-            padding: 12px 18px;
-            border-radius: 10px;
-            font-size: 22px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 18px;
             font-weight: bold;
-            min-width: 45px;
+            min-width: 36px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         .blackjack-card.red { color: #ff0040; }
         .blackjack-card.black { color: #000; }
-        .blackjack-sum { font-size: 18px; font-weight: bold; margin-top: 5px; }
-        .blackjack-actions { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .blackjack-sum { font-size: 16px; font-weight: bold; margin-top: 4px; }
+        .blackjack-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
         .blackjack-action {
-            padding: 10px 25px;
+            padding: 8px 20px;
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 10px;
+            border-radius: 8px;
             color: #fff;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             flex: 1;
-            min-width: 80px;
+            min-width: 70px;
         }
         .blackjack-action:hover { background: rgba(0,240,255,0.1); }
         .blackjack-action:disabled { opacity: 0.3; cursor: not-allowed; }
-        
+
         /* ===== AVIATOR ===== */
         .crash-chart {
             background: radial-gradient(ellipse at bottom, #0a0a2a, #050510);
             border: 1px solid rgba(0,240,255,0.08);
-            border-radius: 20px;
-            height: 350px;
-            margin: 15px 0;
+            border-radius: 16px;
+            height: 280px;
+            margin: 12px 0;
             position: relative;
             overflow: hidden;
         }
@@ -607,7 +618,7 @@
             position: absolute;
             bottom: 10%;
             left: 10%;
-            font-size: 48px;
+            font-size: 40px;
             z-index: 2;
             transition: all 0.05s linear;
         }
@@ -615,49 +626,39 @@
         @keyframes rocketShake { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
         .crash-rocket.crashed { animation: rocketCrash 0.8s ease forwards; }
         @keyframes rocketCrash { 0% { transform: rotate(0deg) scale(1); opacity:1; } 100% { transform: rotate(360deg) scale(0); opacity:0; } }
-        
         .crash-multiplier {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 64px;
+            font-size: 48px;
             font-weight: bold;
             color: #00f0ff;
-            text-shadow: 0 0 50px rgba(0,240,255,0.3);
+            text-shadow: 0 0 40px rgba(0,240,255,0.3);
             z-index: 3;
         }
         .crash-multiplier.crashed { color: #ff0040; }
-        .crash-controls { display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .crash-controls { display: flex; gap: 12px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
         .crash-btn {
-            padding: 12px 35px;
-            border-radius: 12px;
-            font-size: 16px;
+            padding: 10px 28px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s;
             border: none;
             flex: 1;
         }
         .crash-btn.bet { background: linear-gradient(135deg, #ff6a00, #ff4500); color: #fff; }
-        .crash-btn.bet:hover { transform: scale(1.03); box-shadow: 0 0 30px rgba(255,100,0,0.3); }
+        .crash-btn.bet:hover { transform: scale(1.03); }
         .crash-btn.cashout { background: linear-gradient(135deg, #00ff88, #00cc44); color: #fff; }
-        .crash-btn.cashout:hover { transform: scale(1.03); box-shadow: 0 0 30px rgba(0,255,136,0.3); }
+        .crash-btn.cashout:hover { transform: scale(1.03); }
         .crash-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
-        .crash-history { display: flex; gap: 6px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
-        .crash-history-item { padding: 3px 10px; border-radius: 5px; font-weight: bold; font-size: 12px; }
+        .crash-history { display: flex; gap: 5px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+        .crash-history-item { padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
         .crash-history-item.win { background: rgba(0,255,136,0.15); color: #00ff88; }
         .crash-history-item.loss { background: rgba(255,0,64,0.15); color: #ff0040; }
-        .crash-trail-dot {
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            background: rgba(255,150,0,0.5);
-            border-radius: 50%;
-            animation: trailFade 0.8s ease-out forwards;
-        }
-        @keyframes trailFade { 0% { opacity:1; } 100% { opacity:0; } }
-        
+
+        /* ===== МОДАЛКИ ===== */
         .modal {
             display: none;
             position: fixed;
@@ -668,62 +669,71 @@
             backdrop-filter: blur(5px);
         }
         .modal-content {
-            max-width: 450px;
-            margin: 100px auto;
+            max-width: 400px;
+            margin: 80px auto;
             background: #0a0a0f;
             border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 20px;
-            padding: 30px;
+            border-radius: 16px;
+            padding: 25px;
             text-align: center;
         }
-        .modal-close { float: right; font-size: 28px; color: #666; cursor: pointer; }
+        .modal-close { float: right; font-size: 24px; color: #666; cursor: pointer; }
         .modal-close:hover { color: #fff; }
-        .modal-body { padding: 20px 0; font-size: 18px; line-height: 1.6; }
-        
+        .modal-body { padding: 15px 0; font-size: 16px; line-height: 1.6; }
+
+        /* ===== 2FA МОДАЛКА ===== */
+        .twofa-modal .modal-content { max-width: 360px; }
+        .twofa-code-input {
+            font-size: 28px;
+            letter-spacing: 8px;
+            text-align: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(0,240,255,0.1);
+            border-radius: 10px;
+            color: #fff;
+            width: 100%;
+            max-width: 200px;
+            margin: 10px auto;
+        }
+        .twofa-code-input:focus { outline: none; border-color: #00f0ff; }
+
+        /* ===== АДАПТИВ ===== */
         @media (max-width:600px) {
             .roulette-board { width: 200px; height: 200px; padding: 10px; }
             .roulette-number { font-size: 8px; }
-            .slot-symbol { font-size: 30px; }
-            .lobby-header h1 { font-size: 24px; }
-            .crash-multiplier { font-size: 40px; }
-            .crash-rocket { font-size: 32px; }
-            .game-wrapper { padding: 15px; }
-            .header { padding: 15px; }
-            .leaderboard-table th,
-            .leaderboard-table td {
-                padding: 8px 10px;
-                font-size: 11px;
-            }
-            .leaderboard-table .player-stats { display: none; }
+            .slot-symbol { font-size: 26px; }
+            .lobby-header h1 { font-size: 22px; }
+            .crash-multiplier { font-size: 32px; }
+            .crash-rocket { font-size: 30px; }
+            .game-wrapper { padding: 12px; }
+            .header { padding: 10px; }
             .auth-box { padding: 20px; margin: 10px; }
+            .profile-avatar { width: 70px; height: 70px; font-size: 32px; }
         }
     </style>
 </head>
 <body>
-    <!-- ===== МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ ===== -->
+
+    <!-- ===== МОДАЛКА АВТОРИЗАЦИИ ===== -->
     <div class="auth-modal" id="authModal">
         <div class="auth-box">
             <div class="logo">🎰 RuWin</div>
             <div class="subtitle">Войдите или зарегистрируйтесь</div>
-            
             <div class="auth-tabs">
                 <button class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Вход</button>
                 <button class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">Регистрация</button>
             </div>
-            
-            <!-- Вход -->
             <form id="loginForm" class="auth-form active" onsubmit="return handleLogin(event)">
                 <input type="text" id="loginUsername" placeholder="Имя пользователя" required>
                 <input type="password" id="loginPassword" placeholder="Пароль" required>
                 <button type="submit" class="auth-btn">Войти</button>
                 <div id="loginError" class="auth-error"></div>
             </form>
-            
-            <!-- Регистрация -->
             <form id="registerForm" class="auth-form" onsubmit="return handleRegister(event)">
-                <input type="text" id="regUsername" placeholder="Имя пользователя (3-20 символов)" required>
-                <input type="password" id="regPassword" placeholder="Пароль (минимум 6 символов)" required>
-                <input type="email" id="regEmail" placeholder="Email (необязательно)">
+                <input type="text" id="regUsername" placeholder="Имя пользователя" required>
+                <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)" required>
+                <input type="email" id="regEmail" placeholder="Email" required>
                 <button type="submit" class="auth-btn">Зарегистрироваться</button>
                 <div id="registerError" class="auth-error"></div>
                 <div id="registerSuccess" class="auth-success"></div>
@@ -731,32 +741,48 @@
         </div>
     </div>
 
+    <!-- ===== 2FA МОДАЛКА ===== -->
+    <div class="modal twofa-modal" id="twofaModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeTwofa()">×</span>
+            <h3 style="color:#00f0ff;margin-bottom:10px;">🔐 Двухфакторная аутентификация</h3>
+            <p style="color:#888;font-size:14px;">Введите код из письма</p>
+            <input type="text" id="twofaCode" class="twofa-code-input" placeholder="000000" maxlength="6">
+            <button class="auth-btn" onclick="verifyTwofa()" style="margin-top:10px;">Подтвердить</button>
+            <div id="twofaError" class="auth-error"></div>
+        </div>
+    </div>
+
     <!-- ===== ОСНОВНОЙ ИНТЕРФЕЙС ===== -->
     <div id="app" style="display:none;">
         <div class="header">
-            <div class="logo"><span class="logo-icon">🎰</span> RuWin</div>
+            <div class="logo">🎰 RuWin</div>
             <div class="header-right">
                 <div class="user-info">
-                    <span class="username" id="usernameDisplay">Игрок</span>
+                    <div class="user-avatar" id="headerAvatar">👤</div>
+                    <span class="user-name" id="headerUsername">Игрок</span>
                     <button class="logout-btn" onclick="handleLogout()">✕</button>
                 </div>
                 <div class="balance-box">
                     <div class="balance-label">💰 БАЛАНС</div>
-                    <div class="balance-amount" id="balance">$10,000</div>
+                    <div class="balance-amount" id="balance">10 000 ₽</div>
                 </div>
                 <div class="level-box">
                     <div class="level-label">🏆 УРОВЕНЬ</div>
                     <div class="level-amount" id="level">1</div>
                 </div>
+                <div class="bank-box">
+                    <div class="bank-label">🏦 БАНК</div>
+                    <div class="bank-amount" id="bankBalance">1 000 000 ₽</div>
+                </div>
             </div>
         </div>
 
-        <!-- VPN УВЕДОМЛЕНИЕ -->
         <div class="vpn-banner" id="vpnBanner">
             <span class="vpn-icon">🔒</span>
             <div class="vpn-text">
                 <div class="vpn-title">Вы подключены к Ru VPN</div>
-                <div class="vpn-desc">Комиссия на вывод будет понижена</div>
+                <div class="vpn-desc">Комиссия на вывод понижена</div>
             </div>
             <span class="vpn-badge">✓ БОНУС</span>
             <button class="vpn-close" onclick="closeVpnBanner()">×</button>
@@ -768,10 +794,12 @@
             <button class="nav-btn" onclick="showPage('slots')">🎲 Слоты</button>
             <button class="nav-btn" onclick="showPage('blackjack')">🃏 Блэкджек</button>
             <button class="nav-btn" onclick="showPage('crash')">🚀 Aviator</button>
+            <button class="nav-btn" onclick="showPage('profile')">👤 Профиль</button>
         </nav>
 
         <div class="main">
-            <!-- ЛОББИ -->
+
+            <!-- ===== ЛОББИ ===== -->
             <div id="page-lobby" class="page active">
                 <div class="lobby-header">
                     <h1><span>Добро пожаловать в RuWin!</span></h1>
@@ -781,25 +809,25 @@
                     <div class="game-card" onclick="showPage('roulette')">
                         <span class="game-icon">🎰</span>
                         <h3>Рулетка</h3>
-                        <p>Классическая европейская рулетка</p>
+                        <p>Европейская рулетка</p>
                         <span class="game-tag">🔥 Популярная</span>
                     </div>
                     <div class="game-card" onclick="showPage('slots')">
                         <span class="game-icon">🎲</span>
                         <h3>Слоты</h3>
-                        <p>Крути барабаны и выигрывай</p>
+                        <p>Крути барабаны</p>
                         <span class="game-tag">💎 Джекпот</span>
                     </div>
                     <div class="game-card" onclick="showPage('blackjack')">
                         <span class="game-icon">🃏</span>
                         <h3>Блэкджек</h3>
-                        <p>Победи дилера в карточной дуэли</p>
+                        <p>Победи дилера</p>
                         <span class="game-tag">♠️ Классика</span>
                     </div>
                     <div class="game-card" onclick="showPage('crash')">
                         <span class="game-icon">🚀</span>
                         <h3>Aviator</h3>
-                        <p>Забери деньги пока ракета летит</p>
+                        <p>Забери деньги вовремя</p>
                         <span class="game-tag">⚡ Быстрая</span>
                     </div>
                 </div>
@@ -809,20 +837,17 @@
                     <div class="stat-item"><div class="stat-label">Проигрыши</div><div class="stat-value loss" id="losses">0</div></div>
                     <div class="stat-item"><div class="stat-label">Winrate</div><div class="stat-value" id="winrate">0%</div></div>
                 </div>
-                
-                <!-- ЛИДЕРБОРД -->
+
                 <div class="leaderboard-section">
                     <div class="leaderboard-header">
                         <h3>🏆 ТОП ИГРОКОВ</h3>
                         <span class="update-time" id="leaderboardTime">Обновлено: сейчас</span>
                     </div>
-                    <div id="leaderboardContainer">
-                        <div class="leaderboard-empty">Загрузка...</div>
-                    </div>
+                    <div id="leaderboardContainer"><div class="leaderboard-empty">Загрузка...</div></div>
                 </div>
             </div>
 
-            <!-- РУЛЕТКА -->
+            <!-- ===== РУЛЕТКА ===== -->
             <div id="page-roulette" class="page">
                 <div class="game-wrapper">
                     <h2 class="game-title">🎰 ЕВРОПЕЙСКАЯ РУЛЕТКА</h2>
@@ -832,24 +857,24 @@
                             <div class="game-result info" id="rouletteResult">Сделайте ставку!</div>
                             <div class="bet-grid">
                                 <button class="bet-btn active" onclick="setBetType('number')">🎯 Число</button>
-                                <button class="bet-btn red" onclick="setBetType('red')">🔴 Красное</button>
-                                <button class="bet-btn black" onclick="setBetType('black')">⚫ Чёрное</button>
+                                <button class="bet-btn" onclick="setBetType('red')">🔴 Красное</button>
+                                <button class="bet-btn" onclick="setBetType('black')">⚫ Чёрное</button>
                                 <button class="bet-btn" onclick="setBetType('even')">2️⃣ Чётное</button>
                                 <button class="bet-btn" onclick="setBetType('odd')">1️⃣ Нечётное</button>
                                 <button class="bet-btn" onclick="setBetType('half1')">⬆ 1-18</button>
                                 <button class="bet-btn" onclick="setBetType('half2')">⬇ 19-36</button>
                                 <button class="bet-btn" onclick="setBetType('dozen')">📊 Дюжина</button>
                             </div>
-                            <div id="numberSelector"><label style="font-size:12px;color:#666;">Выберите число:</label><div class="number-grid" id="numberGrid"></div></div>
-                            <div id="dozenSelector" style="display:none;"><label style="font-size:12px;color:#666;">Выберите дюжину:</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0;"><button class="dozen-btn" onclick="selectDozen(1)">1-12</button><button class="dozen-btn" onclick="selectDozen(2)">13-24</button><button class="dozen-btn" onclick="selectDozen(3)">25-36</button></div></div>
-                            <input type="number" id="rouletteBet" class="game-input" value="10" min="1">
+                            <div id="numberSelector"><label style="font-size:11px;color:#666;">Выберите число:</label><div class="number-grid" id="numberGrid"></div></div>
+                            <div id="dozenSelector" style="display:none;"><label style="font-size:11px;color:#666;">Выберите дюжину:</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0;"><button class="dozen-btn" onclick="selectDozen(1)">1-12</button><button class="dozen-btn" onclick="selectDozen(2)">13-24</button><button class="dozen-btn" onclick="selectDozen(3)">25-36</button></div></div>
+                            <input type="number" id="rouletteBet" class="game-input" value="100" min="1">
                             <button class="spin-btn" id="rouletteSpinBtn">🎰 СПИН</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- СЛОТЫ -->
+            <!-- ===== СЛОТЫ ===== -->
             <div id="page-slots" class="page">
                 <div class="game-wrapper">
                     <h2 class="game-title">🎲 СЛОТЫ</h2>
@@ -860,13 +885,13 @@
                             <div class="slot-reel"><div class="slot-symbol">🎰</div><div class="slot-symbol">🎰</div><div class="slot-symbol">🎰</div></div>
                         </div>
                         <div class="game-result info" id="slotsResult">Сделайте ставку!</div>
-                        <input type="number" id="slotsBet" class="game-input" value="10" min="1">
+                        <input type="number" id="slotsBet" class="game-input" value="100" min="1">
                         <button class="spin-btn" id="slotsSpinBtn">🎰 КРУТИТЬ</button>
                     </div>
                 </div>
             </div>
 
-            <!-- БЛЭКДЖЕК -->
+            <!-- ===== БЛЭКДЖЕК ===== -->
             <div id="page-blackjack" class="page">
                 <div class="game-wrapper">
                     <h2 class="game-title">🃏 БЛЭКДЖЕК</h2>
@@ -874,7 +899,7 @@
                         <div class="blackjack-hand"><h4>👤 Ваши карты</h4><div class="blackjack-cards" id="playerCards"><div class="blackjack-card">?</div><div class="blackjack-card">?</div></div><div class="blackjack-sum" id="playerSum">Сумма: 0</div></div>
                         <div class="blackjack-hand"><h4>🤖 Карты дилера</h4><div class="blackjack-cards" id="dealerCards"><div class="blackjack-card">?</div><div class="blackjack-card">?</div></div><div class="blackjack-sum" id="dealerSum">Сумма: 0</div></div>
                         <div class="game-result info" id="blackjackResult">Сделайте ставку!</div>
-                        <input type="number" id="blackjackBet" class="game-input" value="10" min="1">
+                        <input type="number" id="blackjackBet" class="game-input" value="100" min="1">
                         <div class="blackjack-actions">
                             <button class="blackjack-action" id="blackjackStart">🃏 СТАРТ</button>
                             <button class="blackjack-action" id="blackjackHit" disabled>✋ ВЗЯТЬ</button>
@@ -884,7 +909,7 @@
                 </div>
             </div>
 
-            <!-- AVIATOR -->
+            <!-- ===== AVIATOR ===== -->
             <div id="page-crash" class="page">
                 <div class="game-wrapper">
                     <h2 class="game-title">🚀 AVIATOR</h2>
@@ -893,7 +918,7 @@
                         <div class="crash-multiplier" id="crashMultiplier">1.00x</div>
                     </div>
                     <div class="game-result info" id="crashResult">Сделайте ставку!</div>
-                    <input type="number" id="crashBet" class="game-input" value="10" min="1">
+                    <input type="number" id="crashBet" class="game-input" value="100" min="1">
                     <div class="crash-controls">
                         <button class="crash-btn bet" id="crashStart">🚀 СТАВКА</button>
                         <button class="crash-btn cashout" id="crashCashout" disabled>💰 ЗАБРАТЬ</button>
@@ -901,13 +926,44 @@
                     <div class="crash-history" id="crashHistory"></div>
                 </div>
             </div>
-        </div>
 
-        <div id="modal" class="modal">
-            <div class="modal-content">
-                <span class="modal-close" onclick="closeModal()">×</span>
-                <div class="modal-body" id="modalBody"></div>
+            <!-- ===== ПРОФИЛЬ ===== -->
+            <div id="page-profile" class="page">
+                <div class="game-wrapper">
+                    <h2 class="game-title">👤 ПРОФИЛЬ</h2>
+                    <div class="profile-container">
+                        <div class="profile-avatar" id="profileAvatar" onclick="document.getElementById('avatarInput').click()">
+                            <img id="avatarPreview" src="" alt="Avatar" style="display:none;">
+                            <span id="avatarPlaceholder">👤</span>
+                            <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)">
+                        </div>
+                        <div class="profile-name" id="profileName">Игрок</div>
+                        <div class="profile-email" id="profileEmail">email@example.com</div>
+                        <div class="profile-field">
+                            <label>Имя пользователя</label>
+                            <input type="text" id="editUsername" placeholder="Новое имя">
+                        </div>
+                        <div class="profile-field">
+                            <label>Email</label>
+                            <input type="email" id="editEmail" placeholder="Новый email">
+                        </div>
+                        <div class="profile-2fa">
+                            <span style="color:#888;font-size:13px;">🔐 Двухфакторная аутентификация</span>
+                            <div class="toggle-2fa" id="twofaToggle" onclick="toggle2fa()"></div>
+                        </div>
+                        <button class="profile-save-btn" onclick="saveProfile()">💾 Сохранить</button>
+                    </div>
+                </div>
             </div>
+
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА ===== -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">×</span>
+            <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
 
@@ -920,6 +976,7 @@
         let spinning = false;
         let isRouletteSpinning = false;
         let leaderboardInterval = null;
+        let twofaPending = false;
 
         let blackjackState = { deck: [], playerHand: [], dealerHand: [], amount: 0, gameOver: false };
         let crashState = { multiplier: 1, isActive: false, isBetPlaced: false, crashPoint: 0, amount: 0, interval: null };
@@ -934,68 +991,70 @@
             document.getElementById('registerSuccess').textContent = '';
         }
 
-        async function handleLogin(event) {
-            event.preventDefault();
+        async function handleLogin(e) {
+            e.preventDefault();
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             const errorEl = document.getElementById('loginError');
-            
             errorEl.textContent = '⏳ Вход...';
-            
+
             try {
-                const response = await fetch('/api/login', {
+                const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
-                const data = await response.json();
-                
+                const data = await res.json();
+
                 if (data.success) {
+                    if (data.need_2fa) {
+                        twofaPending = true;
+                        document.getElementById('authModal').classList.add('hidden');
+                        document.getElementById('twofaModal').style.display = 'block';
+                        return;
+                    }
                     userId = data.user_id;
-                    // СОХРАНЯЕМ В localStorage
                     localStorage.setItem('ruwin_user_id', userId);
                     localStorage.setItem('ruwin_username', data.username);
-                    
                     document.getElementById('authModal').classList.add('hidden');
                     document.getElementById('app').style.display = 'block';
-                    document.getElementById('usernameDisplay').textContent = data.username;
+                    document.getElementById('headerUsername').textContent = data.username;
                     updateUI(data.stats);
                     generateRouletteBoard();
                     generateNumberGrid();
                     setupEvents();
                     startLeaderboardUpdates();
                     showPage('lobby');
+                    loadProfile();
                 } else {
                     errorEl.textContent = '❌ ' + data.error;
                 }
-            } catch (error) {
+            } catch (err) {
                 errorEl.textContent = '❌ Ошибка соединения';
             }
             return false;
         }
 
-        async function handleRegister(event) {
-            event.preventDefault();
+        async function handleRegister(e) {
+            e.preventDefault();
             const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
             const email = document.getElementById('regEmail').value.trim();
             const errorEl = document.getElementById('registerError');
             const successEl = document.getElementById('registerSuccess');
-            
             errorEl.textContent = '';
             successEl.textContent = '⏳ Регистрация...';
-            
+
             try {
-                const response = await fetch('/api/register', {
+                const res = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password, email })
                 });
-                const data = await response.json();
-                
+                const data = await res.json();
+
                 if (data.success) {
                     successEl.textContent = '✅ ' + data.message + ' Теперь войдите!';
-                    errorEl.textContent = '';
                     document.getElementById('regUsername').value = '';
                     document.getElementById('regPassword').value = '';
                     document.getElementById('regEmail').value = '';
@@ -1004,75 +1063,188 @@
                     errorEl.textContent = '❌ ' + data.error;
                     successEl.textContent = '';
                 }
-            } catch (error) {
+            } catch (err) {
                 errorEl.textContent = '❌ Ошибка соединения';
                 successEl.textContent = '';
             }
             return false;
         }
 
+        function closeTwofa() {
+            document.getElementById('twofaModal').style.display = 'none';
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+
+        async function verifyTwofa() {
+            const code = document.getElementById('twofaCode').value.trim();
+            const errorEl = document.getElementById('twofaError');
+            errorEl.textContent = '⏳ Проверка...';
+            try {
+                const res = await fetch('/api/verify_2fa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    userId = data.user_id;
+                    localStorage.setItem('ruwin_user_id', userId);
+                    localStorage.setItem('ruwin_username', data.username);
+                    document.getElementById('twofaModal').style.display = 'none';
+                    document.getElementById('app').style.display = 'block';
+                    document.getElementById('headerUsername').textContent = data.username;
+                    updateUI(data.stats);
+                    generateRouletteBoard();
+                    generateNumberGrid();
+                    setupEvents();
+                    startLeaderboardUpdates();
+                    showPage('lobby');
+                    loadProfile();
+                } else {
+                    errorEl.textContent = '❌ ' + data.error;
+                }
+            } catch (err) {
+                errorEl.textContent = '❌ Ошибка соединения';
+            }
+        }
+
         function handleLogout() {
             userId = null;
-            // Удаляем из localStorage
             localStorage.removeItem('ruwin_user_id');
             localStorage.removeItem('ruwin_username');
-            
             document.getElementById('app').style.display = 'none';
             document.getElementById('authModal').classList.remove('hidden');
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            document.getElementById('loginError').textContent = '';
             stopLeaderboardUpdates();
         }
 
-        // ===== ПРОВЕРКА СОХРАНЕННОГО USER_ID =====
-        async function checkSavedUser() {
-            const savedUserId = localStorage.getItem('ruwin_user_id');
-            const savedUsername = localStorage.getItem('ruwin_username');
-            
-            if (savedUserId) {
-                userId = savedUserId;
-                document.getElementById('authModal').classList.add('hidden');
-                document.getElementById('app').style.display = 'block';
-                document.getElementById('usernameDisplay').textContent = savedUsername || 'Игрок';
-                
-                // Загружаем данные
-                await initGame();
-                generateRouletteBoard();
-                generateNumberGrid();
-                setupEvents();
-                startLeaderboardUpdates();
-                showPage('lobby');
-                return true;
-            }
-            return false;
+        // ===== ПРОФИЛЬ =====
+        async function loadProfile() {
+            if (!userId) return;
+            try {
+                const res = await fetch('/api/profile', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('profileName').textContent = data.stats.username;
+                    document.getElementById('profileEmail').textContent = data.stats.email || 'email не указан';
+                    document.getElementById('editUsername').value = data.stats.username;
+                    document.getElementById('editEmail').value = data.stats.email || '';
+                    if (data.stats.avatar) {
+                        document.getElementById('avatarPreview').src = data.stats.avatar;
+                        document.getElementById('avatarPreview').style.display = 'block';
+                        document.getElementById('avatarPlaceholder').style.display = 'none';
+                    }
+                    if (data.stats.twofa_enabled) {
+                        document.getElementById('twofaToggle').classList.add('active');
+                    } else {
+                        document.getElementById('twofaToggle').classList.remove('active');
+                    }
+                }
+            } catch (err) { console.error(err); }
         }
 
-        // ===== VPN УВЕДОМЛЕНИЕ =====
-        function showVpnBanner(isVpn) {
-            const banner = document.getElementById('vpnBanner');
-            if (isVpn) {
-                banner.classList.add('show');
-                setTimeout(() => { closeVpnBanner(); }, 8000);
+        async function saveProfile() {
+            if (!userId) return;
+            const username = document.getElementById('editUsername').value.trim();
+            const email = document.getElementById('editEmail').value.trim();
+            try {
+                const res = await fetch('/api/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, username, email })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showModal('✅ Профиль обновлён!');
+                    document.getElementById('headerUsername').textContent = data.stats.username;
+                    document.getElementById('profileName').textContent = data.stats.username;
+                } else {
+                    showModal('❌ ' + data.error);
+                }
+            } catch (err) { showModal('❌ Ошибка'); }
+        }
+
+        function uploadAvatar(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                const base64 = event.target.result;
+                try {
+                    const res = await fetch('/api/avatar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: userId, avatar: base64 })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        document.getElementById('avatarPreview').src = base64;
+                        document.getElementById('avatarPreview').style.display = 'block';
+                        document.getElementById('avatarPlaceholder').style.display = 'none';
+                        showModal('✅ Аватар обновлён!');
+                    }
+                } catch (err) { showModal('❌ Ошибка загрузки'); }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function toggle2fa() {
+            if (!userId) return;
+            const toggle = document.getElementById('twofaToggle');
+            const enabled = !toggle.classList.contains('active');
+            try {
+                const res = await fetch('/api/settings/2fa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, enabled })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (enabled) {
+                        toggle.classList.add('active');
+                        showModal('✅ 2FA включена! Код будет отправляться на ваш email.');
+                    } else {
+                        toggle.classList.remove('active');
+                        showModal('✅ 2FA отключена.');
+                    }
+                } else {
+                    showModal('❌ ' + data.error);
+                }
+            } catch (err) { showModal('❌ Ошибка'); }
+        }
+
+        // ===== ОСТАЛЬНЫЕ ФУНКЦИИ =====
+        function updateUI(stats) {
+            if (stats) {
+                document.getElementById('balance').textContent = stats.balance.toLocaleString() + ' ₽';
+                document.getElementById('level').textContent = stats.level;
+                document.getElementById('totalBets').textContent = stats.total_bets;
+                document.getElementById('wins').textContent = stats.wins;
+                document.getElementById('losses').textContent = stats.losses;
+                document.getElementById('winrate').textContent = stats.winrate + '%';
             }
         }
 
-        function closeVpnBanner() {
-            document.getElementById('vpnBanner').classList.remove('show');
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${page}`).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.nav-btn[onclick="showPage('${page}')"]`).classList.add('active');
+            if (page === 'lobby') loadLeaderboard();
+            if (page === 'crash') resetCrashUI();
+            if (page === 'profile') loadProfile();
         }
 
         // ===== ЛИДЕРБОРД =====
         async function loadLeaderboard() {
             try {
-                const response = await fetch('/api/leaderboard');
-                const data = await response.json();
-                if (data.success) {
-                    renderLeaderboard(data.leaders);
-                    updateLeaderboardTime();
-                }
-            } catch (error) {
-                console.error('Ошибка лидерборда:', error);
-            }
+                const res = await fetch('/api/leaderboard');
+                const data = await res.json();
+                if (data.success) renderLeaderboard(data.leaders);
+            } catch (err) { console.error(err); }
         }
 
         function renderLeaderboard(leaders) {
@@ -1085,21 +1257,10 @@
             leaders.forEach(p => {
                 const rankClass = p.rank <= 3 ? `rank-${p.rank}` : '';
                 const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : '';
-                html += `<tr class="${rankClass}"><td class="rank-number">${medal || '#' + p.rank}</td><td class="player-name">${escapeHtml(p.username)}</td><td class="player-balance">$${p.balance.toLocaleString()}</td><td class="player-level">${p.level}</td><td class="player-stats">${p.wins}</td><td class="player-stats">${p.total_bets}</td></tr>`;
+                html += `<tr class="${rankClass}"><td class="rank-number">${medal || '#' + p.rank}</td><td class="player-name">${p.username}</td><td class="player-balance">${p.balance.toLocaleString()} ₽</td><td class="player-level">${p.level}</td><td class="player-stats">${p.wins}</td><td class="player-stats">${p.total_bets}</td></tr>`;
             });
             html += '</tbody></table>';
             container.innerHTML = html;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function updateLeaderboardTime() {
-            const now = new Date();
-            document.getElementById('leaderboardTime').textContent = `Обновлено: ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
         }
 
         function startLeaderboardUpdates() {
@@ -1109,63 +1270,42 @@
         }
 
         function stopLeaderboardUpdates() {
-            if (leaderboardInterval) {
-                clearInterval(leaderboardInterval);
-                leaderboardInterval = null;
-            }
+            if (leaderboardInterval) { clearInterval(leaderboardInterval); leaderboardInterval = null; }
         }
 
-        // ===== ИНИЦИАЛИЗАЦИЯ ИГР =====
-        async function initGame() {
-            if (!userId) {
-                console.log('❌ Нет user_id');
-                return false;
-            }
-            try {
-                const response = await fetch('/api/init', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    updateUI(data.stats);
-                    if (data.is_vpn) showVpnBanner(true);
-                    console.log('✅ Данные загружены для:', data.username);
-                    return true;
-                } else {
-                    if (data.error === 'Не авторизован' || data.error?.includes('не найден')) {
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        async function init() {
+            const savedId = localStorage.getItem('ruwin_user_id');
+            if (savedId) {
+                userId = savedId;
+                document.getElementById('authModal').classList.add('hidden');
+                document.getElementById('app').style.display = 'block';
+                try {
+                    const res = await fetch('/api/init', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: userId })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        document.getElementById('headerUsername').textContent = data.username;
+                        updateUI(data.stats);
+                        generateRouletteBoard();
+                        generateNumberGrid();
+                        setupEvents();
+                        startLeaderboardUpdates();
+                        showPage('lobby');
+                        loadProfile();
+                    } else {
                         handleLogout();
-                        alert('❌ Сессия истекла. Войдите заново.');
                     }
-                    return false;
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                return false;
+                } catch (err) { handleLogout(); }
+            } else {
+                document.getElementById('authModal').classList.remove('hidden');
             }
         }
 
-        function updateUI(stats) {
-            if (stats) {
-                document.getElementById('balance').textContent = `$${stats.balance.toLocaleString()}`;
-                document.getElementById('level').textContent = stats.level;
-                document.getElementById('totalBets').textContent = stats.total_bets;
-                document.getElementById('wins').textContent = stats.wins;
-                document.getElementById('losses').textContent = stats.losses;
-                document.getElementById('winrate').textContent = `${stats.winrate}%`;
-            }
-        }
-
-        function showPage(page) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(`page-${page}`).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.nav-btn[onclick="showPage('${page}')"]`).classList.add('active');
-            if (page === 'lobby') loadLeaderboard();
-            if (page === 'crash') resetCrashUI();
-        }
-
+        // ===== ИГРЫ (ГЕНЕРАЦИЯ) =====
         function generateRouletteBoard() {
             const board = document.getElementById('rouletteBoard');
             const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
@@ -1221,18 +1361,16 @@
             element.innerHTML = text;
         }
 
-        // ===== ОБЩАЯ ФУНКЦИЯ ДЛЯ ЗАПРОСОВ =====
+        // ===== API =====
         async function apiRequest(url, payload) {
-            if (!userId) {
-                throw new Error('Не авторизован');
-            }
+            if (!userId) throw new Error('Не авторизован');
             payload.user_id = userId;
-            const response = await fetch(url, {
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const data = await response.json();
+            const data = await res.json();
             if (!data.success && (data.error === 'Не авторизован' || data.error?.includes('не найден'))) {
                 handleLogout();
                 alert('❌ Сессия истекла. Войдите заново.');
@@ -1266,7 +1404,7 @@
                     const result = document.getElementById('rouletteResult');
                     const color = data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff';
                     setResult(result, data.win ? 'win' : 'loss', 
-                        `Выпало: <strong style="color:${color}">${data.result}</strong> (${data.color})<br>${data.win ? `🎉 ВЫИГРЫШ +$${data.win_amount}` : `😞 ПРОИГРЫШ $${Math.abs(data.win_amount)}`}`
+                        `Выпало: <strong style="color:${color}">${data.result}</strong> (${data.color})<br>${data.win ? `🎉 ВЫИГРЫШ +${data.win_amount} ₽` : `😞 ПРОИГРЫШ ${Math.abs(data.win_amount)} ₽`}`
                     );
                     updateUI(data.stats);
                 } else {
@@ -1324,7 +1462,7 @@
                     });
                     setTimeout(() => {
                         setResult(resultEl, data.win ? 'win' : 'loss', 
-                            data.win ? `🎉 ВЫИГРЫШ +$${data.win_amount}` : `😞 ПРОИГРЫШ $${Math.abs(data.win_amount)}`
+                            data.win ? `🎉 ВЫИГРЫШ +${data.win_amount} ₽` : `😞 ПРОИГРЫШ ${Math.abs(data.win_amount)} ₽`
                         );
                         updateUI(data.stats);
                     }, 2500);
@@ -1424,8 +1562,8 @@
             
             const result = document.getElementById('blackjackResult');
             if (data.game_over) {
-                if (data.win === true) setResult(result, 'win', `🎉 ВЫИГРЫШ +$${data.win_amount}`);
-                else if (data.win === false) setResult(result, 'loss', `😞 ПРОИГРЫШ $${Math.abs(data.win_amount)}`);
+                if (data.win === true) setResult(result, 'win', `🎉 ВЫИГРЫШ +${data.win_amount} ₽`);
+                else if (data.win === false) setResult(result, 'loss', `😞 ПРОИГРЫШ ${Math.abs(data.win_amount)} ₽`);
                 else setResult(result, 'info', '🤝 НИЧЬЯ');
             } else {
                 setResult(result, 'info', 'Игра продолжается...');
@@ -1520,7 +1658,7 @@
                 });
                 if (data.success) {
                     const resultEl = document.getElementById('crashResult');
-                    setResult(resultEl, 'win', `🎉 ВЫИГРЫШ +$${data.win_amount.toFixed(2)} (${crashState.multiplier.toFixed(2)}x)`);
+                    setResult(resultEl, 'win', `🎉 ВЫИГРЫШ +${data.win_amount} ₽ (${crashState.multiplier.toFixed(2)}x)`);
                     updateUI(data.stats);
                     addCrashHistory(crashState.multiplier, true);
                     setTimeout(() => resetCrash(), 1000);
@@ -1590,12 +1728,7 @@
         }
 
         // ===== ЗАПУСК =====
-        document.addEventListener('DOMContentLoaded', async function() {
-            const hasSavedUser = await checkSavedUser();
-            if (!hasSavedUser) {
-                document.getElementById('authModal').classList.remove('hidden');
-            }
-        });
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
