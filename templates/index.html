@@ -321,6 +321,49 @@
         .stat-value.win { color: #00ff88; }
         .stat-value.loss { color: #ff0040; }
 
+        <!-- ===== АДМИН-ПАНЕЛЬ ===== -->
+<div id="page-admin" class="page">
+    <div class="game-wrapper">
+        <h2 class="game-title">👑 АДМИН-ПАНЕЛЬ</h2>
+        
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:20px;">
+            <div style="background:rgba(255,255,255,0.03);padding:15px;border-radius:10px;text-align:center;">
+                <div style="font-size:12px;color:#666;">💰 ПУЛ КАЗИНО</div>
+                <div style="font-size:24px;color:#ffd700;" id="adminPoolBalance">0 ₽</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);padding:15px;border-radius:10px;text-align:center;">
+                <div style="font-size:12px;color:#666;">👥 ВСЕГО ИГРОКОВ</div>
+                <div style="font-size:24px;color:#00f0ff;" id="adminTotalUsers">0</div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <input type="number" id="adminAddPool" class="game-input" placeholder="Сумма для пополнения пула" value="100000">
+            <button class="spin-btn" onclick="adminAddPool()">💰 Пополнить пул</button>
+        </div>
+        
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:1px solid rgba(0,240,255,0.1);">
+                        <th style="padding:8px 10px;text-align:left;color:#666;">#</th>
+                        <th style="padding:8px 10px;text-align:left;color:#666;">Игрок</th>
+                        <th style="padding:8px 10px;text-align:left;color:#666;">💰 Баланс</th>
+                        <th style="padding:8px 10px;text-align:left;color:#666;">🏆 Уровень</th>
+                        <th style="padding:8px 10px;text-align:left;color:#666;">🏅 Победы</th>
+                        <th style="padding:8px 10px;text-align:left;color:#666;">🎯 Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="adminUsersList"></tbody>
+            </table>
+        </div>
+        
+        <button class="spin-btn" onclick="adminRestart()" style="background:linear-gradient(135deg,#ff0040,#8b00ff);margin-top:20px;">
+            🔄 ПЕРЕЗАГРУЗИТЬ САЙТ
+        </button>
+    </div>
+</div>
+
         /* ===== ПРОФИЛЬ ===== */
         .profile-container {
             display: flex;
