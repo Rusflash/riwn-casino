@@ -1,0 +1,270 @@
+/* casino-theme.css - Премиум тема казино */
+
+:root {
+    /* Основные цвета */
+    --casino-gold: #ffd700;
+    --casino-gold-glow: rgba(255, 215, 0, 0.3);
+    --casino-red: #ff0040;
+    --casino-red-glow: rgba(255, 0, 64, 0.3);
+    --casino-green: #00ff88;
+    --casino-green-glow: rgba(0, 255, 136, 0.3);
+    --casino-blue: #00d4ff;
+    --casino-blue-glow: rgba(0, 212, 255, 0.3);
+    --casino-purple: #8b00ff;
+    --casino-purple-glow: rgba(139, 0, 255, 0.3);
+    
+    /* Фоны */
+    --bg-main: #0a0a12;
+    --bg-card: rgba(255, 255, 255, 0.03);
+    --bg-dark: #06060e;
+    
+    /* Тени */
+    --shadow-glow: 0 0 40px rgba(255, 215, 0, 0.05);
+    --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== ПРЕМИУМ ФОН ===== */
+body {
+    background: var(--bg-main);
+    background-image: 
+        radial-gradient(ellipse at 10% 20%, rgba(139, 0, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 215, 0, 0.02) 0%, transparent 70%);
+    min-height: 100vh;
+}
+
+/* ===== ПАРТИКЛЫ ===== */
+.particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--casino-gold);
+    border-radius: 50%;
+    animation: float-particle linear infinite;
+    opacity: 0;
+}
+
+@keyframes float-particle {
+    0% {
+        transform: translateY(100vh) scale(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-10vh) scale(1);
+        opacity: 0;
+    }
+}
+
+/* ===== ПРЕМИУМ ХЕДЕР ===== */
+.header-premium {
+    background: rgba(10, 10, 18, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+.header-premium::before {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--casino-gold), var(--casino-blue), var(--casino-gold), transparent);
+    background-size: 200% 100%;
+    animation: shimmer-border 3s linear infinite;
+}
+
+@keyframes shimmer-border {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* ===== ПРЕМИУМ КАРТОЧКИ ===== */
+.game-card-premium {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    border: 1px solid rgba(255, 215, 0, 0.1);
+    border-radius: 20px;
+    padding: 30px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.game-card-premium::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.05), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+.game-card-premium:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: var(--casino-gold);
+    box-shadow: 0 20px 60px rgba(255, 215, 0, 0.1), 0 0 40px rgba(255, 215, 0, 0.05);
+}
+
+.game-card-premium:hover::before {
+    opacity: 1;
+}
+
+.game-card-premium .icon {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 15px;
+    animation: float-icon 3s ease-in-out infinite;
+}
+
+@keyframes float-icon {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-10px) scale(1.05); }
+}
+
+.game-card-premium .game-tag {
+    display: inline-block;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(45deg, var(--casino-gold), #ffaa00);
+    color: #000;
+}
+
+/* ===== ПРЕМИУМ МОДАЛКА ===== */
+.modal-premium {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(20px);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-premium.active {
+    display: flex;
+    animation: modal-fade 0.3s ease;
+}
+
+@keyframes modal-fade {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-premium-content {
+    background: linear-gradient(145deg, #0d0d20, #080812);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+}
+
+.modal-premium-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.modal-premium-close:hover {
+    color: #fff;
+}
+
+/* ===== ПРЕМИУМ КНОПКИ ===== */
+.btn-premium {
+    padding: 12px 32px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-premium-gold {
+    background: linear-gradient(45deg, #ffd700, #ffaa00);
+    color: #000;
+    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+}
+
+.btn-premium-gold:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(255, 215, 0, 0.3);
+}
+
+.btn-premium-purple {
+    background: linear-gradient(45deg, var(--casino-purple), #6c3bd9);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(139, 0, 255, 0.2);
+}
+
+.btn-premium-purple:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(139, 0, 255, 0.3);
+}
+
+/* ===== ПРЕМИУМ БАЛАНС ===== */
+.balance-premium {
+    background: linear-gradient(145deg, rgba(0, 255, 136, 0.05), rgba(0, 255, 136, 0.01));
+    border: 1px solid rgba(0, 255, 136, 0.15);
+    border-radius: 16px;
+    padding: 12px 24px;
+    text-align: center;
+}
+
+.balance-premium .amount {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(45deg, var(--casino-green), #00ffaa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: balance-pulse 2s ease-in-out infinite;
+}
+
+@keyframes balance-pulse {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.3)); }
+    50% { filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.6)); }
+}
