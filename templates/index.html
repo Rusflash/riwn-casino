@@ -3,21 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casino — Играй и выигрывай</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    
+    <title>RuWin — Премиум Казино</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* ============================================================
-           ПОЛНЫЙ СТИЛЬ КАЗИНО (STYLE CASINO)
-           ============================================================ */
+        /* ===== ВСЕ СТИЛИ ПРЯМО ЗДЕСЬ (ЧТОБЫ НЕ БЫЛО ПРОБЛЕМ С ПУТЯМИ) ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
             --bg-primary: #0d0d1a;
             --bg-secondary: #16162a;
@@ -52,7 +43,6 @@
                 radial-gradient(ellipse at 80% 50%, rgba(0, 212, 255, 0.04) 0%, transparent 60%);
         }
 
-        /* ===== СКРОЛЛ ===== */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
         ::-webkit-scrollbar-thumb { background: var(--accent-gold); border-radius: 4px; }
@@ -67,7 +57,6 @@
             border-bottom: 1px solid var(--border-color);
             padding: 10px 0;
         }
-
         .header-content {
             max-width: 1440px;
             margin: 0 auto;
@@ -75,8 +64,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-
         .logo {
             display: flex;
             align-items: center;
@@ -101,13 +91,12 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-
         .header-right {
             display: flex;
             align-items: center;
             gap: 14px;
+            flex-wrap: wrap;
         }
-
         .balance-box {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -128,7 +117,6 @@
             color: var(--accent-green);
         }
         .balance-box .amount.blue { color: var(--accent-blue); }
-
         .user-btn {
             display: flex;
             align-items: center;
@@ -154,7 +142,7 @@
         }
         .user-btn .name { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
 
-        /* ===== БАНК И СТАТУС ===== */
+        /* ===== СТАТУС БАР ===== */
         .status-bar {
             max-width: 1440px;
             margin: 0 auto;
@@ -193,6 +181,7 @@
             display: flex;
             gap: 4px;
             flex-wrap: wrap;
+            justify-content: center;
         }
         .nav-btn {
             padding: 8px 18px;
@@ -222,19 +211,11 @@
             grid-template-columns: 1fr 320px;
             gap: 20px;
         }
+        @media (max-width: 1024px) { .main { grid-template-columns: 1fr; } }
 
-        @media (max-width: 1024px) {
-            .main { grid-template-columns: 1fr; }
-        }
+        /* ===== ИГРЫ ===== */
+        .games-area { display: flex; flex-direction: column; gap: 20px; }
 
-        /* ===== ЛЕВАЯ КОЛОНКА (ИГРЫ) ===== */
-        .games-area {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* ===== БАННЕР ===== */
         .banner {
             background: linear-gradient(135deg, rgba(139, 0, 255, 0.08), rgba(0, 212, 255, 0.04));
             border: 1px solid var(--border-color);
@@ -253,7 +234,7 @@
         }
         .banner h2 span { color: var(--accent-gold); }
         .banner p { color: var(--text-secondary); font-size: 14px; }
-        .banner .btn-bonus {
+        .btn-bonus {
             padding: 10px 28px;
             background: linear-gradient(45deg, var(--accent-gold), #ffaa00);
             border: none;
@@ -264,9 +245,8 @@
             cursor: pointer;
             transition: var(--transition);
         }
-        .banner .btn-bonus:hover { transform: scale(1.03); box-shadow: 0 0 40px rgba(255, 215, 0, 0.15); }
+        .btn-bonus:hover { transform: scale(1.03); box-shadow: 0 0 40px rgba(255, 215, 0, 0.15); }
 
-        /* ===== ИГРЫ ===== */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -292,7 +272,6 @@
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 14px;
         }
-
         .game-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -304,64 +283,28 @@
             position: relative;
             overflow: hidden;
         }
-        .game-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255, 215, 0, 0.03), transparent);
-            opacity: 0;
-            transition: opacity 0.4s;
-        }
         .game-card:hover {
             transform: translateY(-4px);
             border-color: var(--accent-gold);
             background: var(--bg-card-hover);
             box-shadow: var(--shadow);
         }
-        .game-card:hover::before { opacity: 1; }
         .game-card .icon { font-size: 40px; display: block; margin-bottom: 8px; }
-        .game-card .name {
-            font-size: 13px;
-            font-weight: 600;
-            display: block;
-        }
-        .game-card .tag {
-            font-size: 9px;
-            color: var(--text-secondary);
-            display: block;
-            margin-top: 4px;
-        }
+        .game-card .name { font-size: 13px; font-weight: 600; display: block; }
+        .game-card .tag { font-size: 9px; color: var(--text-secondary); display: block; margin-top: 4px; }
         .game-card .badge-hot {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: var(--accent-red);
-            color: #fff;
-            font-size: 7px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            position: absolute; top: 8px; right: 8px;
+            background: var(--accent-red); color: #fff;
+            font-size: 7px; padding: 2px 8px; border-radius: 10px;
+            font-weight: 700; text-transform: uppercase;
         }
         .game-card .badge-new {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: var(--accent-green);
-            color: #000;
-            font-size: 7px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            position: absolute; top: 8px; right: 8px;
+            background: var(--accent-green); color: #000;
+            font-size: 7px; padding: 2px 8px; border-radius: 10px;
+            font-weight: 700; text-transform: uppercase;
         }
 
-        /* ===== СТАТИСТИКА ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -384,21 +327,11 @@
         .stat-card .stat-value.gold { color: var(--accent-gold); }
         .stat-card .stat-value.green { color: var(--accent-green); }
         .stat-card .stat-value.blue { color: var(--accent-blue); }
-        .stat-card .stat-label {
-            font-size: 10px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .stat-card .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* ===== ПРАВАЯ КОЛОНКА (ЧАТ) ===== */
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
+        /* ===== САЙДБАР ===== */
+        .sidebar { display: flex; flex-direction: column; gap: 16px; }
 
-        /* ===== ОНЛАЙН ===== */
         .online-box {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -408,13 +341,7 @@
             justify-content: space-between;
             align-items: center;
         }
-        .online-box .online-label {
-            font-size: 13px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .online-box .online-label { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .online-box .online-count {
             font-family: 'Orbitron', monospace;
             font-size: 20px;
@@ -422,7 +349,6 @@
             color: var(--accent-green);
         }
 
-        /* ===== ЧАТ РЕЙН ===== */
         .rain-box {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -430,11 +356,7 @@
             padding: 14px 18px;
             text-align: center;
         }
-        .rain-box .rain-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
+        .rain-box .rain-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
         .rain-box .rain-title span { color: var(--accent-gold); }
         .rain-box .timer {
             font-family: 'Orbitron', monospace;
@@ -443,97 +365,8 @@
             color: var(--accent-gold);
             margin: 6px 0;
         }
-        .rain-box .timer span {
-            background: rgba(255, 215, 0, 0.06);
-            padding: 2px 10px;
-            border-radius: 6px;
-            margin: 0 2px;
-        }
+        .rain-box .timer span { background: rgba(255, 215, 0, 0.06); padding: 2px 10px; border-radius: 6px; margin: 0 2px; }
 
-        /* ===== ЧАТ ===== */
-        .chat-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 14px 16px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 320px;
-        }
-        .chat-box .chat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .chat-box .chat-header h4 {
-            font-size: 14px;
-            font-weight: 700;
-        }
-        .chat-box .chat-header .online-badge {
-            font-size: 10px;
-            color: var(--text-secondary);
-        }
-        .chat-box .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            max-height: 280px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .chat-box .chat-messages .msg {
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.02);
-        }
-        .chat-box .chat-messages .msg .user {
-            color: var(--accent-blue);
-            font-weight: 600;
-        }
-        .chat-box .chat-messages .msg .text {
-            color: var(--text-secondary);
-        }
-        .chat-box .chat-messages .msg .time {
-            font-size: 9px;
-            color: var(--text-muted);
-            margin-left: 8px;
-        }
-        .chat-box .chat-input {
-            display: flex;
-            gap: 6px;
-            margin-top: 10px;
-        }
-        .chat-box .chat-input input {
-            flex: 1;
-            padding: 8px 14px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 12px;
-            font-family: 'Inter', sans-serif;
-        }
-        .chat-box .chat-input input:focus {
-            outline: none;
-            border-color: var(--accent-gold);
-        }
-        .chat-box .chat-input button {
-            padding: 8px 16px;
-            background: var(--accent-gold);
-            border: none;
-            border-radius: 8px;
-            color: #000;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 13px;
-            transition: var(--transition);
-        }
-        .chat-box .chat-input button:hover { transform: scale(1.02); }
-
-        /* ===== ИСТОРИЯ СТАВОК ===== */
         .bets-box {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -546,24 +379,13 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .bets-box .bets-header h4 {
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .bets-box .bets-header .filter {
-            display: flex;
-            gap: 4px;
-        }
+        .bets-box .bets-header h4 { font-size: 13px; font-weight: 600; }
+        .bets-box .bets-header .filter { display: flex; gap: 4px; }
         .bets-box .bets-header .filter button {
-            padding: 2px 10px;
-            background: transparent;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            color: var(--text-secondary);
-            font-size: 9px;
-            cursor: pointer;
-            transition: var(--transition);
-            font-weight: 600;
+            padding: 2px 10px; background: transparent;
+            border: 1px solid var(--border-color); border-radius: 4px;
+            color: var(--text-secondary); font-size: 9px; cursor: pointer;
+            transition: var(--transition); font-weight: 600;
         }
         .bets-box .bets-header .filter button.active {
             background: var(--accent-gold-dim);
@@ -581,45 +403,83 @@
             font-size: 11px;
             align-items: center;
         }
-        .bet-row .bet-user {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        .bet-row .bet-game {
-            color: var(--text-secondary);
-            font-size: 10px;
-        }
-        .bet-row .bet-amount {
-            font-weight: 700;
-            font-family: 'Orbitron', monospace;
-        }
+        .bet-row .bet-user { font-weight: 600; color: var(--text-primary); }
+        .bet-row .bet-game { color: var(--text-secondary); font-size: 10px; }
+        .bet-row .bet-amount { font-weight: 700; font-family: 'Orbitron', monospace; }
         .bet-row .bet-amount.win { color: var(--accent-green); }
         .bet-row .bet-amount.loss { color: var(--accent-red); }
-        .bet-row .bet-time {
-            color: var(--text-muted);
-            font-size: 9px;
-        }
+        .bet-row .bet-time { color: var(--text-muted); font-size: 9px; }
 
-        /* ===== КОНТЕЙНЕР ИГР ===== */
-        .game-container {
-            display: none;
-            animation: fadeIn 0.4s ease;
+        .chat-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 320px;
         }
-        .game-container.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .chat-box .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
+        .chat-box .chat-header h4 { font-size: 14px; font-weight: 700; }
+        .chat-box .chat-header .online-badge { font-size: 10px; color: var(--text-secondary); }
+        .chat-box .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .chat-box .chat-messages .msg {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .chat-box .chat-messages .msg .user { color: var(--accent-blue); font-weight: 600; }
+        .chat-box .chat-messages .msg .text { color: var(--text-secondary); }
+        .chat-box .chat-messages .msg .time { font-size: 9px; color: var(--text-muted); margin-left: 8px; }
+        .chat-box .chat-input {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .chat-box .chat-input input {
+            flex: 1;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+        }
+        .chat-box .chat-input input:focus { outline: none; border-color: var(--accent-gold); }
+        .chat-box .chat-input button {
+            padding: 8px 16px;
+            background: var(--accent-gold);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+            transition: var(--transition);
+        }
+        .chat-box .chat-input button:hover { transform: scale(1.02); }
 
         /* ===== МОДАЛКА ===== */
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(10px);
             z-index: 2000;
@@ -637,34 +497,20 @@
             position: relative;
             animation: modalIn 0.3s ease;
         }
-        @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .modal-close {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            font-size: 24px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            background: none;
-            border: none;
+            position: absolute; top: 12px; right: 16px;
+            font-size: 24px; color: var(--text-secondary);
+            cursor: pointer; background: none; border: none;
             transition: var(--transition);
         }
         .modal-close:hover { color: var(--text-primary); }
 
-        /* ===== УВЕДОМЛЕНИЯ ===== */
         .notifications {
-            position: fixed;
-            top: 80px;
-            right: 20px;
+            position: fixed; top: 80px; right: 20px;
             z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-width: 340px;
-            width: 100%;
+            display: flex; flex-direction: column;
+            gap: 8px; max-width: 340px; width: 100%;
         }
         .notification {
             padding: 12px 18px;
@@ -684,7 +530,38 @@
         .notification.info { border-left: 4px solid var(--accent-blue); }
         .notification.warning { border-left: 4px solid var(--accent-gold); }
 
-        /* ===== АДАПТИВ ===== */
+        .game-container { display: none; animation: fadeIn 0.4s ease; }
+        .game-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .game-section { display: block; }
+
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg-primary);
+            z-index: 99999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #loadingOverlay.active { display: flex; }
+        .loader {
+            width: 50px; height: 50px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+        }
+
         @media (max-width: 768px) {
             .header-content { flex-wrap: wrap; gap: 8px; }
             .logo-text { font-size: 18px; }
@@ -699,7 +576,6 @@
             .sidebar { order: -1; }
             .bet-row { grid-template-columns: 1fr 1fr 1fr; font-size: 10px; }
         }
-
         @media (max-width: 480px) {
             .game-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
             .game-card { padding: 14px 10px; }
@@ -707,65 +583,34 @@
             .game-card .name { font-size: 11px; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
         }
-
-        /* ===== ЗАГРУЗКА ===== */
-        #loadingOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-primary);
-            z-index: 99999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            gap: 20px;
-        }
-        #loadingOverlay.active { display: flex; }
-        .loader {
-            width: 50px;
-            height: 50px;
-            border: 3px solid var(--border-color);
-            border-top: 3px solid var(--accent-gold);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        .loader-text {
-            font-family: 'Orbitron', monospace;
-            font-size: 14px;
-            color: var(--text-secondary);
-            letter-spacing: 3px;
-        }
     </style>
 </head>
 <body>
 
-    <!-- ===== ЗАГРУЗКА ===== -->
+    <!-- ЗАГРУЗКА -->
     <div id="loadingOverlay" class="active">
         <div class="loader"></div>
         <div class="loader-text">ЗАГРУЗКА...</div>
     </div>
 
-    <!-- ===== УВЕДОМЛЕНИЯ ===== -->
+    <!-- УВЕДОМЛЕНИЯ -->
     <div class="notifications" id="notifications"></div>
 
-    <!-- ===== ХЕДЕР ===== -->
+    <!-- ХЕДЕР -->
     <header class="header">
         <div class="header-content">
             <div class="logo">
                 <span class="logo-icon">🎰</span>
-                <span class="logo-text">Casino</span>
-                <span class="logo-badge">✦ LIVE</span>
+                <span class="logo-text">RuWin</span>
+                <span class="logo-badge">✦ PREMIUM</span>
             </div>
             <div class="header-right">
                 <div class="balance-box">
-                    <span class="label">💰 Баланс</span>
+                    <span class="label">💰 БАЛАНС</span>
                     <div class="amount" id="balance">10 000 ₽</div>
                 </div>
                 <div class="balance-box">
-                    <span class="label">🏆 Уровень</span>
+                    <span class="label">🏆 УРОВЕНЬ</span>
                     <div class="amount blue" id="level">1</div>
                 </div>
                 <div class="user-btn" onclick="toggleProfile()">
@@ -774,8 +619,6 @@
                 </div>
             </div>
         </div>
-        
-        <!-- СТАТУС БАР -->
         <div class="status-bar">
             <div class="stat-item">
                 <span class="status-dot online"></span>
@@ -796,7 +639,7 @@
         </div>
     </header>
 
-    <!-- ===== НАВИГАЦИЯ ===== -->
+    <!-- НАВИГАЦИЯ -->
     <nav class="nav" id="mainNav">
         <button class="nav-btn active" data-game="lobby"><span class="icon">🏠</span> Лобби</button>
         <button class="nav-btn" data-game="roulette"><span class="icon">🎰</span> Рулетка</button>
@@ -810,15 +653,14 @@
         <button class="nav-btn" data-game="mines"><span class="icon">💣</span> Майнс</button>
     </nav>
 
-    <!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
     <div class="main">
 
-        <!-- ===== ЛЕВАЯ КОЛОНКА ===== -->
+        <!-- ЛЕВАЯ КОЛОНКА -->
         <div class="games-area">
 
             <!-- ЛОББИ -->
-            <div class="game-section active" id="lobby">
-                <!-- БАННЕР -->
+            <div class="game-section" id="lobby">
                 <div class="banner">
                     <div>
                         <h2>🎰 <span>ДОБРО ПОЖАЛОВАТЬ</span></h2>
@@ -827,7 +669,6 @@
                     <button class="btn-bonus" onclick="showBonus()">🎁 +80 Бонус</button>
                 </div>
 
-                <!-- ПОПУЛЯРНЫЕ ИГРЫ -->
                 <div class="section-header">
                     <h3>🔥 Популярные игры</h3>
                     <span class="see-all">Смотреть все →</span>
@@ -883,7 +724,6 @@
                     </div>
                 </div>
 
-                <!-- СТАТИСТИКА -->
                 <div class="section-header" style="margin-top:10px;">
                     <h3>📊 Статистика</h3>
                 </div>
@@ -912,18 +752,14 @@
 
         </div>
 
-        <!-- ===== ПРАВАЯ КОЛОНКА (САЙДБАР) ===== -->
+        <!-- ПРАВАЯ КОЛОНКА -->
         <div class="sidebar">
 
-            <!-- ОНЛАЙН -->
             <div class="online-box">
-                <span class="online-label">
-                    <span class="status-dot online"></span> Онлайн
-                </span>
+                <span class="online-label"><span class="status-dot online"></span> Онлайн</span>
                 <span class="online-count" id="onlineCountSidebar">2 000</span>
             </div>
 
-            <!-- ЧАТ РЕЙН -->
             <div class="rain-box">
                 <div class="rain-title">🎰 Дождь в чате каждые <span>5 часов</span></div>
                 <div class="timer">
@@ -931,7 +767,6 @@
                 </div>
             </div>
 
-            <!-- ИСТОРИЯ СТАВОК -->
             <div class="bets-box">
                 <div class="bets-header">
                     <h4>📊 Последние ставки</h4>
@@ -942,71 +777,25 @@
                     </div>
                 </div>
                 <div id="betsList">
-                    <div class="bet-row">
-                        <span class="bet-user">🎰 Player</span>
-                        <span class="bet-game">Рулетка</span>
-                        <span class="bet-amount win">+2 500 ₽</span>
-                        <span class="bet-time">3 мин</span>
-                    </div>
-                    <div class="bet-row">
-                        <span class="bet-user">🃏 Lucky</span>
-                        <span class="bet-game">Блэкджек</span>
-                        <span class="bet-amount win">+1 200 ₽</span>
-                        <span class="bet-time">16 мин</span>
-                    </div>
-                    <div class="bet-row">
-                        <span class="bet-user">✈️ Pilot</span>
-                        <span class="bet-game">Aviator</span>
-                        <span class="bet-amount loss">-500 ₽</span>
-                        <span class="bet-time">9 мин</span>
-                    </div>
-                    <div class="bet-row">
-                        <span class="bet-user">🎲 Dice</span>
-                        <span class="bet-game">Кости</span>
-                        <span class="bet-amount win">+3 000 ₽</span>
-                        <span class="bet-time">20 мин</span>
-                    </div>
-                    <div class="bet-row">
-                        <span class="bet-user">🎯 Darts</span>
-                        <span class="bet-game">Дартс</span>
-                        <span class="bet-amount loss">-300 ₽</span>
-                        <span class="bet-time">22 мин</span>
-                    </div>
+                    <div class="bet-row"><span class="bet-user">🎰 Player</span><span class="bet-game">Рулетка</span><span class="bet-amount win">+2 500 ₽</span><span class="bet-time">3 мин</span></div>
+                    <div class="bet-row"><span class="bet-user">🃏 Lucky</span><span class="bet-game">Блэкджек</span><span class="bet-amount win">+1 200 ₽</span><span class="bet-time">16 мин</span></div>
+                    <div class="bet-row"><span class="bet-user">✈️ Pilot</span><span class="bet-game">Aviator</span><span class="bet-amount loss">-500 ₽</span><span class="bet-time">9 мин</span></div>
+                    <div class="bet-row"><span class="bet-user">🎲 Dice</span><span class="bet-game">Кости</span><span class="bet-amount win">+3 000 ₽</span><span class="bet-time">20 мин</span></div>
+                    <div class="bet-row"><span class="bet-user">🎯 Darts</span><span class="bet-game">Дартс</span><span class="bet-amount loss">-300 ₽</span><span class="bet-time">22 мин</span></div>
                 </div>
             </div>
 
-            <!-- ЧАТ -->
             <div class="chat-box">
                 <div class="chat-header">
                     <h4>💬 Чат</h4>
                     <span class="online-badge">🟢 200 онлайн</span>
                 </div>
                 <div class="chat-messages" id="chatMessages">
-                    <div class="msg">
-                        <span class="user">🎰 Ultrahero92:</span>
-                        <span class="text">Кто сегодня выигрывает? 🍀</span>
-                        <span class="time">только что</span>
-                    </div>
-                    <div class="msg">
-                        <span class="user">🃏 Mured:</span>
-                        <span class="text">Удача на моей стороне! 🚀</span>
-                        <span class="time">1 мин</span>
-                    </div>
-                    <div class="msg">
-                        <span class="user">🎲 LuckyDice:</span>
-                        <span class="text">Ставлю всё на красное! 🔴</span>
-                        <span class="time">3 мин</span>
-                    </div>
-                    <div class="msg">
-                        <span class="user">✈️ PilotPro:</span>
-                        <span class="text">Кто летит со мной? ✈️</span>
-                        <span class="time">5 мин</span>
-                    </div>
-                    <div class="msg">
-                        <span class="user">🎯 Sniper:</span>
-                        <span class="text">Точность решает всё! 🎯</span>
-                        <span class="time">8 мин</span>
-                    </div>
+                    <div class="msg"><span class="user">🎰 Ultrahero92:</span><span class="text">Кто сегодня выигрывает? 🍀</span><span class="time">только что</span></div>
+                    <div class="msg"><span class="user">🃏 Mured:</span><span class="text">Удача на моей стороне! 🚀</span><span class="time">1 мин</span></div>
+                    <div class="msg"><span class="user">🎲 LuckyDice:</span><span class="text">Ставлю всё на красное! 🔴</span><span class="time">3 мин</span></div>
+                    <div class="msg"><span class="user">✈️ PilotPro:</span><span class="text">Кто летит со мной? ✈️</span><span class="time">5 мин</span></div>
+                    <div class="msg"><span class="user">🎯 Sniper:</span><span class="text">Точность решает всё! 🎯</span><span class="time">8 мин</span></div>
                 </div>
                 <div class="chat-input">
                     <input type="text" id="chatInput" placeholder="Напишите сообщение..." onkeypress="sendChatOnEnter(event)">
@@ -1018,7 +807,7 @@
 
     </div>
 
-    <!-- ===== МОДАЛКА ===== -->
+    <!-- МОДАЛКА -->
     <div class="modal" id="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">×</button>
@@ -1026,7 +815,6 @@
         </div>
     </div>
 
-    <!-- ===== СКРИПТЫ ===== -->
     <script>
         // ============================================================
         // ПОЛНЫЙ JAVASCRIPT
@@ -1036,29 +824,15 @@
         let userBalance = 10000;
         let userLevel = 1;
 
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
         document.addEventListener('DOMContentLoaded', function() {
-            // Скрываем загрузку
             setTimeout(() => {
                 document.getElementById('loadingOverlay').classList.remove('active');
             }, 800);
-
-            // Запускаем таймер
             startRainTimer();
-
-            // Навигация
             setupNavigation();
-
-            // Карточки игр
             setupGameCards();
-
-            // Обновление UI
             updateUI({ balance: 10000, level: 1, total_bets: 0, wins: 0, winrate: 0 });
-
-            // Приветствие
-            showNotification('🎰 Добро пожаловать в Casino!', 'success');
-
-            // Имитация онлайн
+            showNotification('🎰 Добро пожаловать в RuWin Casino!', 'success');
             setInterval(() => {
                 const count = 1800 + Math.floor(Math.random() * 400);
                 document.getElementById('onlineCount').textContent = count.toLocaleString();
@@ -1066,44 +840,25 @@
             }, 30000);
         });
 
-        // ===== ТАЙМЕР ДОЖДЯ =====
         function startRainTimer() {
             let hours = 3, minutes = 20, seconds = 55;
-
             setInterval(() => {
                 seconds--;
-                if (seconds < 0) {
-                    seconds = 59;
-                    minutes--;
-                    if (minutes < 0) {
-                        minutes = 59;
-                        hours--;
-                        if (hours < 0) {
-                            hours = 5;
-                            minutes = 0;
-                            seconds = 0;
-                            // ДОЖДЬ!
-                            showNotification('🎰 ДОЖДЬ В ЧАТЕ! Введите "!rain" для участия!', 'warning');
-                        }
-                    }
-                }
+                if (seconds < 0) { seconds = 59; minutes--; if (minutes < 0) { minutes = 59; hours--; if (hours < 0) { hours = 5; minutes = 0; seconds = 0; showNotification('🎰 ДОЖДЬ В ЧАТЕ! Введите "!rain" для участия!', 'warning'); } } }
                 document.getElementById('rainHours').textContent = String(hours).padStart(2, '0');
                 document.getElementById('rainMinutes').textContent = String(minutes).padStart(2, '0');
                 document.getElementById('rainSeconds').textContent = String(seconds).padStart(2, '0');
             }, 1000);
         }
 
-        // ===== НАВИГАЦИЯ =====
         function setupNavigation() {
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
-
                     const game = this.dataset.game;
                     const lobby = document.getElementById('lobby');
                     const container = document.getElementById('gameContainer');
-
                     if (game === 'lobby') {
                         lobby.style.display = 'block';
                         container.classList.remove('active');
@@ -1117,7 +872,6 @@
             });
         }
 
-        // ===== КАРТОЧКИ ИГР =====
         function setupGameCards() {
             document.querySelectorAll('.game-card').forEach(card => {
                 card.addEventListener('click', function() {
@@ -1128,10 +882,8 @@
             });
         }
 
-        // ===== ЗАГРУЗКА ИГР =====
         function loadGame(game) {
             const container = document.getElementById('gameContainer');
-
             const games = {
                 roulette: { icon: '🎰', name: 'РУЛЕТКА' },
                 slots: { icon: '🎲', name: 'СЛОТЫ' },
@@ -1143,9 +895,7 @@
                 dice: { icon: '🎲', name: 'КОСТИ' },
                 mines: { icon: '💣', name: 'МАЙНС' }
             };
-
             const gameInfo = games[game] || { icon: '🎮', name: game.toUpperCase() };
-
             container.innerHTML = `
                 <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius);padding:30px;max-width:920px;margin:0 auto;">
                     <h2 style="font-family:'Orbitron',monospace;font-size:26px;text-align:center;background:linear-gradient(45deg,var(--accent-gold),var(--accent-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:24px;">
@@ -1164,95 +914,53 @@
             `;
         }
 
-        // ===== ОБНОВЛЕНИЕ UI =====
         function updateUI(stats) {
             if (!stats) return;
-
-            if (document.getElementById('balance')) {
-                document.getElementById('balance').textContent = (stats.balance || 10000).toLocaleString() + ' ₽';
-            }
-            if (document.getElementById('level')) {
-                document.getElementById('level').textContent = stats.level || 1;
-            }
-            if (document.getElementById('totalBets')) {
-                document.getElementById('totalBets').textContent = stats.total_bets || 0;
-            }
-            if (document.getElementById('totalBetsStat')) {
-                document.getElementById('totalBetsStat').textContent = stats.total_bets || 0;
-            }
-            if (document.getElementById('winsStat')) {
-                document.getElementById('winsStat').textContent = stats.wins || 0;
-            }
-            if (document.getElementById('winrateStat')) {
-                document.getElementById('winrateStat').textContent = (stats.winrate || 0) + '%';
-            }
-            if (document.getElementById('levelStat')) {
-                document.getElementById('levelStat').textContent = stats.level || 1;
-            }
+            if (document.getElementById('balance')) document.getElementById('balance').textContent = (stats.balance || 10000).toLocaleString() + ' ₽';
+            if (document.getElementById('level')) document.getElementById('level').textContent = stats.level || 1;
+            if (document.getElementById('totalBets')) document.getElementById('totalBets').textContent = stats.total_bets || 0;
+            if (document.getElementById('totalBetsStat')) document.getElementById('totalBetsStat').textContent = stats.total_bets || 0;
+            if (document.getElementById('winsStat')) document.getElementById('winsStat').textContent = stats.wins || 0;
+            if (document.getElementById('winrateStat')) document.getElementById('winrateStat').textContent = (stats.winrate || 0) + '%';
+            if (document.getElementById('levelStat')) document.getElementById('levelStat').textContent = stats.level || 1;
         }
 
-        // ===== УВЕДОМЛЕНИЯ =====
         function showNotification(message, type = 'info', duration = 4000) {
             const container = document.getElementById('notifications');
             const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
+            notification.className = 'notification ' + type;
             notification.textContent = message;
             container.appendChild(notification);
-
             setTimeout(() => notification.classList.add('show'), 10);
-
-            const timeout = setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => notification.remove(), 400);
-            }, duration);
-
-            notification.addEventListener('click', () => {
-                clearTimeout(timeout);
-                notification.classList.remove('show');
-                setTimeout(() => notification.remove(), 400);
-            });
+            const timeout = setTimeout(() => { notification.classList.remove('show'); setTimeout(() => notification.remove(), 400); }, duration);
+            notification.addEventListener('click', () => { clearTimeout(timeout); notification.classList.remove('show'); setTimeout(() => notification.remove(), 400); });
         }
 
-        // ===== ЧАТ =====
         function sendChat() {
             const input = document.getElementById('chatInput');
             const msg = input.value.trim();
             if (!msg) return;
-
             const container = document.getElementById('chatMessages');
             const div = document.createElement('div');
             div.className = 'msg';
             const username = document.getElementById('username').textContent || 'Игрок';
-            div.innerHTML = `
-                <span class="user">👤 ${username}:</span>
-                <span class="text">${msg}</span>
-                <span class="time">только что</span>
-            `;
+            div.innerHTML = `<span class="user">👤 ${username}:</span><span class="text">${msg}</span><span class="time">только что</span>`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
             input.value = '';
-
-            // Ответ бота (для имитации)
             if (msg.toLowerCase().includes('!rain')) {
                 setTimeout(() => {
                     const botDiv = document.createElement('div');
                     botDiv.className = 'msg';
-                    botDiv.innerHTML = `
-                        <span class="user" style="color:var(--accent-gold);">🎰 Бот:</span>
-                        <span class="text">🎉 Вы участвуете в дожде! Удачи!</span>
-                        <span class="time">только что</span>
-                    `;
+                    botDiv.innerHTML = `<span class="user" style="color:var(--accent-gold);">🎰 Бот:</span><span class="text">🎉 Вы участвуете в дожде! Удачи!</span><span class="time">только что</span>`;
                     container.appendChild(botDiv);
                     container.scrollTop = container.scrollHeight;
                 }, 1000);
             }
         }
 
-        function sendChatOnEnter(event) {
-            if (event.key === 'Enter') sendChat();
-        }
+        function sendChatOnEnter(event) { if (event.key === 'Enter') sendChat(); }
 
-        // ===== БОНУС =====
         function showBonus() {
             showModal(`
                 <div style="text-align:center;">
@@ -1267,7 +975,6 @@
             `);
         }
 
-        // ===== ПРОФИЛЬ =====
         function toggleProfile() {
             showModal(`
                 <div style="text-align:center;">
@@ -1283,14 +990,10 @@
             `);
         }
 
-        // ===== МОДАЛКА =====
         function showModal(content) {
             const modal = document.getElementById('modal');
             const body = document.getElementById('modalBody');
-            if (modal && body) {
-                body.innerHTML = content;
-                modal.classList.add('active');
-            }
+            if (modal && body) { body.innerHTML = content; modal.classList.add('active'); }
         }
 
         function closeModal() {
@@ -1298,30 +1001,19 @@
             if (modal) modal.classList.remove('active');
         }
 
-        // Закрытие по клику вне модалки
-        document.getElementById('modal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
+        document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
-        // ===== ФИЛЬТР СТАВОК =====
         function filterBets(type) {
             document.querySelectorAll('.bets-box .filter button').forEach(b => b.classList.remove('active'));
             document.querySelector(`.bets-box .filter button[onclick="filterBets('${type}')"]`).classList.add('active');
-
-            const rows = document.querySelectorAll('.bet-row');
-            rows.forEach(row => {
+            document.querySelectorAll('.bet-row').forEach(row => {
                 const amount = row.querySelector('.bet-amount');
-                if (type === 'all') {
-                    row.style.display = 'grid';
-                } else if (type === 'win') {
-                    row.style.display = amount.classList.contains('win') ? 'grid' : 'none';
-                } else if (type === 'loss') {
-                    row.style.display = amount.classList.contains('loss') ? 'grid' : 'none';
-                }
+                if (type === 'all') { row.style.display = 'grid'; }
+                else if (type === 'win') { row.style.display = amount && amount.classList.contains('win') ? 'grid' : 'none'; }
+                else if (type === 'loss') { row.style.display = amount && amount.classList.contains('loss') ? 'grid' : 'none'; }
             });
         }
 
-        // Глобальные функции для HTML
         window.sendChat = sendChat;
         window.sendChatOnEnter = sendChatOnEnter;
         window.showBonus = showBonus;
@@ -1333,7 +1025,7 @@
         window.updateUI = updateUI;
         window.loadGame = loadGame;
 
-        console.log('✅ Casino загружен!');
+        console.log('✅ RuWin Casino загружен!');
     </script>
 
 </body>
