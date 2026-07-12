@@ -12,6 +12,7 @@ import os
 import base64
 from PIL import Image
 import io
+import subprocess
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
@@ -30,7 +31,6 @@ def init_db():
     conn = sqlite3.connect('ruwin.db')
     c = conn.cursor()
     
-    # Пользователи
     c.execute('''CREATE TABLE IF NOT EXISTS users
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id TEXT UNIQUE,
@@ -49,7 +49,6 @@ def init_db():
                   created_at TEXT,
                   last_login TEXT)''')
     
-    # История игр
     c.execute('''CREATE TABLE IF NOT EXISTS game_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id TEXT,
@@ -59,7 +58,6 @@ def init_db():
                   result TEXT,
                   timestamp TEXT)''')
     
-    # Пул казино (общий фонд)
     c.execute('''CREATE TABLE IF NOT EXISTS casino_pool
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   balance INTEGER DEFAULT 1000000,
@@ -107,155 +105,6 @@ def get_pool_stats():
         return {'balance': row[0], 'total_in': row[1], 'total_out': row[2], 'commission': row[3]}
     return {'balance': 1000000, 'total_in': 0, 'total_out': 0, 'commission': 0}
 
-# ===== АДМИН-ПАНЕЛЬ =====
-
-# Проверка админа
-def is_admin(user_id):
-    conn = sqlite3.connect('ruwin.db')
-    c = conn.cursor()
-    c.execute("SELECT username FROM users WHERE user_id = ?", (user_id,))
-    row = c.fetchone()
-    conn.close()
-    return row and row[0] == 'mrdante'
-
-# Получить всех игроков
-@app.route('/api/admin/users', methods=['POST'])
-def admin_get_users():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('user_id')
-        
-        if not is_admin(user_id):
-            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
-        
-        conn = sqlite3.connect('ruwin.db')
-        c = conn.cursor()
-        c.execute("SELECT user_id, username, email, balance, total_bets, wins, level, xp, created_at, last_login FROM users ORDER BY balance DESC")
-        users = []
-        for row in c.fetchall():
-            users.append({
-                'user_id': row[0],
-                'username': row[1],
-                'email': row[2],
-                'balance': row[3],
-                'total_bets': row[4],
-                'wins': row[5],
-                'level': row[6],
-                'xp': row[7],
-                'created_at': row[8],
-                'last_login': row[9]
-            })
-        conn.close()
-        return jsonify({'success': True, 'users': users})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Обнулить баланс игрока
-@app.route('/api/admin/reset_balance', methods=['POST'])
-def admin_reset_balance():
-    try:
-        data = request.get_json(force=True)
-        admin_id = data.get('admin_id')
-        target_user_id = data.get('target_user_id')
-        
-        if not is_admin(admin_id):
-            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
-        
-        conn = sqlite3.connect('ruwin.db')
-        c = conn.cursor()
-        c.execute("UPDATE users SET balance = 10000 WHERE user_id = ?", (target_user_id,))
-        conn.commit()
-        conn.close()
-        
-        # Обновляем кеш
-        if target_user_id in users:
-            users[target_user_id].balance = 10000
-            users[target_user_id].save_to_db()
-        
-        return jsonify({'success': True, 'message': 'Баланс обнулён до 10 000 ₽'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Забанить игрока (удалить аккаунт)
-@app.route('/api/admin/ban_user', methods=['POST'])
-def admin_ban_user():
-    try:
-        data = request.get_json(force=True)
-        admin_id = data.get('admin_id')
-        target_user_id = data.get('target_user_id')
-        
-        if not is_admin(admin_id):
-            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
-        
-        if target_user_id == admin_id:
-            return jsonify({'success': False, 'error': 'Нельзя забанить самого себя'}), 400
-        
-        conn = sqlite3.connect('ruwin.db')
-        c = conn.cursor()
-        c.execute("DELETE FROM users WHERE user_id = ?", (target_user_id,))
-        c.execute("DELETE FROM game_history WHERE user_id = ?", (target_user_id,))
-        conn.commit()
-        conn.close()
-        
-        # Удаляем из кеша
-        if target_user_id in users:
-            del users[target_user_id]
-        
-        return jsonify({'success': True, 'message': 'Игрок забанен'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Перезагрузить сайт
-@app.route('/api/admin/restart', methods=['POST'])
-def admin_restart():
-    try:
-        data = request.get_json(force=True)
-        admin_id = data.get('admin_id')
-        
-        if not is_admin(admin_id):
-            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
-        
-        # Перезапуск через systemd
-        import subprocess
-        subprocess.Popen(['sudo', 'systemctl', 'restart', 'ruwin'])
-        
-        return jsonify({'success': True, 'message': 'Сайт перезагружается...'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Получить статистику пула
-@app.route('/api/admin/pool_stats', methods=['POST'])
-def admin_pool_stats():
-    try:
-        data = request.get_json(force=True)
-        admin_id = data.get('admin_id')
-        
-        if not is_admin(admin_id):
-            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
-        
-        pool_stats = get_pool_stats()
-        return jsonify({'success': True, 'pool': pool_stats})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Пополнить пул
-@app.route('/api/admin/add_to_pool', methods=['POST'])
-def admin_add_to_pool():
-    try:
-        data = request.get_json(force=True)
-        admin_id = data.get('admin_id')
-        amount = int(data.get('amount', 0))
-        
-        if not is_admin(admin_id):
-            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
-        
-        if amount <= 0:
-            return jsonify({'success': False, 'error': 'Сумма должна быть положительной'}), 400
-        
-        update_pool(amount)
-        return jsonify({'success': True, 'message': f'Пул пополнен на {amount} ₽', 'pool_balance': get_pool_balance()})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
 # ===== КЛАСС ПОЛЬЗОВАТЕЛЯ =====
 class User:
     def __init__(self, user_id):
@@ -395,6 +244,14 @@ def get_client_ip():
 
 def is_vpn_user(ip_address):
     return ip_address in ['147.90.14.196']
+
+def is_admin(user_id):
+    conn = sqlite3.connect('ruwin.db')
+    c = conn.cursor()
+    c.execute("SELECT username FROM users WHERE user_id = ?", (user_id,))
+    row = c.fetchone()
+    conn.close()
+    return row and row[0] == 'mrdante'
 
 # ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
 @app.route('/')
@@ -584,9 +441,118 @@ def get_leaderboard():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ ИГРЫ ============
+# ===== АДМИН-ПАНЕЛЬ =====
+@app.route('/api/admin/users', methods=['POST'])
+def admin_get_users():
+    try:
+        data = request.get_json(force=True)
+        user_id = data.get('user_id')
+        if not is_admin(user_id):
+            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
+        c.execute("SELECT user_id, username, email, balance, total_bets, wins, level, xp, created_at, last_login FROM users ORDER BY balance DESC")
+        users_list = []
+        for row in c.fetchall():
+            users_list.append({
+                'user_id': row[0],
+                'username': row[1],
+                'email': row[2],
+                'balance': row[3],
+                'total_bets': row[4],
+                'wins': row[5],
+                'level': row[6],
+                'xp': row[7],
+                'created_at': row[8],
+                'last_login': row[9]
+            })
+        conn.close()
+        return jsonify({'success': True, 'users': users_list})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# ===== РУЛЕТКА =====
+@app.route('/api/admin/reset_balance', methods=['POST'])
+def admin_reset_balance():
+    try:
+        data = request.get_json(force=True)
+        admin_id = data.get('admin_id')
+        target_user_id = data.get('target_user_id')
+        if not is_admin(admin_id):
+            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
+        c.execute("UPDATE users SET balance = 10000 WHERE user_id = ?", (target_user_id,))
+        conn.commit()
+        conn.close()
+        if target_user_id in users:
+            users[target_user_id].balance = 10000
+            users[target_user_id].save_to_db()
+        return jsonify({'success': True, 'message': 'Баланс обнулён до 10 000 ₽'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/ban_user', methods=['POST'])
+def admin_ban_user():
+    try:
+        data = request.get_json(force=True)
+        admin_id = data.get('admin_id')
+        target_user_id = data.get('target_user_id')
+        if not is_admin(admin_id):
+            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+        if target_user_id == admin_id:
+            return jsonify({'success': False, 'error': 'Нельзя забанить самого себя'}), 400
+        conn = sqlite3.connect('ruwin.db')
+        c = conn.cursor()
+        c.execute("DELETE FROM users WHERE user_id = ?", (target_user_id,))
+        c.execute("DELETE FROM game_history WHERE user_id = ?", (target_user_id,))
+        conn.commit()
+        conn.close()
+        if target_user_id in users:
+            del users[target_user_id]
+        return jsonify({'success': True, 'message': 'Игрок забанен'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/restart', methods=['POST'])
+def admin_restart():
+    try:
+        data = request.get_json(force=True)
+        admin_id = data.get('admin_id')
+        if not is_admin(admin_id):
+            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+        subprocess.Popen(['sudo', 'systemctl', 'restart', 'ruwin'])
+        return jsonify({'success': True, 'message': 'Сайт перезагружается...'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/pool_stats', methods=['POST'])
+def admin_pool_stats():
+    try:
+        data = request.get_json(force=True)
+        admin_id = data.get('admin_id')
+        if not is_admin(admin_id):
+            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+        pool_stats = get_pool_stats()
+        return jsonify({'success': True, 'pool': pool_stats})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/add_to_pool', methods=['POST'])
+def admin_add_to_pool():
+    try:
+        data = request.get_json(force=True)
+        admin_id = data.get('admin_id')
+        amount = int(data.get('amount', 0))
+        if not is_admin(admin_id):
+            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+        if amount <= 0:
+            return jsonify({'success': False, 'error': 'Сумма должна быть положительной'}), 400
+        update_pool(amount)
+        return jsonify({'success': True, 'message': f'Пул пополнен на {amount} ₽', 'pool_balance': get_pool_balance()})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ===== ИГРЫ =====
 @app.route('/api/roulette/spin', methods=['POST'])
 def roulette_spin():
     try:
@@ -599,7 +565,6 @@ def roulette_spin():
         amount = float(data.get('amount', 0))
         number = data.get('number')
         
-        # Проверка пула
         pool_balance = get_pool_balance()
         if pool_balance < amount * 10:
             return jsonify({'success': False, 'error': 'Временно недоступно, попробуйте позже'})
@@ -637,22 +602,16 @@ def roulette_spin():
             win_amount = amount * 3
         
         if win:
-            # Выигрыш из пула (95% от суммы, 5% комиссия казино)
             commission = int(win_amount * 0.05)
             payout = win_amount - commission
-            
             if get_pool_balance() < payout:
                 return jsonify({'success': False, 'error': 'Недостаточно средств в пуле'})
-            
             game.balance += payout
             game.wins += 1
             game.add_xp(int(abs(payout) / 10))
             game.add_history('roulette', amount, payout, 'win')
-            update_pool(-payout)  # Выплата из пула
-            
-            # Комиссия идёт в отдельный счёт казино (можно добавить позже)
+            update_pool(-payout)
         else:
-            # Проигрыш идёт в пул
             game.balance -= amount
             game.add_history('roulette', amount, -amount, 'loss')
             update_pool(amount)
@@ -674,7 +633,6 @@ def roulette_spin():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ===== СЛОТЫ =====
 @app.route('/api/slots/spin', methods=['POST'])
 def slots_spin():
     try:
@@ -714,10 +672,8 @@ def slots_spin():
         if win:
             commission = int(win_amount * 0.05)
             payout = win_amount - commission
-            
             if get_pool_balance() < payout:
                 return jsonify({'success': False, 'error': 'Недостаточно средств в пуле'})
-            
             game.balance += payout
             game.wins += 1
             game.add_xp(int(payout / 5))
@@ -744,7 +700,6 @@ def slots_spin():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ===== БЛЭКДЖЕК =====
 @app.route('/api/blackjack/start', methods=['POST'])
 def blackjack_start():
     try:
@@ -909,7 +864,6 @@ def blackjack_stand():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ===== AVIATOR =====
 @app.route('/api/crash/start', methods=['POST'])
 def crash_start():
     try:
