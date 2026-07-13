@@ -18,8 +18,8 @@ CORS(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your_app_password'
+app.config['MAIL_USERNAME'] = 'your_email@gmail.com'  # ЗАМЕНИТЕ
+app.config['MAIL_PASSWORD'] = 'your_app_password'     # ЗАМЕНИТЕ
 mail = Mail(app)
 
 # ===== БАЗА ДАННЫХ =====
@@ -27,6 +27,7 @@ def init_db():
     conn = sqlite3.connect('ruwin.db')
     c = conn.cursor()
     
+    # Таблица пользователей
     c.execute('''CREATE TABLE IF NOT EXISTS users
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id TEXT UNIQUE,
@@ -45,6 +46,7 @@ def init_db():
                   created_at TEXT,
                   last_login TEXT)''')
     
+    # Таблица истории игр
     c.execute('''CREATE TABLE IF NOT EXISTS game_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id TEXT,
@@ -54,6 +56,7 @@ def init_db():
                   result TEXT,
                   timestamp TEXT)''')
     
+    # Таблица пула казино
     c.execute('''CREATE TABLE IF NOT EXISTS casino_pool
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   balance INTEGER DEFAULT 1000000,
@@ -62,6 +65,18 @@ def init_db():
                   commission INTEGER DEFAULT 0,
                   house_edge REAL DEFAULT 0.05,
                   updated_at TEXT)''')
+    
+    # Добавляем колонку house_edge если её нет (для старых БД)
+    try:
+        c.execute("ALTER TABLE casino_pool ADD COLUMN house_edge REAL DEFAULT 0.05")
+    except sqlite3.OperationalError:
+        pass  # Колонка уже существует
+    
+    # Добавляем начальные данные в пул если пусто
+    c.execute("SELECT COUNT(*) FROM casino_pool")
+    if c.fetchone()[0] == 0:
+        c.execute('''INSERT INTO casino_pool (balance, house_edge, updated_at)
+                     VALUES (?, ?, datetime('now'))''', (1000000, 0.05))
     
     # Добавляем тестового пользователя
     c.execute("SELECT * FROM users WHERE username = 'test'")
@@ -120,7 +135,7 @@ def get_user_stats(user_id):
             'wins': row[2],
             'level': row[3],
             'username': row[4],
-            'email': row[5],
+            'email': row[5] or '',
             'winrate': round((row[2] / row[1] * 100), 1) if row[1] > 0 else 0
         }
     return {'balance': 10000, 'total_bets': 0, 'wins': 0, 'level': 1, 'username': 'Игрок', 'email': '', 'winrate': 0}
@@ -150,7 +165,9 @@ def get_pool_balance():
     c.execute("SELECT balance, house_edge FROM casino_pool ORDER BY id DESC LIMIT 1")
     row = c.fetchone()
     conn.close()
-    return (row[0], row[1]) if row else (1000000, 0.05)
+    if row:
+        return (row[0], row[1])
+    return (1000000, 0.05)
 
 def update_pool(amount):
     conn = sqlite3.connect('ruwin.db')
@@ -160,21 +177,37 @@ def update_pool(amount):
     if row:
         c.execute("UPDATE casino_pool SET balance = ?, updated_at = datetime('now') WHERE id = ?", (row[1] + amount, row[0]))
     else:
-        c.execute("INSERT INTO casino_pool (balance, updated_at) VALUES (?, datetime('now'))", (1000000 + amount,))
+        c.execute("INSERT INTO casino_pool (balance, house_edge, updated_at) VALUES (?, ?, datetime('now'))", (1000000 + amount, 0.05))
     conn.commit()
     conn.close()
 
 def send_2fa_email(email, code):
     try:
         msg = Message('🔐 Код подтверждения RuWin Casino', sender=app.config['MAIL_USERNAME'], recipients=[email])
-        msg.body = f'Ваш код для входа в RuWin Casino: {code}\n\nКод действителен в течение 5 минут.'
+        msg.body = f'''Ваш код для входа в RuWin Casino: {code}
+
+Код действителен в течение 5 минут.
+
+Если вы не запрашивали вход, проигнорируйте это сообщение.
+
+С уважением,
+Команда RuWin Casino'''
         mail.send(msg)
         return True
     except Exception as e:
         print(f"Ошибка отправки email: {e}")
         return False
 
+# Преимущество казино (House Edge)
+def calculate_win(amount, multiplier):
+    """Расчет выигрыша с учетом комиссии казино"""
+    win_amount = amount * multiplier
+    house_edge = get_pool_balance()[1]
+    commission = int(win_amount * house_edge)
+    return win_amount - commission
+
 # ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -326,15 +359,6 @@ def logout():
 # ===== ИГРЫ С РЕАЛЬНОЙ ЭКОНОМИКОЙ =====
 # ============================================================
 
-# Преимущество казино (House Edge)
-HOUSE_EDGE = 0.05  # 5%
-
-def calculate_win(amount, multiplier):
-    """Расчет выигрыша с учетом комиссии казино"""
-    win_amount = amount * multiplier
-    commission = int(win_amount * HOUSE_EDGE)
-    return win_amount - commission
-
 # ============================================================
 # ===== РУЛЕТКА =====
 # ============================================================
@@ -351,14 +375,15 @@ def roulette_spin():
         
         # Если денег нет - ставка проигрывает автоматом
         if amount > balance:
-            update_user_balance(user_id, -int(balance))
-            add_history(user_id, 'roulette', amount, -int(balance), 'loss')
+            loss_amount = int(balance)
+            update_user_balance(user_id, -loss_amount)
+            add_history(user_id, 'roulette', amount, -loss_amount, 'loss')
             return jsonify({
                 'success': True,
                 'result': random.randint(0, 36),
                 'color': 'red',
                 'win': False,
-                'win_amount': -int(balance),
+                'win_amount': -loss_amount,
                 'stats': get_user_stats(user_id),
                 'pool_balance': get_pool_balance()[0],
                 'message': 'Недостаточно средств'
@@ -402,15 +427,15 @@ def roulette_spin():
         if win:
             win_amount = int(win_amount)
             if pool_balance < win_amount:
-                # Если в банке мало денег - уменьшаем выигрыш
                 win_amount = int(pool_balance * 0.9)
             update_user_balance(user_id, win_amount)
             update_pool(-win_amount)
             add_history(user_id, 'roulette', amount, win_amount, 'win')
         else:
-            update_user_balance(user_id, -int(amount))
-            update_pool(int(amount))
-            add_history(user_id, 'roulette', amount, -int(amount), 'loss')
+            loss_amount = int(amount)
+            update_user_balance(user_id, -loss_amount)
+            update_pool(loss_amount)
+            add_history(user_id, 'roulette', amount, -loss_amount, 'loss')
         
         return jsonify({
             'success': True,
@@ -437,13 +462,14 @@ def slots_spin():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            update_user_balance(user_id, -int(balance))
-            add_history(user_id, 'slots', amount, -int(balance), 'loss')
+            loss_amount = int(balance)
+            update_user_balance(user_id, -loss_amount)
+            add_history(user_id, 'slots', amount, -loss_amount, 'loss')
             return jsonify({
                 'success': True,
                 'reels': ['💀', '💀', '💀', '💀', '💀', '💀', '💀', '💀', '💀'],
                 'win': False,
-                'win_amount': -int(balance),
+                'win_amount': -loss_amount,
                 'stats': get_user_stats(user_id),
                 'pool_balance': get_pool_balance()[0],
                 'message': 'Недостаточно средств'
@@ -483,9 +509,10 @@ def slots_spin():
             update_pool(-win_amount)
             add_history(user_id, 'slots', amount, win_amount, 'win')
         else:
-            update_user_balance(user_id, -int(amount))
-            update_pool(int(amount))
-            add_history(user_id, 'slots', amount, -int(amount), 'loss')
+            loss_amount = int(amount)
+            update_user_balance(user_id, -loss_amount)
+            update_pool(loss_amount)
+            add_history(user_id, 'slots', amount, -loss_amount, 'loss')
         
         return jsonify({
             'success': True,
@@ -511,13 +538,14 @@ def blackjack_start():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            update_user_balance(user_id, -int(balance))
-            add_history(user_id, 'blackjack', amount, -int(balance), 'loss')
+            loss_amount = int(balance)
+            update_user_balance(user_id, -loss_amount)
+            add_history(user_id, 'blackjack', amount, -loss_amount, 'loss')
             return jsonify({
                 'success': True,
                 'game_over': True,
                 'win': False,
-                'win_amount': -int(balance),
+                'win_amount': -loss_amount,
                 'stats': get_user_stats(user_id),
                 'pool_balance': get_pool_balance()[0],
                 'message': 'Недостаточно средств'
@@ -576,15 +604,16 @@ def blackjack_hit():
         player_sum = sum(player_hand)
         
         if player_sum > 21:
-            update_user_balance(user_id, -int(amount))
-            update_pool(int(amount))
-            add_history(user_id, 'blackjack', amount, -int(amount), 'loss')
+            loss_amount = int(amount)
+            update_user_balance(user_id, -loss_amount)
+            update_pool(loss_amount)
+            add_history(user_id, 'blackjack', amount, -loss_amount, 'loss')
             return jsonify({
                 'success': True,
                 'player_hand': player_hand,
                 'game_over': True,
                 'win': False,
-                'win_amount': -int(amount),
+                'win_amount': -loss_amount,
                 'stats': get_user_stats(user_id),
                 'pool_balance': get_pool_balance()[0]
             })
@@ -644,16 +673,17 @@ def blackjack_stand():
                 'pool_balance': get_pool_balance()[0]
             })
         else:
-            update_user_balance(user_id, -int(amount))
-            update_pool(int(amount))
-            add_history(user_id, 'blackjack', amount, -int(amount), 'loss')
+            loss_amount = int(amount)
+            update_user_balance(user_id, -loss_amount)
+            update_pool(loss_amount)
+            add_history(user_id, 'blackjack', amount, -loss_amount, 'loss')
             return jsonify({
                 'success': True,
                 'player_hand': player_hand,
                 'dealer_hand': dealer_hand,
                 'game_over': True,
                 'win': False,
-                'win_amount': -int(amount),
+                'win_amount': -loss_amount,
                 'stats': get_user_stats(user_id),
                 'pool_balance': get_pool_balance()[0]
             })
@@ -673,12 +703,13 @@ def crash_start():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            update_user_balance(user_id, -int(balance))
-            add_history(user_id, 'crash', amount, -int(balance), 'loss')
+            loss_amount = int(balance)
+            update_user_balance(user_id, -loss_amount)
+            add_history(user_id, 'crash', amount, -loss_amount, 'loss')
             return jsonify({
                 'success': True,
                 'crash_point': 1.0,
-                'amount': balance,
+                'amount': loss_amount,
                 'balance': 0,
                 'stats': get_user_stats(user_id),
                 'pool_balance': get_pool_balance()[0],
@@ -736,8 +767,9 @@ def crash_result():
         user_id = data.get('session_id', 'test_user')
         amount = float(data.get('amount', 10))
         
-        update_pool(int(amount))
-        add_history(user_id, 'crash', amount, -int(amount), 'loss')
+        loss_amount = int(amount)
+        update_pool(loss_amount)
+        add_history(user_id, 'crash', amount, -loss_amount, 'loss')
         
         return jsonify({
             'success': True,
@@ -761,15 +793,16 @@ def dice_roll():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            update_user_balance(user_id, -int(balance))
-            add_history(user_id, 'dice', amount, -int(balance), 'loss')
+            loss_amount = int(balance)
+            update_user_balance(user_id, -loss_amount)
+            add_history(user_id, 'dice', amount, -loss_amount, 'loss')
             return jsonify({
                 'success': True,
                 'd1': 1,
                 'd2': 1,
                 'total': 2,
                 'win': False,
-                'win_amount': -int(balance),
+                'win_amount': -loss_amount,
                 'stats': get_user_stats(user_id),
                 'pool_balance': get_pool_balance()[0],
                 'message': 'Недостаточно средств'
@@ -802,9 +835,10 @@ def dice_roll():
             update_pool(-win_amount)
             add_history(user_id, 'dice', amount, win_amount, 'win')
         else:
-            update_user_balance(user_id, -int(amount))
-            update_pool(int(amount))
-            add_history(user_id, 'dice', amount, -int(amount), 'loss')
+            loss_amount = int(amount)
+            update_user_balance(user_id, -loss_amount)
+            update_pool(loss_amount)
+            add_history(user_id, 'dice', amount, -loss_amount, 'loss')
         
         return jsonify({
             'success': True,
