@@ -18,8 +18,8 @@ CORS(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'  # ЗАМЕНИТЕ
-app.config['MAIL_PASSWORD'] = 'your_app_password'     # ЗАМЕНИТЕ
+app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your_app_password'
 mail = Mail(app)
 
 # ===== БАЗА ДАННЫХ =====
@@ -27,7 +27,6 @@ def init_db():
     conn = sqlite3.connect('ruwin.db')
     c = conn.cursor()
     
-    # Таблица пользователей
     c.execute('''CREATE TABLE IF NOT EXISTS users
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id TEXT UNIQUE,
@@ -46,7 +45,6 @@ def init_db():
                   created_at TEXT,
                   last_login TEXT)''')
     
-    # Таблица истории игр
     c.execute('''CREATE TABLE IF NOT EXISTS game_history
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   user_id TEXT,
@@ -56,7 +54,6 @@ def init_db():
                   result TEXT,
                   timestamp TEXT)''')
     
-    # Таблица пула казино
     c.execute('''CREATE TABLE IF NOT EXISTS casino_pool
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   balance INTEGER DEFAULT 1000000,
@@ -66,19 +63,16 @@ def init_db():
                   house_edge REAL DEFAULT 0.05,
                   updated_at TEXT)''')
     
-    # Добавляем колонку house_edge если её нет (для старых БД)
     try:
         c.execute("ALTER TABLE casino_pool ADD COLUMN house_edge REAL DEFAULT 0.05")
     except sqlite3.OperationalError:
-        pass  # Колонка уже существует
+        pass
     
-    # Добавляем начальные данные в пул если пусто
     c.execute("SELECT COUNT(*) FROM casino_pool")
     if c.fetchone()[0] == 0:
         c.execute('''INSERT INTO casino_pool (balance, house_edge, updated_at)
                      VALUES (?, ?, datetime('now'))''', (1000000, 0.05))
     
-    # Добавляем тестового пользователя
     c.execute("SELECT * FROM users WHERE username = 'test'")
     if not c.fetchone():
         c.execute('''INSERT INTO users (user_id, username, password, email, balance, created_at, last_login)
@@ -198,7 +192,6 @@ def send_2fa_email(email, code):
         print(f"Ошибка отправки email: {e}")
         return False
 
-# Преимущество казино (House Edge)
 def calculate_win(amount, multiplier):
     """Расчет выигрыша с учетом комиссии казино"""
     win_amount = amount * multiplier
@@ -207,7 +200,6 @@ def calculate_win(amount, multiplier):
     return win_amount - commission
 
 # ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -356,10 +348,6 @@ def logout():
     return jsonify({'success': True})
 
 # ============================================================
-# ===== ИГРЫ С РЕАЛЬНОЙ ЭКОНОМИКОЙ =====
-# ============================================================
-
-# ============================================================
 # ===== РУЛЕТКА =====
 # ============================================================
 @app.route('/api/roulette/spin', methods=['POST'])
@@ -373,7 +361,6 @@ def roulette_spin():
         
         balance = get_user_balance(user_id)
         
-        # Если денег нет - ставка проигрывает автоматом
         if amount > balance:
             loss_amount = int(balance)
             update_user_balance(user_id, -loss_amount)
@@ -395,7 +382,6 @@ def roulette_spin():
         win = False
         win_amount = 0
         
-        # Проверка выигрыша
         if bet_type == 'number' and result == number:
             win = True
             win_amount = calculate_win(amount, 35)
@@ -481,17 +467,14 @@ def slots_spin():
         win = False
         win_amount = 0
         
-        # Горизонтальные линии
         for row in range(3):
             if reels[row*3] == reels[row*3+1] and reels[row*3+1] == reels[row*3+2]:
                 win = True
                 win_amount += calculate_win(amount, 5)
-        # Вертикальные линии
         for col in range(3):
             if reels[col] == reels[col+3] and reels[col+3] == reels[col+6]:
                 win = True
                 win_amount += calculate_win(amount, 5)
-        # Диагонали
         if reels[0] == reels[4] and reels[4] == reels[8]:
             win = True
             win_amount += calculate_win(amount, 10)
@@ -691,7 +674,7 @@ def blackjack_stand():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== AVIATOR =====
+# ===== AVIATOR (С УМНОЙ ЭКОНОМИКОЙ) =====
 # ============================================================
 @app.route('/api/crash/start', methods=['POST'])
 def crash_start():
@@ -716,13 +699,42 @@ def crash_start():
                 'message': 'Недостаточно средств'
             })
         
-        # Генерируем точку краша (от 1.1 до 100)
-        crash_point = random.uniform(1.1, 100.0)
-        if crash_point > 2.0:
-            crash_point = 2.0 + random.uniform(0, 1.5)
+        # ===== УМНАЯ ЭКОНОМИКА AVIATOR =====
+        # Казино всегда должно быть в плюсе, но создавать иллюзию удачи
+        
+        # Получаем баланс пользователя и банка
+        user_balance = get_user_balance(user_id)
+        pool_balance, house_edge = get_pool_balance()
+        
+        # Чем больше ставка, тем выше шанс краша (казино не должно проигрывать большие суммы)
+        # Чем больше баланс у игрока, тем выше шанс краша (чтобы слить крупные суммы)
+        # Чем больше баланс у банка, тем дольше можно держать игру (чтобы игрок думал, что везёт)
+        
+        # Базовый краш (1.3 - 2.5x) - большинство игр заканчивается здесь
+        base_crash = random.uniform(1.3, 2.5)
+        
+        # Корректировка в зависимости от ставки (чем больше ставка, тем ниже краш)
+        stake_factor = min(amount / 500, 1.0)  # Максимальный эффект при ставке 500+
+        stake_adjustment = 1.0 - (stake_factor * 0.3)  # -30% к крашу при больших ставках
+        
+        # Корректировка в зависимости от баланса игрока (чем больше баланс, тем ниже краш)
+        balance_factor = min(user_balance / 20000, 1.0)  # Максимальный эффект при балансе 20000+
+        balance_adjustment = 1.0 - (balance_factor * 0.2)  # -20% к крашу при большом балансе
+        
+        # Корректировка в зависимости от баланса банка (чем больше банк, тем выше краш)
+        pool_factor = min(pool_balance / 1000000, 1.0)  # Максимальный эффект при банке 1M+
+        pool_adjustment = 1.0 + (pool_factor * 0.2)  # +20% к крашу при большом банке
+        
+        # Итоговый краш с учётом всех факторов
+        crash_point = base_crash * stake_adjustment * balance_adjustment * pool_adjustment
+        
+        # Ограничиваем краш (чтобы не было слишком низко или высоко)
+        crash_point = max(1.15, min(4.0, crash_point))
         crash_point = round(crash_point, 2)
         
-        update_user_balance(user_id, -int(amount))
+        # Логируем для аудита (можно убрать в продакшене)
+        print(f"[AVIATOR] Ставка: {amount}, Баланс игрока: {user_balance}, Банк: {pool_balance}")
+        print(f"[AVIATOR] Краш: {crash_point} (base: {base_crash}, stake: {stake_adjustment}, balance: {balance_adjustment}, pool: {pool_adjustment})")
         
         return jsonify({
             'success': True,
@@ -768,6 +780,12 @@ def crash_result():
         amount = float(data.get('amount', 10))
         
         loss_amount = int(amount)
+        current_balance = get_user_balance(user_id)
+        
+        if current_balance < loss_amount:
+            loss_amount = current_balance
+        
+        update_user_balance(user_id, -loss_amount)
         update_pool(loss_amount)
         add_history(user_id, 'crash', amount, -loss_amount, 'loss')
         
