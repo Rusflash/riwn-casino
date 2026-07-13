@@ -24,6 +24,10 @@
             --neon-gold: #ffd700;
             --neon-green: #00ff88;
             --neon-red: #ff0040;
+            --neon-blue: #0066ff;
+            --neon-cyan-glow: rgba(0, 240, 255, 0.15);
+            --neon-pink-glow: rgba(255, 0, 160, 0.15);
+            --neon-purple-glow: rgba(139, 0, 255, 0.15);
             --bg-primary: #08080f;
             --bg-secondary: #0d0d1a;
             --bg-card: rgba(255, 255, 255, 0.02);
@@ -33,6 +37,7 @@
             --text-muted: #555577;
             --border-color: rgba(255, 255, 255, 0.04);
             --border-glow: rgba(0, 240, 255, 0.08);
+            --shadow-glow: 0 0 40px rgba(0, 240, 255, 0.02);
             --radius: 12px;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -48,7 +53,8 @@
         body {
             background-image: 
                 radial-gradient(ellipse at 10% 20%, rgba(0, 240, 255, 0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 90% 80%, rgba(139, 0, 255, 0.03) 0%, transparent 50%);
+                radial-gradient(ellipse at 90% 80%, rgba(139, 0, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 0, 160, 0.02) 0%, transparent 60%);
         }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -458,7 +464,7 @@
         }
         .nav-btn.active {
             color: var(--neon-cyan);
-            background: var(--neon-cyan);
+            background: rgba(0, 240, 255, 0.06);
         }
         .nav-btn.active::after {
             content: '';
@@ -1423,7 +1429,6 @@
                 <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
             </div>
             
-            <!-- Форма входа -->
             <form id="loginForm" class="auth-form" onsubmit="return handleLogin(event)">
                 <input type="text" id="loginUsername" placeholder="Имя пользователя">
                 <input type="password" id="loginPassword" placeholder="Пароль">
@@ -1431,7 +1436,6 @@
                 <div class="auth-error" id="loginError"></div>
             </form>
             
-            <!-- Форма регистрации -->
             <form id="registerForm" class="auth-form" style="display:none;" onsubmit="return handleRegister(event)">
                 <input type="text" id="regUsername" placeholder="Имя пользователя">
                 <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)">
@@ -1824,12 +1828,10 @@
         // ============================================================
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Скрываем загрузку
             setTimeout(() => {
                 document.getElementById('loadingOverlay').classList.remove('active');
             }, 800);
 
-            // Проверяем сохранённую сессию
             const savedId = localStorage.getItem('ruwin_user_id');
             const savedName = localStorage.getItem('ruwin_username');
 
@@ -1845,7 +1847,6 @@
                 document.getElementById('authModal').classList.add('active');
             }
 
-            // Настройка
             startRainTimer();
             setupNavigation();
             setupGameCards();
@@ -2041,7 +2042,7 @@
             const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
             return numbers.map(num => {
                 const color = num === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num) ? 'red' : 'black';
-                return `<div class="roulette-number ${color}" data-number="${num}">${num}</div>`;
+                return '<div class="roulette-number ' + color + '" data-number="' + num + '">' + num + '</div>';
             }).join('');
         }
 
@@ -2049,7 +2050,7 @@
             let html = '';
             for (let i = 0; i <= 36; i++) {
                 const color = i === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i) ? 'red' : 'black';
-                html += `<button class="num-btn" data-number="${i}" style="color:${i === 0 ? '#00cc44' : color === 'red' ? '#ff0040' : '#fff'}">${i}</button>`;
+                html += '<button class="num-btn" data-number="' + i + '" style="color:' + (i === 0 ? '#00cc44' : color === 'red' ? '#ff0040' : '#fff') + '">' + i + '</button>';
             }
             return html;
         }
@@ -2123,10 +2124,7 @@
                 if (data.success) {
                     const result = document.getElementById('rouletteResult');
                     result.className = 'game-result ' + (data.win ? 'win' : 'loss');
-                    result.innerHTML = `
-                        Выпало: <strong style="color:${data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff'}">${data.result}</strong> (${data.color.toUpperCase()})
-                        <br>${data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽'}
-                    `;
+                    result.innerHTML = 'Выпало: <strong style="color:' + (data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff') + '">' + data.result + '</strong> (' + data.color.toUpperCase() + ')<br>' + (data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽');
                     if (data.win) {
                         showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
                     } else {
@@ -2401,10 +2399,20 @@
         }
 
         // ============================================================
-        // AVIATOR
+        // AVIATOR (С УМНОЙ ЭКОНОМИКОЙ)
         // ============================================================
 
-        let crashState = { multiplier: 1, isActive: false, isBetPlaced: false, crashPoint: 0, amount: 0, interval: null };
+        let crashState = { 
+            multiplier: 1, 
+            isActive: false, 
+            isBetPlaced: false, 
+            crashPoint: 0, 
+            amount: 0, 
+            interval: null,
+            startTime: 0,
+            isCrashed: false,
+            cashoutMultiplier: 0
+        };
 
         function loadCrash(container) {
             container.innerHTML = `
@@ -2425,10 +2433,11 @@
 
             document.getElementById('crashStart').addEventListener('click', crashStart);
             document.getElementById('crashCashout').addEventListener('click', crashCashout);
+            resetCrash();
         }
 
         async function crashStart() {
-            if (crashState.isActive) return;
+            if (crashState.isActive || crashState.isBetPlaced) return;
 
             const amount = parseFloat(document.getElementById('crashBet').value);
             if (isNaN(amount) || amount <= 0) {
@@ -2436,41 +2445,66 @@
                 return;
             }
 
+            const balance = parseInt(document.getElementById('balance').textContent.replace(/[^\d]/g, ''));
+            if (amount > balance) {
+                showNotification('❌ Недостаточно средств!', 'error');
+                return;
+            }
+
             crashState.amount = amount;
             crashState.isBetPlaced = true;
             crashState.isActive = true;
+            crashState.isCrashed = false;
             crashState.multiplier = 1;
+            crashState.startTime = Date.now();
+            crashState.cashoutMultiplier = 0;
 
             document.getElementById('crashStart').disabled = true;
             document.getElementById('crashCashout').disabled = false;
             document.getElementById('crashResult').className = 'game-result info';
             document.getElementById('crashResult').textContent = '✈️ Самолет взлетает...';
+            document.getElementById('crashMultiplier').classList.remove('crashed');
+            document.getElementById('crashMultiplier').textContent = '1.00x';
 
             try {
                 const response = await fetch('/api/crash/start', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId || 'test_user', amount: amount })
+                    body: JSON.stringify({ 
+                        session_id: sessionId || 'test_user', 
+                        amount: amount 
+                    })
                 });
                 const data = await response.json();
 
                 if (data.success) {
                     crashState.crashPoint = data.crash_point;
-                    updateUI(data.stats);
-
-                    let startTime = Date.now();
+                    
+                    let lastMultiplier = 1;
                     crashState.interval = setInterval(() => {
-                        const elapsed = (Date.now() - startTime) / 1000;
-                        const progress = Math.min(elapsed / 5, 1);
+                        if (crashState.isCrashed) return;
+                        
+                        const elapsed = (Date.now() - crashState.startTime) / 1000;
+                        const progress = Math.min(elapsed / 4, 1);
+                        
                         if (progress < 1) {
-                            crashState.multiplier = 1 + progress * (crashState.crashPoint - 1);
+                            const ease = 1 - Math.pow(1 - progress, 1.5);
+                            crashState.multiplier = 1 + ease * (crashState.crashPoint - 1);
                         } else {
                             crashState.multiplier = crashState.crashPoint;
                         }
-
-                        document.getElementById('crashMultiplier').textContent = crashState.multiplier.toFixed(2) + 'x';
-
-                        if (crashState.multiplier >= crashState.crashPoint - 0.01) {
+                        
+                        const displayMultiplier = Math.round(crashState.multiplier * 100) / 100;
+                        document.getElementById('crashMultiplier').textContent = displayMultiplier.toFixed(2) + 'x';
+                        
+                        if (displayMultiplier > lastMultiplier + 0.05) {
+                            const el = document.getElementById('crashMultiplier');
+                            el.style.transform = 'scale(1.05)';
+                            setTimeout(() => el.style.transform = 'scale(1)', 100);
+                            lastMultiplier = displayMultiplier;
+                        }
+                        
+                        if (crashState.multiplier >= crashState.crashPoint - 0.005) {
                             clearInterval(crashState.interval);
                             crashCrash();
                         }
@@ -2486,12 +2520,15 @@
         }
 
         async function crashCashout() {
-            if (!crashState.isActive || !crashState.isBetPlaced) return;
+            if (!crashState.isActive || !crashState.isBetPlaced || crashState.isCrashed) return;
 
             clearInterval(crashState.interval);
             crashState.isActive = false;
             document.getElementById('crashCashout').disabled = true;
-
+            
+            const currentMultiplier = Math.round(crashState.multiplier * 100) / 100;
+            crashState.cashoutMultiplier = currentMultiplier;
+            
             try {
                 const response = await fetch('/api/crash/cashout', {
                     method: 'POST',
@@ -2499,7 +2536,7 @@
                     body: JSON.stringify({
                         session_id: sessionId || 'test_user',
                         amount: crashState.amount,
-                        multiplier: crashState.multiplier
+                        multiplier: currentMultiplier
                     })
                 });
                 const data = await response.json();
@@ -2507,10 +2544,11 @@
                 if (data.success) {
                     const result = document.getElementById('crashResult');
                     result.className = 'game-result win';
-                    result.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽ (' + crashState.multiplier.toFixed(2) + 'x)';
+                    result.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽ (' + currentMultiplier.toFixed(2) + 'x)';
                     showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
                     updateUI(data.stats);
-                    addCrashHistory(crashState.multiplier, true);
+                    addCrashHistory(currentMultiplier, true);
+                    createConfetti(50);
                     resetCrash();
                 }
             } catch (error) {
@@ -2520,37 +2558,51 @@
         }
 
         async function crashCrash() {
-            if (!crashState.isActive || !crashState.isBetPlaced) return;
-
+            if (crashState.isCrashed) return;
+            
+            crashState.isCrashed = true;
             crashState.isActive = false;
             document.getElementById('crashCashout').disabled = true;
             document.getElementById('crashMultiplier').classList.add('crashed');
-
+            
+            const finalMultiplier = Math.round(crashState.multiplier * 100) / 100;
+            
             const result = document.getElementById('crashResult');
             result.className = 'game-result loss';
-            result.textContent = '💥 КРАШ! (' + crashState.crashPoint.toFixed(2) + 'x)';
-
+            result.textContent = '💥 КРАШ! (' + finalMultiplier.toFixed(2) + 'x)';
+            
             try {
                 const response = await fetch('/api/crash/result', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId || 'test_user', amount: crashState.amount })
+                    body: JSON.stringify({ 
+                        session_id: sessionId || 'test_user', 
+                        amount: crashState.amount 
+                    })
                 });
                 const data = await response.json();
                 if (data.success) {
                     updateUI(data.stats);
-                    showNotification('💥 КРАШ! -' + crashState.amount + ' ₽', 'error');
-                    addCrashHistory(crashState.crashPoint, false);
+                    showNotification('💥 КРАШ! Проигрыш ' + crashState.amount + ' ₽', 'error');
+                    addCrashHistory(finalMultiplier, false);
                 }
             } catch (error) {}
-
+            
             resetCrash();
         }
 
         function resetCrash() {
             crashState.isActive = false;
             crashState.isBetPlaced = false;
+            crashState.isCrashed = false;
             crashState.multiplier = 1;
+            crashState.cashoutMultiplier = 0;
+            
+            if (crashState.interval) {
+                clearInterval(crashState.interval);
+                crashState.interval = null;
+            }
+            
             document.getElementById('crashStart').disabled = false;
             document.getElementById('crashCashout').disabled = true;
             document.getElementById('crashMultiplier').classList.remove('crashed');
@@ -2564,6 +2616,50 @@
             item.textContent = point.toFixed(2) + 'x';
             history.prepend(item);
             if (history.children.length > 10) history.removeChild(history.lastChild);
+        }
+
+        function createConfetti(count = 50) {
+            const container = document.createElement('div');
+            container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden;';
+            document.body.appendChild(container);
+            
+            const colors = ['#ffd700', '#ff0040', '#00ff88', '#00d4ff', '#8b00ff', '#ff6b00', '#ff1493'];
+            
+            for (let i = 0; i < count; i++) {
+                const piece = document.createElement('div');
+                const size = Math.random() * 8 + 4;
+                const x = Math.random() * 100;
+                const delay = Math.random() * 1.5;
+                const duration = Math.random() * 2 + 1.5;
+                
+                piece.style.cssText = `
+                    position: absolute;
+                    left: ${x}%;
+                    top: -10px;
+                    width: ${size}px;
+                    height: ${size * 1.5}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                    opacity: 1;
+                    transform: rotate(${Math.random() * 360}deg);
+                    animation: confettiFall ${duration}s ease-out ${delay}s forwards;
+                `;
+                container.appendChild(piece);
+            }
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes confettiFall {
+                    0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+                    100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            setTimeout(() => {
+                container.remove();
+                style.remove();
+            }, 4000);
         }
 
         // ============================================================
