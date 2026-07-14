@@ -193,13 +193,16 @@ def send_2fa_email(email, code):
         return False
 
 def calculate_win(amount, multiplier):
-    """Расчет выигрыша с учетом комиссии казино"""
+    """Расчет выигрыша с учетом комиссии казино (5%)"""
     win_amount = amount * multiplier
-    house_edge = get_pool_balance()[1]
+    house_edge = 0.05
     commission = int(win_amount * house_edge)
-    return win_amount - commission
+    return int(win_amount - commission)
 
+# ============================================================
 # ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
+# ============================================================
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -348,8 +351,9 @@ def logout():
     return jsonify({'success': True})
 
 # ============================================================
-# ===== РУЛЕТКА =====
+# ===== РУЛЕТКА (ИСПРАВЛЕННАЯ) =====
 # ============================================================
+
 @app.route('/api/roulette/spin', methods=['POST'])
 def roulette_spin():
     try:
@@ -362,18 +366,10 @@ def roulette_spin():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            loss_amount = int(balance)
-            update_user_balance(user_id, -loss_amount)
-            add_history(user_id, 'roulette', amount, -loss_amount, 'loss')
             return jsonify({
-                'success': True,
-                'result': random.randint(0, 36),
-                'color': 'red',
-                'win': False,
-                'win_amount': -loss_amount,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0],
-                'message': 'Недостаточно средств'
+                'success': False,
+                'error': 'Недостаточно средств',
+                'balance': balance
             })
         
         result = random.randint(0, 36)
@@ -436,8 +432,9 @@ def roulette_spin():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== СЛОТЫ =====
+# ===== СЛОТЫ (ИСПРАВЛЕННЫЕ) =====
 # ============================================================
+
 @app.route('/api/slots/spin', methods=['POST'])
 def slots_spin():
     try:
@@ -448,17 +445,10 @@ def slots_spin():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            loss_amount = int(balance)
-            update_user_balance(user_id, -loss_amount)
-            add_history(user_id, 'slots', amount, -loss_amount, 'loss')
             return jsonify({
-                'success': True,
-                'reels': ['💀', '💀', '💀', '💀', '💀', '💀', '💀', '💀', '💀'],
-                'win': False,
-                'win_amount': -loss_amount,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0],
-                'message': 'Недостаточно средств'
+                'success': False,
+                'error': 'Недостаточно средств',
+                'balance': balance
             })
         
         symbols = ['🍒', '🍋', '🍊', '🍇', '💎', '⭐', '7️⃣', '🎰']
@@ -467,14 +457,17 @@ def slots_spin():
         win = False
         win_amount = 0
         
+        # Горизонтальные линии
         for row in range(3):
             if reels[row*3] == reels[row*3+1] and reels[row*3+1] == reels[row*3+2]:
                 win = True
                 win_amount += calculate_win(amount, 5)
+        # Вертикальные линии
         for col in range(3):
             if reels[col] == reels[col+3] and reels[col+3] == reels[col+6]:
                 win = True
                 win_amount += calculate_win(amount, 5)
+        # Диагонали
         if reels[0] == reels[4] and reels[4] == reels[8]:
             win = True
             win_amount += calculate_win(amount, 10)
@@ -509,8 +502,17 @@ def slots_spin():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== БЛЭКДЖЕК =====
+# ===== БЛЭКДЖЕК (ИСПРАВЛЕННЫЙ) =====
 # ============================================================
+
+def sum_hand(hand):
+    total = sum(hand)
+    aces = hand.count(11)
+    while total > 21 and aces > 0:
+        total -= 10
+        aces -= 1
+    return total
+
 @app.route('/api/blackjack/start', methods=['POST'])
 def blackjack_start():
     try:
@@ -521,17 +523,10 @@ def blackjack_start():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            loss_amount = int(balance)
-            update_user_balance(user_id, -loss_amount)
-            add_history(user_id, 'blackjack', amount, -loss_amount, 'loss')
             return jsonify({
-                'success': True,
-                'game_over': True,
-                'win': False,
-                'win_amount': -loss_amount,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0],
-                'message': 'Недостаточно средств'
+                'success': False,
+                'error': 'Недостаточно средств',
+                'balance': balance
             })
         
         deck = [2,3,4,5,6,7,8,9,10,10,10,10,11] * 4
@@ -540,8 +535,8 @@ def blackjack_start():
         player_hand = [deck.pop(), deck.pop()]
         dealer_hand = [deck.pop(), deck.pop()]
         
-        player_sum = sum(player_hand)
-        dealer_sum = sum(dealer_hand)
+        player_sum = sum_hand(player_hand)
+        dealer_sum = sum_hand(dealer_hand)
         
         if player_sum == 21 and dealer_sum != 21:
             win_amount = int(calculate_win(amount, 1.5))
@@ -584,7 +579,7 @@ def blackjack_hit():
         amount = float(data.get('amount', 10))
         
         player_hand.append(deck.pop())
-        player_sum = sum(player_hand)
+        player_sum = sum_hand(player_hand)
         
         if player_sum > 21:
             loss_amount = int(amount)
@@ -620,15 +615,16 @@ def blackjack_stand():
         dealer_hand = data.get('dealer_hand', [])
         amount = float(data.get('amount', 10))
         
-        while sum(dealer_hand) < 17:
+        while sum_hand(dealer_hand) < 17:
             dealer_hand.append(deck.pop())
         
-        player_sum = sum(player_hand)
-        dealer_sum = sum(dealer_hand)
+        player_sum = sum_hand(player_hand)
+        dealer_sum = sum_hand(dealer_hand)
+        
+        pool_balance, _ = get_pool_balance()
         
         if dealer_sum > 21 or player_sum > dealer_sum:
             win_amount = int(calculate_win(amount, 2))
-            pool_balance, _ = get_pool_balance()
             if pool_balance < win_amount:
                 win_amount = int(pool_balance * 0.9)
             update_user_balance(user_id, win_amount)
@@ -674,8 +670,9 @@ def blackjack_stand():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== AVIATOR (С УМНОЙ ЭКОНОМИКОЙ) =====
+# ===== AVIATOR (ИСПРАВЛЕННЫЙ) =====
 # ============================================================
+
 @app.route('/api/crash/start', methods=['POST'])
 def crash_start():
     try:
@@ -686,55 +683,44 @@ def crash_start():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            loss_amount = int(balance)
-            update_user_balance(user_id, -loss_amount)
-            add_history(user_id, 'crash', amount, -loss_amount, 'loss')
             return jsonify({
-                'success': True,
-                'crash_point': 1.0,
-                'amount': loss_amount,
-                'balance': 0,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0],
-                'message': 'Недостаточно средств'
+                'success': False,
+                'error': 'Недостаточно средств',
+                'balance': balance
             })
         
-        # ===== УМНАЯ ЭКОНОМИКА AVIATOR =====
-        # Казино всегда должно быть в плюсе, но создавать иллюзию удачи
+        pool_balance, _ = get_pool_balance()
         
-        # Получаем баланс пользователя и банка
-        user_balance = get_user_balance(user_id)
-        pool_balance, house_edge = get_pool_balance()
+        # Исправленная логика: краш всегда между 1.3 и 3.5
+        # Но с учётом ставки и баланса
         
-        # Чем больше ставка, тем выше шанс краша (казино не должно проигрывать большие суммы)
-        # Чем больше баланс у игрока, тем выше шанс краша (чтобы слить крупные суммы)
-        # Чем больше баланс у банка, тем дольше можно держать игру (чтобы игрок думал, что везёт)
+        # Базовый краш (1.5 - 3.0)
+        base_crash = random.uniform(1.5, 3.0)
         
-        # Базовый краш (1.3 - 2.5x) - большинство игр заканчивается здесь
-        base_crash = random.uniform(1.3, 2.5)
+        # Влияние ставки (но не убиваем игру)
+        if amount > 100:
+            # Большая ставка → краш чуть раньше
+            base_crash = base_crash * 0.85
+        elif amount < 50:
+            # Маленькая ставка → краш чуть позже
+            base_crash = base_crash * 1.15
         
-        # Корректировка в зависимости от ставки (чем больше ставка, тем ниже краш)
-        stake_factor = min(amount / 500, 1.0)  # Максимальный эффект при ставке 500+
-        stake_adjustment = 1.0 - (stake_factor * 0.3)  # -30% к крашу при больших ставках
+        # Влияние баланса (но не убиваем игру)
+        if balance > 50000:
+            # Большой баланс → краш раньше
+            base_crash = base_crash * 0.9
+        elif balance < 1000:
+            # Маленький баланс → краш позже
+            base_crash = base_crash * 1.1
         
-        # Корректировка в зависимости от баланса игрока (чем больше баланс, тем ниже краш)
-        balance_factor = min(user_balance / 20000, 1.0)  # Максимальный эффект при балансе 20000+
-        balance_adjustment = 1.0 - (balance_factor * 0.2)  # -20% к крашу при большом балансе
+        # Влияние банка (но не убиваем игру)
+        if pool_balance > 2000000:
+            # Большой банк → краш позже (иллюзия удачи)
+            base_crash = base_crash * 1.1
         
-        # Корректировка в зависимости от баланса банка (чем больше банк, тем выше краш)
-        pool_factor = min(pool_balance / 1000000, 1.0)  # Максимальный эффект при банке 1M+
-        pool_adjustment = 1.0 + (pool_factor * 0.2)  # +20% к крашу при большом банке
-        
-        # Итоговый краш с учётом всех факторов
-        crash_point = base_crash * stake_adjustment * balance_adjustment * pool_adjustment
-        
-        # Ограничиваем краш (чтобы не было слишком низко или высоко)
-        crash_point = max(1.15, min(4.0, crash_point))
+        # Ограничиваем краш
+        crash_point = max(1.3, min(3.5, base_crash))
         crash_point = round(crash_point, 2)
-        
-        # Логируем для аудита (можно убрать в продакшене)
-        print(f"[AVIATOR] Ставка: {amount}, Баланс игрока: {user_balance}, Банк: {pool_balance}")
-        print(f"[AVIATOR] Краш: {crash_point} (base: {base_crash}, stake: {stake_adjustment}, balance: {balance_adjustment}, pool: {pool_adjustment})")
         
         return jsonify({
             'success': True,
@@ -798,8 +784,9 @@ def crash_result():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== КОСТИ =====
+# ===== КОСТИ (ИСПРАВЛЕННЫЕ) =====
 # ============================================================
+
 @app.route('/api/dice/roll', methods=['POST'])
 def dice_roll():
     try:
@@ -811,19 +798,10 @@ def dice_roll():
         balance = get_user_balance(user_id)
         
         if amount > balance:
-            loss_amount = int(balance)
-            update_user_balance(user_id, -loss_amount)
-            add_history(user_id, 'dice', amount, -loss_amount, 'loss')
             return jsonify({
-                'success': True,
-                'd1': 1,
-                'd2': 1,
-                'total': 2,
-                'win': False,
-                'win_amount': -loss_amount,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0],
-                'message': 'Недостаточно средств'
+                'success': False,
+                'error': 'Недостаточно средств',
+                'balance': balance
             })
         
         d1 = random.randint(1, 6)
