@@ -64,7 +64,7 @@ def init_db():
             updated_at TEXT
         )''')
         
-        # Создаем тестового пользователя с балансом 10000
+        # Проверяем и создаем тестового пользователя
         c.execute("SELECT * FROM users WHERE username = 'test'")
         if not c.fetchone():
             c.execute('''INSERT INTO users (user_id, username, password, email, balance, created_at, last_login)
@@ -79,6 +79,11 @@ def init_db():
                 VALUES (?, ?)''', (POOL_START, datetime.now().isoformat()))
         
         conn.commit()
+        
+        # Проверяем баланс тестового пользователя
+        c.execute("SELECT balance FROM users WHERE user_id = 'test_001'")
+        row = c.fetchone()
+        print(f"✅ Тестовый пользователь создан. Баланс: {row[0] if row else 'Нет данных'}")
 
 init_db()
 
@@ -109,34 +114,54 @@ def get_user_by_username(username):
 
 def get_balance(user_id):
     """Получить актуальный баланс пользователя"""
-    with get_db() as conn:
-        c = conn.cursor()
-        c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-        row = c.fetchone()
-        return row[0] if row else 0
+    try:
+        with get_db() as conn:
+            c = conn.cursor()
+            c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
+            row = c.fetchone()
+            if row:
+                return row[0]
+            return START_BALANCE
+    except Exception as e:
+        print(f"Ошибка получения баланса: {e}")
+        return START_BALANCE
 
 def update_balance(user_id, amount):
-    """Обновить баланс пользователя"""
-    with get_db() as conn:
-        c = conn.cursor()
-        c.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
-        if amount > 0:
-            c.execute("UPDATE users SET wins = wins + 1 WHERE user_id = ?", (user_id,))
-        c.execute("UPDATE users SET total_bets = total_bets + 1 WHERE user_id = ?", (user_id,))
-        conn.commit()
-        
-        # Возвращаем новый баланс
-        c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-        row = c.fetchone()
-        return row[0] if row else 0
+    """Обновить баланс пользователя и вернуть новый баланс"""
+    try:
+        with get_db() as conn:
+            c = conn.cursor()
+            # Обновляем баланс
+            c.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
+            
+            # Обновляем статистику
+            if amount > 0:
+                c.execute("UPDATE users SET wins = wins + 1 WHERE user_id = ?", (user_id,))
+            c.execute("UPDATE users SET total_bets = total_bets + 1 WHERE user_id = ?", (user_id,))
+            
+            conn.commit()
+            
+            # Получаем новый баланс
+            c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
+            row = c.fetchone()
+            new_balance = row[0] if row else START_BALANCE
+            
+            print(f"✅ Баланс обновлен: user_id={user_id}, amount={amount}, new_balance={new_balance}")
+            return new_balance
+    except Exception as e:
+        print(f"❌ Ошибка обновления баланса: {e}")
+        return get_balance(user_id)
 
 def add_history(user_id, game, bet, win, result):
-    with get_db() as conn:
-        c = conn.cursor()
-        c.execute('''INSERT INTO game_history (user_id, game, bet, win, result, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)''',
-            (user_id, game, bet, win, result, datetime.now().isoformat()))
-        conn.commit()
+    try:
+        with get_db() as conn:
+            c = conn.cursor()
+            c.execute('''INSERT INTO game_history (user_id, game, bet, win, result, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)''',
+                (user_id, game, bet, win, result, datetime.now().isoformat()))
+            conn.commit()
+    except Exception as e:
+        print(f"❌ Ошибка записи истории: {e}")
 
 def get_pool():
     with get_db() as conn:
@@ -161,7 +186,15 @@ def get_stats(user_id):
     """Получить статистику пользователя с актуальным балансом"""
     user = get_user(user_id)
     if not user:
-        return {'balance': START_BALANCE, 'total_bets': 0, 'wins': 0, 'level': 1, 'username': 'Игрок', 'email': ''}
+        return {
+            'balance': START_BALANCE, 
+            'total_bets': 0, 
+            'wins': 0, 
+            'level': 1, 
+            'username': 'Игрок', 
+            'email': '',
+            'user_id': user_id
+        }
     
     winrate = round((user['wins'] / user['total_bets'] * 100), 1) if user['total_bets'] > 0 else 0
     
@@ -253,11 +286,13 @@ def login():
                  (datetime.now().isoformat(), user['user_id']))
         conn.commit()
     
+    stats = get_stats(user['user_id'])
+    
     return jsonify({
         'success': True,
         'user_id': user['user_id'],
         'username': user['username'],
-        'stats': get_stats(user['user_id'])
+        'stats': stats
     })
 
 @app.route('/api/init', methods=['POST'])
@@ -267,6 +302,8 @@ def init():
     
     stats = get_stats(user_id)
     pool = get_pool()
+    
+    print(f"📊 Init: user_id={user_id}, balance={stats.get('balance')}")
     
     return jsonify({
         'success': True,
@@ -282,6 +319,8 @@ def get_balance_api():
     user_id = data.get('user_id', 'test_001')
     
     balance = get_balance(user_id)
+    print(f"💰 Запрос баланса: user_id={user_id}, balance={balance}")
+    
     return jsonify({
         'success': True,
         'balance': balance
@@ -298,11 +337,15 @@ def game_roulette(user):
     bet_type = data.get('type', 'number')
     number = data.get('number')
     
+    print(f"🎡 Рулетка: user_id={user['user_id']}, bet={bet}, type={bet_type}")
+    
     if bet <= 0:
         return jsonify({'success': False, 'error': 'Неверная ставка'})
     
     # Проверяем актуальный баланс
     current_balance = get_balance(user['user_id'])
+    print(f"💰 Текущий баланс: {current_balance}")
+    
     if bet > current_balance:
         return jsonify({
             'success': False, 
@@ -348,13 +391,14 @@ def game_roulette(user):
         new_balance = update_balance(user['user_id'], win_amount)
         update_pool(-win_amount)
         add_history(user['user_id'], 'roulette', bet, win_amount, 'win')
+        print(f"🎉 ВЫИГРЫШ: +{win_amount}, новый баланс: {new_balance}")
     else:
         new_balance = update_balance(user['user_id'], -bet)
         update_pool(bet)
         add_history(user['user_id'], 'roulette', bet, -bet, 'loss')
+        print(f"😞 ПРОИГРЫШ: -{bet}, новый баланс: {new_balance}")
     
     stats = get_stats(user['user_id'])
-    stats['balance'] = new_balance  # Гарантируем актуальный баланс
     
     return jsonify({
         'success': True,
@@ -376,10 +420,14 @@ def game_slots(user):
     data = request.json
     bet = int(data.get('bet', 0))
     
+    print(f"🎰 Слоты: user_id={user['user_id']}, bet={bet}")
+    
     if bet <= 0:
         return jsonify({'success': False, 'error': 'Неверная ставка'})
     
     current_balance = get_balance(user['user_id'])
+    print(f"💰 Текущий баланс: {current_balance}")
+    
     if bet > current_balance:
         return jsonify({
             'success': False, 
@@ -414,13 +462,14 @@ def game_slots(user):
         new_balance = update_balance(user['user_id'], win_amount)
         update_pool(-win_amount)
         add_history(user['user_id'], 'slots', bet, win_amount, 'win')
+        print(f"🎉 ВЫИГРЫШ: +{win_amount}, новый баланс: {new_balance}")
     else:
         new_balance = update_balance(user['user_id'], -bet)
         update_pool(bet)
         add_history(user['user_id'], 'slots', bet, -bet, 'loss')
+        print(f"😞 ПРОИГРЫШ: -{bet}, новый баланс: {new_balance}")
     
     stats = get_stats(user['user_id'])
-    stats['balance'] = new_balance
     
     return jsonify({
         'success': True,
@@ -450,10 +499,14 @@ def game_blackjack(user):
     bet = int(data.get('bet', 0))
     action = data.get('action', 'start')
     
+    print(f"🃏 Блэкджек: user_id={user['user_id']}, bet={bet}, action={action}")
+    
     if bet <= 0:
         return jsonify({'success': False, 'error': 'Неверная ставка'})
     
     current_balance = get_balance(user['user_id'])
+    print(f"💰 Текущий баланс: {current_balance}")
+    
     if bet > current_balance:
         return jsonify({
             'success': False, 
@@ -481,7 +534,6 @@ def game_blackjack(user):
             add_history(user['user_id'], 'blackjack', bet, win_amount, 'win')
             
             stats = get_stats(user['user_id'])
-            stats['balance'] = new_balance
             
             return jsonify({
                 'success': True,
@@ -514,7 +566,6 @@ def game_blackjack(user):
             add_history(user['user_id'], 'blackjack', bet, -bet, 'loss')
             
             stats = get_stats(user['user_id'])
-            stats['balance'] = new_balance
             
             return jsonify({
                 'success': True,
@@ -555,7 +606,6 @@ def game_blackjack(user):
             add_history(user['user_id'], 'blackjack', bet, win_amount, 'win')
             
             stats = get_stats(user['user_id'])
-            stats['balance'] = new_balance
             
             return jsonify({
                 'success': True,
@@ -585,7 +635,6 @@ def game_blackjack(user):
             add_history(user['user_id'], 'blackjack', bet, -bet, 'loss')
             
             stats = get_stats(user['user_id'])
-            stats['balance'] = new_balance
             
             return jsonify({
                 'success': True,
@@ -610,11 +659,15 @@ def game_crash(user):
     action = data.get('action', 'start')
     bet = int(data.get('bet', 0))
     
+    print(f"✈️ Aviator: user_id={user['user_id']}, bet={bet}, action={action}")
+    
     if action == 'start':
         if bet <= 0:
             return jsonify({'success': False, 'error': 'Неверная ставка'})
         
         current_balance = get_balance(user['user_id'])
+        print(f"💰 Текущий баланс: {current_balance}")
+        
         if bet > current_balance:
             return jsonify({
                 'success': False, 
@@ -654,7 +707,6 @@ def game_crash(user):
         add_history(user['user_id'], 'crash', bet, win_amount, 'win')
         
         stats = get_stats(user['user_id'])
-        stats['balance'] = new_balance
         
         return jsonify({
             'success': True,
@@ -670,7 +722,6 @@ def game_crash(user):
         add_history(user['user_id'], 'crash', bet, -bet, 'loss')
         
         stats = get_stats(user['user_id'])
-        stats['balance'] = new_balance
         
         return jsonify({
             'success': True,
@@ -691,10 +742,14 @@ def game_dice(user):
     bet = int(data.get('bet', 0))
     bet_type = data.get('type', 'over')
     
+    print(f"🎲 Кости: user_id={user['user_id']}, bet={bet}, type={bet_type}")
+    
     if bet <= 0:
         return jsonify({'success': False, 'error': 'Неверная ставка'})
     
     current_balance = get_balance(user['user_id'])
+    print(f"💰 Текущий баланс: {current_balance}")
+    
     if bet > current_balance:
         return jsonify({
             'success': False, 
@@ -727,13 +782,14 @@ def game_dice(user):
         new_balance = update_balance(user['user_id'], win_amount)
         update_pool(-win_amount)
         add_history(user['user_id'], 'dice', bet, win_amount, 'win')
+        print(f"🎉 ВЫИГРЫШ: +{win_amount}, новый баланс: {new_balance}")
     else:
         new_balance = update_balance(user['user_id'], -bet)
         update_pool(bet)
         add_history(user['user_id'], 'dice', bet, -bet, 'loss')
+        print(f"😞 ПРОИГРЫШ: -{bet}, новый баланс: {new_balance}")
     
     stats = get_stats(user['user_id'])
-    stats['balance'] = new_balance
     
     return jsonify({
         'success': True,
@@ -751,4 +807,11 @@ def game_dice(user):
 # ===== ЗАПУСК =====
 # ============================================================
 if __name__ == '__main__':
+    print("=" * 50)
+    print("🎰 RuWin Casino Server Started")
+    print("=" * 50)
+    print(f"📁 Database: {DATABASE}")
+    print(f"💰 House Edge: {HOUSE_EDGE * 100}%")
+    print(f"🎯 Start Balance: {START_BALANCE} ₽")
+    print("=" * 50)
     app.run(debug=True, host='0.0.0.0', port=5000)
