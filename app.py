@@ -193,15 +193,12 @@ def send_2fa_email(email, code):
         return False
 
 def calculate_win(amount, multiplier):
-    """Расчет выигрыша с учетом комиссии казино (5%)"""
     win_amount = amount * multiplier
     house_edge = 0.05
     commission = int(win_amount * house_edge)
     return int(win_amount - commission)
 
-# ============================================================
 # ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
-# ============================================================
 
 @app.route('/')
 def index():
@@ -351,7 +348,7 @@ def logout():
     return jsonify({'success': True})
 
 # ============================================================
-# ===== РУЛЕТКА (ИСПРАВЛЕННАЯ) =====
+# ===== РУЛЕТКА =====
 # ============================================================
 
 @app.route('/api/roulette/spin', methods=['POST'])
@@ -365,6 +362,7 @@ def roulette_spin():
         
         balance = get_user_balance(user_id)
         
+        # Проверка баланса
         if amount > balance:
             return jsonify({
                 'success': False,
@@ -432,7 +430,7 @@ def roulette_spin():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== СЛОТЫ (ИСПРАВЛЕННЫЕ) =====
+# ===== СЛОТЫ =====
 # ============================================================
 
 @app.route('/api/slots/spin', methods=['POST'])
@@ -457,17 +455,14 @@ def slots_spin():
         win = False
         win_amount = 0
         
-        # Горизонтальные линии
         for row in range(3):
             if reels[row*3] == reels[row*3+1] and reels[row*3+1] == reels[row*3+2]:
                 win = True
                 win_amount += calculate_win(amount, 5)
-        # Вертикальные линии
         for col in range(3):
             if reels[col] == reels[col+3] and reels[col+3] == reels[col+6]:
                 win = True
                 win_amount += calculate_win(amount, 5)
-        # Диагонали
         if reels[0] == reels[4] and reels[4] == reels[8]:
             win = True
             win_amount += calculate_win(amount, 10)
@@ -502,7 +497,7 @@ def slots_spin():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== БЛЭКДЖЕК (ИСПРАВЛЕННЫЙ) =====
+# ===== БЛЭКДЖЕК =====
 # ============================================================
 
 def sum_hand(hand):
@@ -670,7 +665,7 @@ def blackjack_stand():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== AVIATOR (ИСПРАВЛЕННЫЙ) =====
+# ===== AVIATOR =====
 # ============================================================
 
 @app.route('/api/crash/start', methods=['POST'])
@@ -691,34 +686,22 @@ def crash_start():
         
         pool_balance, _ = get_pool_balance()
         
-        # Исправленная логика: краш всегда между 1.3 и 3.5
-        # Но с учётом ставки и баланса
-        
-        # Базовый краш (1.5 - 3.0)
+        # Умная экономика
         base_crash = random.uniform(1.5, 3.0)
         
-        # Влияние ставки (но не убиваем игру)
         if amount > 100:
-            # Большая ставка → краш чуть раньше
             base_crash = base_crash * 0.85
         elif amount < 50:
-            # Маленькая ставка → краш чуть позже
             base_crash = base_crash * 1.15
         
-        # Влияние баланса (но не убиваем игру)
         if balance > 50000:
-            # Большой баланс → краш раньше
             base_crash = base_crash * 0.9
         elif balance < 1000:
-            # Маленький баланс → краш позже
             base_crash = base_crash * 1.1
         
-        # Влияние банка (но не убиваем игру)
         if pool_balance > 2000000:
-            # Большой банк → краш позже (иллюзия удачи)
             base_crash = base_crash * 1.1
         
-        # Ограничиваем краш
         crash_point = max(1.3, min(3.5, base_crash))
         crash_point = round(crash_point, 2)
         
@@ -784,7 +767,7 @@ def crash_result():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
-# ===== КОСТИ (ИСПРАВЛЕННЫЕ) =====
+# ===== КОСТИ =====
 # ============================================================
 
 @app.route('/api/dice/roll', methods=['POST'])
