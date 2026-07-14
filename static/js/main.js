@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const savedId = localStorage.getItem('ruwin_user_id');
     const savedName = localStorage.getItem('ruwin_username');
 
+    console.log('🔐 Saved session:', savedId, savedName);
+
     if (savedId) {
         userId = savedId;
         sessionId = savedId;
@@ -31,6 +33,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setupNavigation();
     setupGameCards();
+    
+    // Автоматическое обновление баланса каждые 10 секунд
+    setInterval(() => {
+        if (sessionId) refreshBalance();
+    }, 10000);
 });
 
 // ============================================================
@@ -44,6 +51,8 @@ async function initGame() {
             body: JSON.stringify({ user_id: userId || 'test_001' })
         });
         const data = await response.json();
+        console.log('📊 Init response:', data);
+        
         if (data.success) {
             sessionId = data.stats?.user_id || 'test_001';
             updateUI(data.stats);
@@ -53,9 +62,8 @@ async function initGame() {
             }
         }
     } catch (error) {
-        console.error('Ошибка инициализации:', error);
+        console.error('❌ Ошибка инициализации:', error);
         sessionId = 'test_001';
-        // Пробуем получить баланс через отдельный запрос
         refreshBalance();
     }
 }
@@ -68,19 +76,26 @@ async function refreshBalance() {
             body: JSON.stringify({ user_id: sessionId || 'test_001' })
         });
         const data = await response.json();
-        if (data.success) {
+        console.log('💰 Balance response:', data);
+        
+        if (data.success && data.balance !== undefined) {
             userBalance = data.balance;
             updateBalanceDisplay();
+            console.log(`✅ Баланс обновлен: ${userBalance} ₽`);
         }
     } catch (error) {
-        console.error('Ошибка обновления баланса:', error);
+        console.error('❌ Ошибка обновления баланса:', error);
     }
 }
 
 function updateUI(stats) {
     if (!stats) return;
     
-    userBalance = stats.balance || 10000;
+    console.log('📊 Updating UI with stats:', stats);
+    
+    if (stats.balance !== undefined) {
+        userBalance = stats.balance;
+    }
     userLevel = stats.level || 1;
     
     updateBalanceDisplay();
@@ -98,9 +113,12 @@ function updateUI(stats) {
 }
 
 function updateBalanceDisplay() {
+    console.log(`💵 Обновление баланса: ${userBalance} ₽`);
     const balanceEls = document.querySelectorAll('.balance, #balance, #balanceDisplay');
     balanceEls.forEach(el => {
-        if (el) el.textContent = userBalance.toLocaleString() + ' ₽';
+        if (el) {
+            el.textContent = userBalance.toLocaleString() + ' ₽';
+        }
     });
 }
 
@@ -116,6 +134,7 @@ function getCurrentBalance() {
 }
 
 function checkBalance(amount) {
+    console.log(`🔍 checkBalance: amount=${amount}, balance=${userBalance}`);
     if (amount > userBalance) {
         showNotification('❌ Недостаточно средств! Баланс: ' + userBalance.toLocaleString() + ' ₽', 'error');
         return false;
@@ -207,6 +226,8 @@ async function handleLogin(e) {
             body: JSON.stringify({ username, password })
         });
         const data = await response.json();
+        console.log('🔐 Login response:', data);
+        
         if (data.success) {
             userId = data.user_id;
             sessionId = data.user_id;
@@ -214,14 +235,18 @@ async function handleLogin(e) {
             localStorage.setItem('ruwin_username', data.username);
             document.getElementById('authModal').classList.remove('active');
             document.getElementById('app').style.display = 'block';
-            if (data.stats) updateUI(data.stats);
+            if (data.stats) {
+                userBalance = data.stats.balance || 10000;
+                updateUI(data.stats);
+            }
             showNotification('✅ Добро пожаловать, ' + data.username + '!', 'success');
-            initGame();
+            refreshBalance();
         } else {
             errorEl.textContent = '❌ ' + data.error;
         }
     } catch (error) {
         errorEl.textContent = '❌ Ошибка соединения';
+        console.error('Login error:', error);
     }
     return false;
 }
@@ -395,18 +420,27 @@ async function rouletteSpin() {
             body: JSON.stringify(payload)
         });
         const data = await response.json();
+        console.log('🎡 Roulette response:', data);
+        
         if (data.success) {
             const result = document.getElementById('rouletteResult');
             result.className = 'game-result ' + (data.win ? 'win' : 'loss');
             result.innerHTML = `Выпало: <strong style="color:${data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff'}">${data.result}</strong> (${data.color.toUpperCase()})<br>${data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽'}`;
+            
+            // Обновляем баланс из ответа
+            if (data.balance !== undefined) {
+                userBalance = data.balance;
+                updateBalanceDisplay();
+                console.log(`💰 Новый баланс: ${userBalance}`);
+            } else if (data.stats && data.stats.balance !== undefined) {
+                userBalance = data.stats.balance;
+                updateBalanceDisplay();
+            }
+            
             if (data.win) {
                 showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
             } else {
                 showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
-            }
-            if (data.balance !== undefined) {
-                userBalance = data.balance;
-                updateBalanceDisplay();
             }
             updateUI(data.stats);
         } else {
@@ -416,7 +450,10 @@ async function rouletteSpin() {
                 updateBalanceDisplay();
             }
         }
-    } catch (error) { showNotification('❌ Ошибка соединения!', 'error'); }
+    } catch (error) { 
+        showNotification('❌ Ошибка соединения!', 'error');
+        console.error('Roulette error:', error);
+    }
     setTimeout(() => {
         spinBtn.disabled = false;
         document.getElementById('rouletteBoard').classList.remove('spinning');
@@ -460,6 +497,8 @@ async function slotsSpin() {
             body: JSON.stringify({ user_id: sessionId || 'test_001', bet: bet })
         });
         const data = await response.json();
+        console.log('🎰 Slots response:', data);
+        
         if (data.success) {
             const reels = document.querySelectorAll('.slot-reel');
             reels.forEach((reel, idx) => {
@@ -476,14 +515,16 @@ async function slotsSpin() {
                 const result = document.getElementById('slotsResult');
                 result.className = 'game-result ' + (data.win ? 'win' : 'loss');
                 result.textContent = data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
+                
+                if (data.balance !== undefined) {
+                    userBalance = data.balance;
+                    updateBalanceDisplay();
+                }
+                
                 if (data.win) {
                     showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
                 } else {
                     showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
-                }
-                if (data.balance !== undefined) {
-                    userBalance = data.balance;
-                    updateBalanceDisplay();
                 }
                 updateUI(data.stats);
             }, 2000);
@@ -494,7 +535,10 @@ async function slotsSpin() {
                 updateBalanceDisplay();
             }
         }
-    } catch (error) { showNotification('❌ Ошибка соединения!', 'error'); }
+    } catch (error) { 
+        showNotification('❌ Ошибка соединения!', 'error');
+        console.error('Slots error:', error);
+    }
     setTimeout(() => {
         spinBtn.disabled = false;
         document.querySelectorAll('.slot-reel').forEach(r => r.classList.remove('spinning'));
@@ -555,6 +599,8 @@ async function blackjackStart() {
             body: JSON.stringify({ user_id: sessionId || 'test_001', bet: bet, action: 'start' })
         });
         const data = await response.json();
+        console.log('🃏 Blackjack response:', data);
+        
         if (data.success) {
             blackjackState.deck = data.deck || [];
             blackjackState.playerHand = data.player_hand || [];
@@ -577,7 +623,10 @@ async function blackjackStart() {
                 updateBalanceDisplay();
             }
         }
-    } catch (error) { showNotification('❌ Ошибка!', 'error'); }
+    } catch (error) { 
+        showNotification('❌ Ошибка!', 'error');
+        console.error('Blackjack error:', error);
+    }
 }
 
 async function blackjackHit() {
@@ -602,7 +651,10 @@ async function blackjackHit() {
                 updateUI(data.stats);
             }
         }
-    } catch (error) { showNotification('❌ Ошибка!', 'error'); }
+    } catch (error) { 
+        showNotification('❌ Ошибка!', 'error');
+        console.error('Blackjack hit error:', error);
+    }
 }
 
 async function blackjackStand() {
@@ -623,7 +675,10 @@ async function blackjackStand() {
             }
             updateUI(data.stats);
         }
-    } catch (error) { showNotification('❌ Ошибка!', 'error'); }
+    } catch (error) { 
+        showNotification('❌ Ошибка!', 'error');
+        console.error('Blackjack stand error:', error);
+    }
 }
 
 function updateBlackjackUI(data) {
@@ -719,6 +774,8 @@ async function crashStart() {
             body: JSON.stringify({ user_id: sessionId || 'test_001', action: 'start', bet: bet })
         });
         const data = await response.json();
+        console.log('✈️ Crash start response:', data);
+        
         if (data.success) {
             crashState.crashPoint = data.crash_point;
             let lastMultiplier = 1;
@@ -749,7 +806,11 @@ async function crashStart() {
             showNotification('❌ ' + data.error, 'error');
             resetCrash();
         }
-    } catch (error) { showNotification('❌ Ошибка!', 'error'); resetCrash(); }
+    } catch (error) { 
+        showNotification('❌ Ошибка!', 'error');
+        console.error('Crash start error:', error);
+        resetCrash();
+    }
 }
 
 async function crashCashout() {
@@ -765,6 +826,8 @@ async function crashCashout() {
             body: JSON.stringify({ user_id: sessionId || 'test_001', action: 'cashout', bet: crashState.bet, multiplier: currentMultiplier })
         });
         const data = await response.json();
+        console.log('✈️ Crash cashout response:', data);
+        
         if (data.success) {
             const result = document.getElementById('crashResult');
             result.className = 'game-result win';
@@ -778,7 +841,11 @@ async function crashCashout() {
             addCrashHistory(currentMultiplier, true);
             resetCrash();
         }
-    } catch (error) { showNotification('❌ Ошибка!', 'error'); resetCrash(); }
+    } catch (error) { 
+        showNotification('❌ Ошибка!', 'error');
+        console.error('Crash cashout error:', error);
+        resetCrash();
+    }
 }
 
 async function crashCrash() {
@@ -807,7 +874,9 @@ async function crashCrash() {
             showNotification('💥 КРАШ! Проигрыш ' + crashState.bet + ' ₽', 'error');
             addCrashHistory(finalMultiplier, false);
         }
-    } catch (error) {}
+    } catch (error) {
+        console.error('Crash crash error:', error);
+    }
     resetCrash();
 }
 
@@ -883,6 +952,8 @@ async function rollDice() {
             body: JSON.stringify({ user_id: sessionId || 'test_001', bet: bet, type: diceBetType })
         });
         const data = await response.json();
+        console.log('🎲 Dice response:', data);
+        
         if (data.success) {
             const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
             document.getElementById('die1').textContent = diceSymbols[data.d1 - 1];
@@ -894,14 +965,16 @@ async function rollDice() {
             const result = document.getElementById('diceResult');
             result.className = 'game-result ' + (data.win ? 'win' : 'loss');
             result.textContent = data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽ (выпало ' + data.total + ')' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽ (выпало ' + data.total + ')';
+            
+            if (data.balance !== undefined) {
+                userBalance = data.balance;
+                updateBalanceDisplay();
+            }
+            
             if (data.win) {
                 showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
             } else {
                 showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
-            }
-            if (data.balance !== undefined) {
-                userBalance = data.balance;
-                updateBalanceDisplay();
             }
             updateUI(data.stats);
         } else {
@@ -911,7 +984,10 @@ async function rollDice() {
                 updateBalanceDisplay();
             }
         }
-    } catch (error) { showNotification('❌ Ошибка соединения!', 'error'); }
+    } catch (error) { 
+        showNotification('❌ Ошибка соединения!', 'error');
+        console.error('Dice error:', error);
+    }
     setTimeout(() => { btn.disabled = false; }, 1500);
 }
 
@@ -927,7 +1003,7 @@ document.querySelectorAll('.modal').forEach(modal => {
 });
 
 // ============================================================
-// ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ЛОББИ
+// ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================================
 function showBonus() {
     showNotification('🎁 Бонус +80 ₽ зачислен на баланс!', 'success');
@@ -951,9 +1027,6 @@ function filterBets(type) {
     });
 }
 
-// ============================================================
-// ГЛОБАЛЬНЫЕ ЭКСПОРТЫ
-// ============================================================
 window.sendChat = function() {
     const input = document.getElementById('chatInput');
     if (!input) return;
@@ -978,5 +1051,14 @@ window.sendChatOnEnter = function(event) {
     if (event.key === 'Enter') window.sendChat();
 };
 
+// ============================================================
+// ВЫВОД В КОНСОЛЬ
+// ============================================================
 console.log('🎰 RuWin Casino загружен!');
-console.log('💰 Баланс:', userBalance);
+console.log('💰 Текущий баланс:', userBalance);
+console.log('👤 Пользователь:', userId || 'Не авторизован');
+
+// Экспортируем функции в глобальный скоуп
+window.refreshBalance = refreshBalance;
+window.getCurrentBalance = getCurrentBalance;
+window.updateBalanceDisplay = updateBalanceDisplay;
