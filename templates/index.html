@@ -24,10 +24,6 @@
             --neon-gold: #ffd700;
             --neon-green: #00ff88;
             --neon-red: #ff0040;
-            --neon-blue: #0066ff;
-            --neon-cyan-glow: rgba(0, 240, 255, 0.15);
-            --neon-pink-glow: rgba(255, 0, 160, 0.15);
-            --neon-purple-glow: rgba(139, 0, 255, 0.15);
             --bg-primary: #08080f;
             --bg-secondary: #0d0d1a;
             --bg-card: rgba(255, 255, 255, 0.02);
@@ -37,7 +33,6 @@
             --text-muted: #555577;
             --border-color: rgba(255, 255, 255, 0.04);
             --border-glow: rgba(0, 240, 255, 0.08);
-            --shadow-glow: 0 0 40px rgba(0, 240, 255, 0.02);
             --radius: 12px;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -53,8 +48,7 @@
         body {
             background-image: 
                 radial-gradient(ellipse at 10% 20%, rgba(0, 240, 255, 0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 90% 80%, rgba(139, 0, 255, 0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(255, 0, 160, 0.02) 0%, transparent 60%);
+                radial-gradient(ellipse at 90% 80%, rgba(139, 0, 255, 0.03) 0%, transparent 50%);
         }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -121,7 +115,6 @@
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             font-size: 13px;
             font-weight: 500;
-            box-shadow: var(--shadow-glow);
             cursor: pointer;
         }
         .notification.show { transform: translateX(0); }
@@ -130,7 +123,7 @@
         .notification.info { border-left: 4px solid var(--neon-cyan); }
         .notification.warning { border-left: 4px solid var(--neon-gold); }
 
-        /* ===== МОДАЛКИ АВТОРИЗАЦИИ ===== */
+        /* ===== МОДАЛКИ ===== */
         .modal {
             display: none;
             position: fixed;
@@ -236,7 +229,6 @@
             min-height: 18px;
         }
 
-        /* ===== 2FA ===== */
         .twofa-input {
             font-size: 28px;
             letter-spacing: 10px;
@@ -1663,7 +1655,7 @@
 
     <script>
         // ============================================================
-        // ПОЛНЫЙ JAVASCRIPT - АВТОРИЗАЦИЯ + ВСЕ ИГРЫ
+        // ПОЛНЫЙ JAVASCRIPT - ИСПРАВЛЕННАЯ ВЕРСИЯ
         // ============================================================
 
         let userId = null;
@@ -1671,6 +1663,27 @@
         let userLevel = 1;
         let currentGame = 'lobby';
         let sessionId = null;
+
+        // ============================================================
+        // ФУНКЦИИ РАБОТЫ С БАЛАНСОМ (ИСПРАВЛЕННЫЕ)
+        // ============================================================
+
+        function getCurrentBalance() {
+            const balanceEl = document.getElementById('balance');
+            if (!balanceEl) return 0;
+            const text = balanceEl.textContent;
+            const numbers = text.replace(/[^\d]/g, '');
+            return parseInt(numbers) || 0;
+        }
+
+        function checkBalance(amount) {
+            const balance = getCurrentBalance();
+            if (amount > balance) {
+                showNotification('❌ Недостаточно средств! Баланс: ' + balance.toLocaleString() + ' ₽', 'error');
+                return false;
+            }
+            return true;
+        }
 
         // ============================================================
         // АВТОРИЗАЦИЯ
@@ -2094,6 +2107,9 @@
                 return;
             }
 
+            // ✅ ПРОВЕРКА БАЛАНСА
+            if (!checkBalance(amount)) return;
+
             let payload = {
                 session_id: sessionId || 'test_user',
                 bet_type: rouletteBetType,
@@ -2177,6 +2193,9 @@
                 showNotification('❌ Введите сумму!', 'error');
                 return;
             }
+
+            // ✅ ПРОВЕРКА БАЛАНСА
+            if (!checkBalance(amount)) return;
 
             spinBtn.disabled = true;
             const reels = document.querySelectorAll('.slot-reel');
@@ -2272,6 +2291,10 @@
                 showNotification('❌ Введите сумму!', 'error');
                 return;
             }
+
+            // ✅ ПРОВЕРКА БАЛАНСА
+            if (!checkBalance(amount)) return;
+
             blackjackState.amount = amount;
 
             try {
@@ -2399,7 +2422,7 @@
         }
 
         // ============================================================
-        // AVIATOR (С УМНОЙ ЭКОНОМИКОЙ)
+        // AVIATOR
         // ============================================================
 
         let crashState = { 
@@ -2410,8 +2433,7 @@
             amount: 0, 
             interval: null,
             startTime: 0,
-            isCrashed: false,
-            cashoutMultiplier: 0
+            isCrashed: false
         };
 
         function loadCrash(container) {
@@ -2445,11 +2467,8 @@
                 return;
             }
 
-            const balance = parseInt(document.getElementById('balance').textContent.replace(/[^\d]/g, ''));
-            if (amount > balance) {
-                showNotification('❌ Недостаточно средств!', 'error');
-                return;
-            }
+            // ✅ ПРОВЕРКА БАЛАНСА
+            if (!checkBalance(amount)) return;
 
             crashState.amount = amount;
             crashState.isBetPlaced = true;
@@ -2457,7 +2476,6 @@
             crashState.isCrashed = false;
             crashState.multiplier = 1;
             crashState.startTime = Date.now();
-            crashState.cashoutMultiplier = 0;
 
             document.getElementById('crashStart').disabled = true;
             document.getElementById('crashCashout').disabled = false;
@@ -2527,7 +2545,6 @@
             document.getElementById('crashCashout').disabled = true;
             
             const currentMultiplier = Math.round(crashState.multiplier * 100) / 100;
-            crashState.cashoutMultiplier = currentMultiplier;
             
             try {
                 const response = await fetch('/api/crash/cashout', {
@@ -2596,7 +2613,6 @@
             crashState.isBetPlaced = false;
             crashState.isCrashed = false;
             crashState.multiplier = 1;
-            crashState.cashoutMultiplier = 0;
             
             if (crashState.interval) {
                 clearInterval(crashState.interval);
@@ -2707,6 +2723,9 @@
                 showNotification('❌ Введите сумму!', 'error');
                 return;
             }
+
+            // ✅ ПРОВЕРКА БАЛАНСА
+            if (!checkBalance(amount)) return;
 
             btn.disabled = true;
             document.getElementById('die1').classList.add('rolling');
@@ -2865,7 +2884,10 @@
             });
         }
 
-        // Глобальные функции для HTML
+        // ============================================================
+        // ГЛОБАЛЬНЫЕ ФУНКЦИИ
+        // ============================================================
+
         window.sendChat = sendChat;
         window.sendChatOnEnter = sendChatOnEnter;
         window.showBonus = showBonus;
@@ -2880,6 +2902,8 @@
         window.verifyTwofa = verifyTwofa;
         window.handleLogout = handleLogout;
         window.updateUI = updateUI;
+        window.getCurrentBalance = getCurrentBalance;
+        window.checkBalance = checkBalance;
 
         console.log('✅ RuWin Casino загружен!');
     </script>
