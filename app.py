@@ -146,7 +146,7 @@ def calculate_win(bet, multiplier):
 def get_stats(user_id):
     user = get_user(user_id)
     if not user:
-        return {'balance': START_BALANCE, 'total_bets': 0, 'wins': 0, 'level': 1}
+        return {'balance': START_BALANCE, 'total_bets': 0, 'wins': 0, 'level': 1, 'username': 'Игрок', 'email': ''}
     
     winrate = round((user['wins'] / user['total_bets'] * 100), 1) if user['total_bets'] > 0 else 0
     
@@ -157,14 +157,16 @@ def get_stats(user_id):
         'level': user['level'],
         'winrate': winrate,
         'username': user['username'],
-        'email': user['email']
+        'email': user['email'],
+        'user_id': user['user_id']
     }
 
 # ===== ДЕКОРАТОР ДЛЯ ПРОВЕРКИ АВТОРИЗАЦИИ =====
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        user_id = request.json.get('user_id') or request.args.get('user_id')
+        data = request.get_json(force=True)
+        user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Не авторизован'}), 401
         
@@ -262,9 +264,9 @@ def init():
         'house_edge': HOUSE_EDGE
     })
 
-# ===== ИГРЫ =====
-
-# 1. РУЛЕТКА
+# ============================================================
+# ===== ИГРА 1: РУЛЕТКА =====
+# ============================================================
 @app.route('/api/game/roulette', methods=['POST'])
 @require_auth
 def game_roulette(user):
@@ -334,7 +336,9 @@ def game_roulette(user):
         'pool': get_pool()
     })
 
-# 2. СЛОТЫ
+# ============================================================
+# ===== ИГРА 2: СЛОТЫ =====
+# ============================================================
 @app.route('/api/game/slots', methods=['POST'])
 @require_auth
 def game_slots(user):
@@ -389,7 +393,9 @@ def game_slots(user):
         'pool': get_pool()
     })
 
-# 3. БЛЭКДЖЕК
+# ============================================================
+# ===== ИГРА 3: БЛЭКДЖЕК =====
+# ============================================================
 def sum_hand(hand):
     total = sum(hand)
     aces = hand.count(11)
@@ -411,40 +417,133 @@ def game_blackjack(user):
     if bet > user['balance']:
         return jsonify({'success': False, 'error': 'Недостаточно средств'})
     
+    # Создаем колоду
     deck = [2,3,4,5,6,7,8,9,10,10,10,10,11] * 4
     random.shuffle(deck)
     
-    player_hand = [deck.pop(), deck.pop()]
-    dealer_hand = [deck.pop(), deck.pop()]
-    
-    player_sum = sum_hand(player_hand)
-    dealer_sum = sum_hand(dealer_hand)
-    
-    # Проверка блэкджека
-    if player_sum == 21:
-        win_amount = calculate_win(bet, 1.5)
-        update_balance(user['user_id'], win_amount)
-        update_pool(-win_amount)
-        add_history(user['user_id'], 'blackjack', bet, win_amount, 'win')
+    if action == 'start':
+        player_hand = [deck.pop(), deck.pop()]
+        dealer_hand = [deck.pop(), deck.pop()]
+        
+        player_sum = sum_hand(player_hand)
+        dealer_sum = sum_hand(dealer_hand)
+        
+        # Проверка блэкджека
+        if player_sum == 21:
+            win_amount = calculate_win(bet, 1.5)
+            pool = get_pool()
+            if pool < win_amount:
+                win_amount = int(pool * 0.9)
+            
+            update_balance(user['user_id'], win_amount)
+            update_pool(-win_amount)
+            add_history(user['user_id'], 'blackjack', bet, win_amount, 'win')
+            
+            return jsonify({
+                'success': True,
+                'player_hand': player_hand,
+                'dealer_hand': dealer_hand,
+                'game_over': True,
+                'win': True,
+                'win_amount': win_amount,
+                'stats': get_stats(user['user_id'])
+            })
+        
         return jsonify({
             'success': True,
             'player_hand': player_hand,
-            'dealer_hand': dealer_hand,
-            'game_over': True,
-            'win': True,
-            'win_amount': win_amount,
-            'stats': get_stats(user['user_id'])
+            'dealer_hand': [dealer_hand[0], '?'],
+            'deck': deck,
+            'game_over': False
         })
     
-    return jsonify({
-        'success': True,
-        'player_hand': player_hand,
-        'dealer_hand': [dealer_hand[0], '?'],
-        'deck': deck,
-        'game_over': False
-    })
+    elif action == 'hit':
+        player_hand = data.get('player_hand', [])
+        player_hand.append(deck.pop())
+        player_sum = sum_hand(player_hand)
+        
+        if player_sum > 21:
+            update_balance(user['user_id'], -bet)
+            update_pool(bet)
+            add_history(user['user_id'], 'blackjack', bet, -bet, 'loss')
+            
+            return jsonify({
+                'success': True,
+                'player_hand': player_hand,
+                'game_over': True,
+                'win': False,
+                'win_amount': -bet,
+                'stats': get_stats(user['user_id'])
+            })
+        
+        return jsonify({
+            'success': True,
+            'player_hand': player_hand,
+            'deck': deck,
+            'game_over': False
+        })
+    
+    elif action == 'stand':
+        player_hand = data.get('player_hand', [])
+        dealer_hand = data.get('dealer_hand', [])
+        
+        # Дилер берет карты до 17
+        while sum_hand(dealer_hand) < 17:
+            dealer_hand.append(deck.pop())
+        
+        player_sum = sum_hand(player_hand)
+        dealer_sum = sum_hand(dealer_hand)
+        
+        pool = get_pool()
+        
+        if dealer_sum > 21 or player_sum > dealer_sum:
+            win_amount = calculate_win(bet, 2)
+            if pool < win_amount:
+                win_amount = int(pool * 0.9)
+            
+            update_balance(user['user_id'], win_amount)
+            update_pool(-win_amount)
+            add_history(user['user_id'], 'blackjack', bet, win_amount, 'win')
+            
+            return jsonify({
+                'success': True,
+                'player_hand': player_hand,
+                'dealer_hand': dealer_hand,
+                'game_over': True,
+                'win': True,
+                'win_amount': win_amount,
+                'stats': get_stats(user['user_id'])
+            })
+        elif player_sum == dealer_sum:
+            return jsonify({
+                'success': True,
+                'player_hand': player_hand,
+                'dealer_hand': dealer_hand,
+                'game_over': True,
+                'win': None,
+                'win_amount': 0,
+                'stats': get_stats(user['user_id'])
+            })
+        else:
+            update_balance(user['user_id'], -bet)
+            update_pool(bet)
+            add_history(user['user_id'], 'blackjack', bet, -bet, 'loss')
+            
+            return jsonify({
+                'success': True,
+                'player_hand': player_hand,
+                'dealer_hand': dealer_hand,
+                'game_over': True,
+                'win': False,
+                'win_amount': -bet,
+                'stats': get_stats(user['user_id'])
+            })
+    
+    return jsonify({'success': False, 'error': 'Неверное действие'})
 
-# 4. AVIATOR
+# ============================================================
+# ===== ИГРА 4: AVIATOR (CRASH) =====
+# ============================================================
 @app.route('/api/game/crash', methods=['POST'])
 @require_auth
 def game_crash(user):
@@ -512,7 +611,9 @@ def game_crash(user):
     
     return jsonify({'success': False, 'error': 'Неверное действие'})
 
-# 5. КОСТИ
+# ============================================================
+# ===== ИГРА 5: КОСТИ =====
+# ============================================================
 @app.route('/api/game/dice', methods=['POST'])
 @require_auth
 def game_dice(user):
@@ -567,5 +668,276 @@ def game_dice(user):
         'pool': get_pool()
     })
 
+# ============================================================
+# ===== ДОПОЛНИТЕЛЬНЫЕ ИГРЫ (для расширения) =====
+# ============================================================
+
+# 6. ДАРТС
+@app.route('/api/game/darts', methods=['POST'])
+@require_auth
+def game_darts(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    # Бросаем 3 дротика
+    throws = [random.randint(1, 20) for _ in range(3)]
+    total = sum(throws)
+    
+    win = False
+    win_amount = 0
+    
+    # Выигрыш если сумма > 50 или есть попадание в 20
+    if total > 50:
+        win = True
+        win_amount = calculate_win(bet, 2.5)
+    elif 20 in throws:
+        win = True
+        win_amount = calculate_win(bet, 1.5)
+    
+    pool = get_pool()
+    
+    if win:
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'darts', bet, win_amount, 'win')
+    else:
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'darts', bet, -bet, 'loss')
+    
+    return jsonify({
+        'success': True,
+        'throws': throws,
+        'total': total,
+        'win': win,
+        'win_amount': win_amount if win else -bet,
+        'stats': get_stats(user['user_id']),
+        'pool': get_pool()
+    })
+
+# 7. КОЛЕСО ФОРТУНЫ
+@app.route('/api/game/wheel', methods=['POST'])
+@require_auth
+def game_wheel(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    sector = data.get('sector', 0)  # 1-12
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    result = random.randint(1, 12)
+    win = False
+    win_amount = 0
+    
+    if result == sector:
+        win = True
+        win_amount = calculate_win(bet, 10)
+    
+    pool = get_pool()
+    
+    if win:
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'wheel', bet, win_amount, 'win')
+    else:
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'wheel', bet, -bet, 'loss')
+    
+    return jsonify({
+        'success': True,
+        'result': result,
+        'win': win,
+        'win_amount': win_amount if win else -bet,
+        'stats': get_stats(user['user_id']),
+        'pool': get_pool()
+    })
+
+# 8. МАЙНС
+@app.route('/api/game/mines', methods=['POST'])
+@require_auth
+def game_mines(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    cell = data.get('cell', 0)  # 0-24
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    # 5x5 поле с 3 минами
+    mines = random.sample(range(25), 3)
+    
+    win = False
+    win_amount = 0
+    
+    if cell not in mines:
+        win = True
+        win_amount = calculate_win(bet, 2)
+    
+    pool = get_pool()
+    
+    if win:
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'mines', bet, win_amount, 'win')
+    else:
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'mines', bet, -bet, 'loss')
+    
+    return jsonify({
+        'success': True,
+        'mines': mines,
+        'cell': cell,
+        'win': win,
+        'win_amount': win_amount if win else -bet,
+        'stats': get_stats(user['user_id']),
+        'pool': get_pool()
+    })
+
+# 9. МОНЕТКА
+@app.route('/api/game/coin', methods=['POST'])
+@require_auth
+def game_coin(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    choice = data.get('choice', 'heads')
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    result = random.choice(['heads', 'tails'])
+    win = False
+    win_amount = 0
+    
+    if result == choice:
+        win = True
+        win_amount = calculate_win(bet, 2)
+    
+    pool = get_pool()
+    
+    if win:
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'coin', bet, win_amount, 'win')
+    else:
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'coin', bet, -bet, 'loss')
+    
+    return jsonify({
+        'success': True,
+        'result': result,
+        'win': win,
+        'win_amount': win_amount if win else -bet,
+        'stats': get_stats(user['user_id']),
+        'pool': get_pool()
+    })
+
+# 10. ЛОТЕРЕЯ
+@app.route('/api/game/lottery', methods=['POST'])
+@require_auth
+def game_lottery(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    number = data.get('number', 0)
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    result = random.randint(0, 99)
+    win = False
+    win_amount = 0
+    
+    if result == number:
+        win = True
+        win_amount = calculate_win(bet, 50)
+    
+    pool = get_pool()
+    
+    if win:
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'lottery', bet, win_amount, 'win')
+    else:
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'lottery', bet, -bet, 'loss')
+    
+    return jsonify({
+        'success': True,
+        'result': result,
+        'win': win,
+        'win_amount': win_amount if win else -bet,
+        'stats': get_stats(user['user_id']),
+        'pool': get_pool()
+    })
+
+# ============================================================
+# ===== ИСТОРИЯ ИГР =====
+# ============================================================
+@app.route('/api/history', methods=['POST'])
+@require_auth
+def get_history(user):
+    data = request.json
+    limit = data.get('limit', 50)
+    
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute('''SELECT game, bet, win, result, created_at 
+                     FROM game_history 
+                     WHERE user_id = ? 
+                     ORDER BY created_at DESC 
+                     LIMIT ?''', (user['user_id'], limit))
+        rows = c.fetchall()
+        
+        history = []
+        for row in rows:
+            history.append({
+                'game': row[0],
+                'bet': row[1],
+                'win': row[2],
+                'result': row[3],
+                'date': row[4]
+            })
+        
+        return jsonify({
+            'success': True,
+            'history': history,
+            'total': len(history)
+        })
+
+# ============================================================
+# ===== ЗАПУСК =====
+# ============================================================
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
