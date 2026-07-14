@@ -7,16 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
-        /* ============================================================
-           ПОЛНЫЙ НЕОНОВЫЙ ДИЗАЙН
-           ============================================================ */
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* ===== ВСЕ СТИЛИ (ТЕ ЖЕ ЧТО И РАНЬШЕ) ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --neon-cyan: #00f0ff;
             --neon-pink: #ff00a0;
@@ -36,7 +28,6 @@
             --radius: 12px;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         html, body {
             font-family: 'Inter', sans-serif;
             background: var(--bg-primary);
@@ -44,13 +35,11 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
-
         body {
             background-image: 
                 radial-gradient(ellipse at 10% 20%, rgba(0, 240, 255, 0.03) 0%, transparent 50%),
                 radial-gradient(ellipse at 90% 80%, rgba(139, 0, 255, 0.03) 0%, transparent 50%);
         }
-
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
         ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 4px; }
@@ -71,7 +60,6 @@
             gap: 20px;
         }
         #loadingOverlay.active { display: flex; }
-        
         .loader {
             width: 60px;
             height: 60px;
@@ -82,7 +70,6 @@
             box-shadow: 0 0 40px var(--neon-cyan);
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .loader-text {
             font-family: 'Orbitron', monospace;
             font-size: 14px;
@@ -136,7 +123,6 @@
             align-items: center;
         }
         .modal.active { display: flex; }
-        
         .modal-content {
             background: var(--bg-secondary);
             border: 1px solid var(--border-glow);
@@ -149,7 +135,6 @@
             box-shadow: 0 0 60px var(--neon-cyan);
         }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        
         .modal-close {
             position: absolute; top: 12px; right: 16px;
             font-size: 24px; color: var(--text-secondary);
@@ -157,7 +142,6 @@
             transition: var(--transition);
         }
         .modal-close:hover { color: var(--text-primary); }
-
         .auth-tab {
             flex: 1;
             padding: 10px;
@@ -179,7 +163,6 @@
             border-color: var(--neon-cyan);
             color: var(--text-primary);
         }
-
         .auth-form input {
             width: 100%;
             padding: 10px 14px;
@@ -214,21 +197,8 @@
             transform: scale(1.02);
             box-shadow: 0 0 50px var(--neon-cyan);
         }
-        .auth-error {
-            color: var(--neon-red);
-            font-size: 12px;
-            text-align: center;
-            margin-top: 6px;
-            min-height: 18px;
-        }
-        .auth-success {
-            color: var(--neon-green);
-            font-size: 12px;
-            text-align: center;
-            margin-top: 2px;
-            min-height: 18px;
-        }
-
+        .auth-error { color: var(--neon-red); font-size: 12px; text-align: center; margin-top: 6px; min-height: 18px; }
+        .auth-success { color: var(--neon-green); font-size: 12px; text-align: center; margin-top: 2px; min-height: 18px; }
         .twofa-input {
             font-size: 28px;
             letter-spacing: 10px;
@@ -273,7 +243,6 @@
             animation: shimmerBorder 3s linear infinite;
         }
         @keyframes shimmerBorder { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-
         .header-content {
             max-width: 1440px;
             margin: 0 auto;
@@ -284,7 +253,6 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-
         .logo {
             display: flex;
             align-items: center;
@@ -292,7 +260,6 @@
         }
         .logo-icon { font-size: 28px; animation: floatIcon 3s ease-in-out infinite; }
         @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-        
         .logo-text {
             font-family: 'Orbitron', monospace;
             font-size: 22px;
@@ -304,7 +271,6 @@
             animation: shimmerText 3s linear infinite;
         }
         @keyframes shimmerText { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        
         .logo-badge {
             font-size: 8px;
             background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple));
@@ -316,14 +282,12 @@
             letter-spacing: 0.5px;
             text-shadow: 0 0 20px var(--neon-cyan);
         }
-
         .header-right {
             display: flex;
             align-items: center;
             gap: 14px;
             flex-wrap: wrap;
         }
-
         .balance-box {
             background: var(--bg-card);
             border: 1px solid var(--border-glow);
@@ -353,7 +317,6 @@
             color: var(--neon-cyan);
             text-shadow: 0 0 20px var(--neon-cyan);
         }
-
         .user-btn {
             display: flex;
             align-items: center;
@@ -413,7 +376,6 @@
         .status-bar .stat-item .value.green { color: var(--neon-green); }
         .status-bar .stat-item .value.red { color: var(--neon-red); }
         .status-bar .stat-item .value.cyan { color: var(--neon-cyan); }
-        
         .status-dot {
             width: 6px;
             height: 6px;
@@ -482,7 +444,6 @@
             gap: 20px;
         }
         @media (max-width: 1024px) { .main { grid-template-columns: 1fr; } }
-
         .games-area { display: flex; flex-direction: column; gap: 20px; }
 
         .banner {
@@ -520,7 +481,6 @@
             text-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
         }
         .banner p { color: var(--text-secondary); font-size: 14px; position: relative; }
-        
         .btn-bonus {
             padding: 10px 28px;
             background: linear-gradient(45deg, var(--neon-gold), #ffaa00);
@@ -660,7 +620,6 @@
 
         /* ===== САЙДБАР ===== */
         .sidebar { display: flex; flex-direction: column; gap: 16px; }
-
         .online-box {
             background: var(--bg-card);
             border: 1px solid var(--border-glow);
@@ -977,7 +936,6 @@
             gap: 24px;
         }
         @media (max-width: 768px) { .roulette-layout { grid-template-columns: 1fr; } }
-
         .roulette-board {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -997,7 +955,6 @@
             60% { transform: rotate(1440deg) scale(1.01); }
             100% { transform: rotate(2160deg) scale(1); }
         }
-
         .roulette-number {
             display: flex;
             align-items: center;
@@ -1133,7 +1090,6 @@
             box-shadow: 0 0 30px var(--neon-cyan);
             transform: scale(1.05);
         }
-
         .slot-reel.spinning .slot-symbol {
             animation: slotSpin 0.08s linear infinite;
         }
@@ -1141,7 +1097,6 @@
             0% { transform: translateY(0); }
             100% { transform: translateY(-100%); }
         }
-
         .slot-reel.stopping .slot-symbol {
             animation: slotStop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
@@ -1247,7 +1202,6 @@
             25% { transform: translate(-50%, -50%) scale(1.08) rotate(-3deg); }
             75% { transform: translate(-50%, -50%) scale(1.08) rotate(3deg); }
         }
-
         .crash-controls {
             display: flex;
             gap: 8px;
@@ -1291,7 +1245,6 @@
             cursor: not-allowed;
             transform: none !important;
         }
-
         .crash-history {
             display: flex;
             gap: 4px;
@@ -1336,7 +1289,6 @@
             50% { transform: rotate(180deg) scale(1.2); }
             100% { transform: rotate(360deg) scale(1); }
         }
-
         .dice-options {
             display: flex;
             gap: 8px;
@@ -1370,7 +1322,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .game-section { display: block; }
 
-        /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
             .header-content { flex-wrap: wrap; gap: 8px; }
             .logo-text { font-size: 18px; }
@@ -1415,19 +1366,16 @@
                 <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;background:linear-gradient(45deg,var(--neon-cyan),var(--neon-purple),var(--neon-pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🎰 RuWin</div>
                 <div style="color:var(--text-secondary);font-size:13px;">Войдите или зарегистрируйтесь</div>
             </div>
-            
             <div style="display:flex;gap:6px;margin-bottom:14px;">
                 <button class="auth-tab active" onclick="switchAuthTab('login')">Вход</button>
                 <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
             </div>
-            
             <form id="loginForm" class="auth-form" onsubmit="return handleLogin(event)">
                 <input type="text" id="loginUsername" placeholder="Имя пользователя">
                 <input type="password" id="loginPassword" placeholder="Пароль">
                 <button type="submit" class="auth-btn">Войти</button>
                 <div class="auth-error" id="loginError"></div>
             </form>
-            
             <form id="registerForm" class="auth-form" style="display:none;" onsubmit="return handleRegister(event)">
                 <input type="text" id="regUsername" placeholder="Имя пользователя">
                 <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)">
@@ -1457,7 +1405,6 @@
     <!-- ===== ОСНОВНОЕ ПРИЛОЖЕНИЕ ===== -->
     <div id="app" style="display:none;">
 
-        <!-- ХЕДЕР -->
         <header class="header">
             <div class="header-content">
                 <div class="logo">
@@ -1501,7 +1448,6 @@
             </div>
         </header>
 
-        <!-- НАВИГАЦИЯ -->
         <nav class="nav" id="mainNav">
             <button class="nav-btn active" data-game="lobby"><span class="icon">🏠</span> Лобби</button>
             <button class="nav-btn" data-game="roulette"><span class="icon">🎰</span> Рулетка</button>
@@ -1511,13 +1457,10 @@
             <button class="nav-btn" data-game="dice"><span class="icon">🎲</span> Кости</button>
         </nav>
 
-        <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div class="main">
 
-            <!-- ЛЕВАЯ КОЛОНКА -->
             <div class="games-area">
 
-                <!-- ЛОББИ -->
                 <div class="game-section" id="lobby">
                     <div class="banner">
                         <div>
@@ -1585,12 +1528,10 @@
                     </div>
                 </div>
 
-                <!-- КОНТЕЙНЕР ДЛЯ ИГР -->
                 <div class="game-container" id="gameContainer"></div>
 
             </div>
 
-            <!-- ПРАВАЯ КОЛОНКА -->
             <div class="sidebar">
 
                 <div class="online-box">
@@ -1645,7 +1586,6 @@
 
     </div>
 
-    <!-- ===== МОДАЛКА ПРОФИЛЯ ===== -->
     <div class="modal" id="profileModal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeProfileModal()">×</button>
@@ -1665,15 +1605,20 @@
         let sessionId = null;
 
         // ============================================================
-        // ФУНКЦИИ РАБОТЫ С БАЛАНСОМ (ИСПРАВЛЕННЫЕ)
+        // ФУНКЦИИ РАБОТЫ С БАЛАНСОМ (ИСПРАВЛЕННЫЕ!)
         // ============================================================
 
         function getCurrentBalance() {
             const balanceEl = document.getElementById('balance');
             if (!balanceEl) return 0;
-            const text = balanceEl.textContent;
-            const numbers = text.replace(/[^\d]/g, '');
-            return parseInt(numbers) || 0;
+            
+            // Получаем текст и убираем всё кроме цифр
+            let text = balanceEl.textContent;
+            // Убираем все символы кроме цифр
+            let numbers = text.replace(/[^0-9]/g, '');
+            // Если ничего не найдено - возвращаем 0
+            if (!numbers) return 0;
+            return parseInt(numbers, 10);
         }
 
         function checkBalance(amount) {
@@ -2906,6 +2851,7 @@
         window.checkBalance = checkBalance;
 
         console.log('✅ RuWin Casino загружен!');
+        console.log('Баланс:', getCurrentBalance());
     </script>
 
 </body>
