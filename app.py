@@ -1,86 +1,84 @@
 from flask import Flask, render_template, request, jsonify, session
 from flask_cors import CORS
-from flask_mail import Mail, Message
-import secrets
 import sqlite3
 from datetime import datetime
 import hashlib
 import re
 import random
+import secrets
 import json
 import os
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 CORS(app)
 
-# ===== КОНФИГУРАЦИЯ ПОЧТЫ =====
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your_app_password'
-mail = Mail(app)
+# ===== КОНФИГ =====
+DATABASE = 'ruwin.db'
+HOUSE_EDGE = 0.05
+START_BALANCE = 10000
+POOL_START = 1000000
 
 # ===== БАЗА ДАННЫХ =====
+def get_db():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 def init_db():
-    conn = sqlite3.connect('ruwin.db')
-    c = conn.cursor()
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id TEXT UNIQUE,
-                  username TEXT UNIQUE,
-                  password TEXT,
-                  email TEXT UNIQUE,
-                  avatar TEXT,
-                  ip_address TEXT,
-                  balance INTEGER DEFAULT 10000,
-                  total_bets INTEGER DEFAULT 0,
-                  wins INTEGER DEFAULT 0,
-                  level INTEGER DEFAULT 1,
-                  xp INTEGER DEFAULT 0,
-                  twofa_enabled INTEGER DEFAULT 0,
-                  twofa_secret TEXT,
-                  created_at TEXT,
-                  last_login TEXT)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS game_history
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id TEXT,
-                  game TEXT,
-                  bet_amount INTEGER,
-                  win_amount INTEGER,
-                  result TEXT,
-                  timestamp TEXT)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS casino_pool
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  balance INTEGER DEFAULT 1000000,
-                  total_in INTEGER DEFAULT 0,
-                  total_out INTEGER DEFAULT 0,
-                  commission INTEGER DEFAULT 0,
-                  house_edge REAL DEFAULT 0.05,
-                  updated_at TEXT)''')
-    
-    try:
-        c.execute("ALTER TABLE casino_pool ADD COLUMN house_edge REAL DEFAULT 0.05")
-    except sqlite3.OperationalError:
-        pass
-    
-    c.execute("SELECT COUNT(*) FROM casino_pool")
-    if c.fetchone()[0] == 0:
-        c.execute('''INSERT INTO casino_pool (balance, house_edge, updated_at)
-                     VALUES (?, ?, datetime('now'))''', (1000000, 0.05))
-    
-    c.execute("SELECT * FROM users WHERE username = 'test'")
-    if not c.fetchone():
-        c.execute('''INSERT INTO users (user_id, username, password, email, balance, created_at, last_login)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                  ('test_user', 'test', hashlib.sha256('test'.encode()).hexdigest(), 'test@test.com', 10000, datetime.now().isoformat(), datetime.now().isoformat()))
-    
-    conn.commit()
-    conn.close()
+    with get_db() as conn:
+        c = conn.cursor()
+        
+        # Таблица пользователей
+        c.execute('''CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            balance INTEGER DEFAULT 10000,
+            total_bets INTEGER DEFAULT 0,
+            wins INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
+            xp INTEGER DEFAULT 0,
+            created_at TEXT,
+            last_login TEXT
+        )''')
+        
+        # Таблица истории
+        c.execute('''CREATE TABLE IF NOT EXISTS game_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            game TEXT NOT NULL,
+            bet INTEGER NOT NULL,
+            win INTEGER NOT NULL,
+            result TEXT NOT NULL,
+            created_at TEXT
+        )''')
+        
+        # Таблица банка казино
+        c.execute('''CREATE TABLE IF NOT EXISTS casino_pool (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            balance INTEGER DEFAULT 1000000,
+            updated_at TEXT
+        )''')
+        
+        # Создаем тестового пользователя
+        c.execute("SELECT * FROM users WHERE username = 'test'")
+        if not c.fetchone():
+            c.execute('''INSERT INTO users (user_id, username, password, email, balance, created_at, last_login)
+                VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                ('test_001', 'test', hashlib.sha256('test'.encode()).hexdigest(), 
+                 'test@test.com', 10000, datetime.now().isoformat(), datetime.now().isoformat()))
+        
+        # Создаем банк если нет
+        c.execute("SELECT * FROM casino_pool")
+        if not c.fetchone():
+            c.execute('''INSERT INTO casino_pool (balance, updated_at)
+                VALUES (?, ?)''', (POOL_START, datetime.now().isoformat()))
+        
+        conn.commit()
 
 init_db()
 
@@ -91,415 +89,307 @@ def hash_password(password):
 def generate_user_id():
     return f"user_{secrets.token_hex(8)}"
 
-def generate_2fa_code():
-    return str(random.randint(100000, 999999))
-
 def validate_username(username):
-    return re.match(r'^[a-zA-Z0-9_-]{3,20}$', username) is not None
-
-def validate_password(password):
-    return len(password) >= 6
+    return bool(re.match(r'^[a-zA-Z0-9_-]{3,20}$', username))
 
 def validate_email(email):
-    return re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email) is not None
+    return bool(re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email))
 
-def get_client_ip():
-    if request.headers.get('X-Forwarded-For'):
-        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
-    return request.remote_addr
+def get_user(user_id):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+        return c.fetchone()
 
-def get_user_balance(user_id):
-    conn = sqlite3.connect('ruwin.db')
-    c = conn.cursor()
-    c.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
-    row = c.fetchone()
-    conn.close()
-    return row[0] if row else 10000
+def get_user_by_username(username):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE username = ?", (username,))
+        return c.fetchone()
 
-def get_user_stats(user_id):
-    conn = sqlite3.connect('ruwin.db')
-    c = conn.cursor()
-    c.execute("SELECT balance, total_bets, wins, level, username, email FROM users WHERE user_id = ?", (user_id,))
-    row = c.fetchone()
-    conn.close()
-    if row:
-        return {
-            'balance': row[0],
-            'total_bets': row[1],
-            'wins': row[2],
-            'level': row[3],
-            'username': row[4],
-            'email': row[5] or '',
-            'winrate': round((row[2] / row[1] * 100), 1) if row[1] > 0 else 0
-        }
-    return {'balance': 10000, 'total_bets': 0, 'wins': 0, 'level': 1, 'username': 'Игрок', 'email': '', 'winrate': 0}
+def update_balance(user_id, amount):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
+        if amount > 0:
+            c.execute("UPDATE users SET wins = wins + 1 WHERE user_id = ?", (user_id,))
+        c.execute("UPDATE users SET total_bets = total_bets + 1 WHERE user_id = ?", (user_id,))
+        conn.commit()
 
-def update_user_balance(user_id, amount):
-    conn = sqlite3.connect('ruwin.db')
-    c = conn.cursor()
-    c.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
-    if amount > 0:
-        c.execute("UPDATE users SET wins = wins + 1 WHERE user_id = ?", (user_id,))
-    c.execute("UPDATE users SET total_bets = total_bets + 1 WHERE user_id = ?", (user_id,))
-    conn.commit()
-    conn.close()
+def add_history(user_id, game, bet, win, result):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute('''INSERT INTO game_history (user_id, game, bet, win, result, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)''',
+            (user_id, game, bet, win, result, datetime.now().isoformat()))
+        conn.commit()
 
-def add_history(user_id, game, bet_amount, win_amount, result):
-    conn = sqlite3.connect('ruwin.db')
-    c = conn.cursor()
-    c.execute('''INSERT INTO game_history (user_id, game, bet_amount, win_amount, result, timestamp)
-                 VALUES (?, ?, ?, ?, ?, ?)''',
-              (user_id, game, bet_amount, win_amount, result, datetime.now().isoformat()))
-    conn.commit()
-    conn.close()
-
-def get_pool_balance():
-    conn = sqlite3.connect('ruwin.db')
-    c = conn.cursor()
-    c.execute("SELECT balance, house_edge FROM casino_pool ORDER BY id DESC LIMIT 1")
-    row = c.fetchone()
-    conn.close()
-    if row:
-        return (row[0], row[1])
-    return (1000000, 0.05)
+def get_pool():
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT balance FROM casino_pool ORDER BY id DESC LIMIT 1")
+        row = c.fetchone()
+        return row[0] if row else POOL_START
 
 def update_pool(amount):
-    conn = sqlite3.connect('ruwin.db')
-    c = conn.cursor()
-    c.execute("SELECT id, balance FROM casino_pool ORDER BY id DESC LIMIT 1")
-    row = c.fetchone()
-    if row:
-        c.execute("UPDATE casino_pool SET balance = ?, updated_at = datetime('now') WHERE id = ?", (row[1] + amount, row[0]))
-    else:
-        c.execute("INSERT INTO casino_pool (balance, house_edge, updated_at) VALUES (?, ?, datetime('now'))", (1000000 + amount, 0.05))
-    conn.commit()
-    conn.close()
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("UPDATE casino_pool SET balance = balance + ?, updated_at = ?", 
+                 (amount, datetime.now().isoformat()))
+        conn.commit()
 
-def send_2fa_email(email, code):
-    try:
-        msg = Message('🔐 Код подтверждения RuWin Casino', sender=app.config['MAIL_USERNAME'], recipients=[email])
-        msg.body = f'''Ваш код для входа в RuWin Casino: {code}
+def calculate_win(bet, multiplier):
+    win = bet * multiplier
+    commission = int(win * HOUSE_EDGE)
+    return int(win - commission)
 
-Код действителен в течение 5 минут.
+def get_stats(user_id):
+    user = get_user(user_id)
+    if not user:
+        return {'balance': START_BALANCE, 'total_bets': 0, 'wins': 0, 'level': 1}
+    
+    winrate = round((user['wins'] / user['total_bets'] * 100), 1) if user['total_bets'] > 0 else 0
+    
+    return {
+        'balance': user['balance'],
+        'total_bets': user['total_bets'],
+        'wins': user['wins'],
+        'level': user['level'],
+        'winrate': winrate,
+        'username': user['username'],
+        'email': user['email']
+    }
 
-Если вы не запрашивали вход, проигнорируйте это сообщение.
+# ===== ДЕКОРАТОР ДЛЯ ПРОВЕРКИ АВТОРИЗАЦИИ =====
+def require_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user_id = request.json.get('user_id') or request.args.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Не авторизован'}), 401
+        
+        user = get_user(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'Пользователь не найден'}), 401
+        
+        return f(user, *args, **kwargs)
+    return decorated
 
-С уважением,
-Команда RuWin Casino'''
-        mail.send(msg)
-        return True
-    except Exception as e:
-        print(f"Ошибка отправки email: {e}")
-        return False
-
-def calculate_win(amount, multiplier):
-    win_amount = amount * multiplier
-    house_edge = 0.05
-    commission = int(win_amount * house_edge)
-    return int(win_amount - commission)
-
-# ===== МАРШРУТЫ АВТОРИЗАЦИИ =====
-
+# ===== МАРШРУТЫ =====
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    try:
-        data = request.get_json(force=True)
-        username = data.get('username', '').strip()
-        password = data.get('password', '')
-        email = data.get('email', '').strip()
-        
-        if not validate_username(username):
-            return jsonify({'success': False, 'error': 'Имя 3-20 символов (буквы, цифры, _, -)'})
-        if not validate_password(password):
-            return jsonify({'success': False, 'error': 'Пароль минимум 6 символов'})
-        if not validate_email(email):
-            return jsonify({'success': False, 'error': 'Введите корректный email'})
-        
-        conn = sqlite3.connect('ruwin.db')
+    data = request.json
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    email = data.get('email', '').strip()
+    
+    # Валидация
+    if not validate_username(username):
+        return jsonify({'success': False, 'error': 'Имя должно быть 3-20 символов'})
+    
+    if len(password) < 6:
+        return jsonify({'success': False, 'error': 'Пароль минимум 6 символов'})
+    
+    if not validate_email(email):
+        return jsonify({'success': False, 'error': 'Неверный email'})
+    
+    with get_db() as conn:
         c = conn.cursor()
         
-        c.execute("SELECT username FROM users WHERE username = ?", (username,))
+        # Проверка на существование
+        c.execute("SELECT id FROM users WHERE username = ?", (username,))
         if c.fetchone():
-            conn.close()
             return jsonify({'success': False, 'error': 'Имя уже занято'})
         
-        c.execute("SELECT email FROM users WHERE email = ?", (email,))
+        c.execute("SELECT id FROM users WHERE email = ?", (email,))
         if c.fetchone():
-            conn.close()
             return jsonify({'success': False, 'error': 'Email уже зарегистрирован'})
         
+        # Создание пользователя
         user_id = generate_user_id()
-        hashed_password = hash_password(password)
-        ip_address = get_client_ip()
+        hashed = hash_password(password)
         
-        c.execute('''INSERT INTO users (user_id, username, password, email, ip_address, created_at, last_login)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                  (user_id, username, hashed_password, email, ip_address, datetime.now().isoformat(), datetime.now().isoformat()))
-        
+        c.execute('''INSERT INTO users (user_id, username, password, email, created_at, last_login)
+            VALUES (?, ?, ?, ?, ?, ?)''',
+            (user_id, username, hashed, email, datetime.now().isoformat(), datetime.now().isoformat()))
         conn.commit()
-        conn.close()
-        
-        return jsonify({'success': True, 'message': 'Регистрация успешна!', 'user_id': user_id, 'username': username})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    
+    return jsonify({'success': True, 'message': 'Регистрация успешна', 'user_id': user_id})
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    try:
-        data = request.get_json(force=True)
-        username = data.get('username', '').strip()
-        password = data.get('password', '')
-        
-        conn = sqlite3.connect('ruwin.db')
+    data = request.json
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    
+    user = get_user_by_username(username)
+    if not user:
+        return jsonify({'success': False, 'error': 'Пользователь не найден'})
+    
+    if user['password'] != hash_password(password):
+        return jsonify({'success': False, 'error': 'Неверный пароль'})
+    
+    # Обновляем last_login
+    with get_db() as conn:
         c = conn.cursor()
-        c.execute("SELECT user_id, password, twofa_enabled, email FROM users WHERE username = ?", (username,))
-        user = c.fetchone()
-        conn.close()
-        
-        if not user:
-            return jsonify({'success': False, 'error': 'Пользователь не найден'})
-        if user[1] != hash_password(password):
-            return jsonify({'success': False, 'error': 'Неверный пароль'})
-        
-        if user[2] == 1:
-            code = generate_2fa_code()
-            session['2fa_code'] = code
-            session['2fa_user_id'] = user[0]
-            session['2fa_email'] = user[3]
-            if send_2fa_email(user[3], code):
-                return jsonify({'success': True, 'need_2fa': True, 'user_id': user[0]})
-            else:
-                return jsonify({'success': False, 'error': 'Ошибка отправки 2FA кода'})
-        
-        conn = sqlite3.connect('ruwin.db')
-        c = conn.cursor()
-        c.execute("UPDATE users SET last_login = datetime('now') WHERE user_id = ?", (user[0],))
+        c.execute("UPDATE users SET last_login = ? WHERE user_id = ?", 
+                 (datetime.now().isoformat(), user['user_id']))
         conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'success': True, 
-            'user_id': user[0], 
-            'username': username, 
-            'stats': get_user_stats(user[0])
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/verify_2fa', methods=['POST'])
-def verify_2fa():
-    try:
-        data = request.get_json(force=True)
-        code = data.get('code', '')
-        
-        user_id = session.get('2fa_user_id')
-        expected_code = session.get('2fa_code')
-        
-        if not user_id or code != expected_code:
-            return jsonify({'success': False, 'error': 'Неверный код'})
-        
-        conn = sqlite3.connect('ruwin.db')
-        c = conn.cursor()
-        c.execute("UPDATE users SET last_login = datetime('now') WHERE user_id = ?", (user_id,))
-        conn.commit()
-        conn.close()
-        
-        session.pop('2fa_code', None)
-        session.pop('2fa_user_id', None)
-        session.pop('2fa_email', None)
-        
-        game = get_user_stats(user_id)
-        
-        return jsonify({
-            'success': True, 
-            'user_id': user_id, 
-            'username': game.get('username', 'Игрок'),
-            'stats': game
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    
+    return jsonify({
+        'success': True,
+        'user_id': user['user_id'],
+        'username': user['username'],
+        'stats': get_stats(user['user_id'])
+    })
 
 @app.route('/api/init', methods=['POST'])
-def init_game():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('user_id', 'test_user')
-        
-        stats = get_user_stats(user_id)
-        pool_balance, house_edge = get_pool_balance()
-        
-        return jsonify({
-            'success': True,
-            'session_id': user_id,
-            'stats': stats,
-            'pool_balance': pool_balance,
-            'house_edge': house_edge
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+def init():
+    data = request.json
+    user_id = data.get('user_id', 'test_001')
+    
+    stats = get_stats(user_id)
+    pool = get_pool()
+    
+    return jsonify({
+        'success': True,
+        'stats': stats,
+        'pool': pool,
+        'house_edge': HOUSE_EDGE
+    })
 
-@app.route('/api/logout', methods=['POST'])
-def logout():
-    session.clear()
-    return jsonify({'success': True})
+# ===== ИГРЫ =====
 
-# ============================================================
-# ===== РУЛЕТКА =====
-# ============================================================
+# 1. РУЛЕТКА
+@app.route('/api/game/roulette', methods=['POST'])
+@require_auth
+def game_roulette(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    bet_type = data.get('type', 'number')
+    number = data.get('number')
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    # Генерация результата
+    result = random.randint(0, 36)
+    color = 'green' if result == 0 else 'red' if result in [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36] else 'black'
+    
+    win = False
+    win_amount = 0
+    
+    # Проверка выигрыша
+    if bet_type == 'number' and result == number:
+        win = True
+        win_amount = calculate_win(bet, 35)
+    elif bet_type == 'red' and color == 'red':
+        win = True
+        win_amount = calculate_win(bet, 2)
+    elif bet_type == 'black' and color == 'black':
+        win = True
+        win_amount = calculate_win(bet, 2)
+    elif bet_type == 'even' and result > 0 and result % 2 == 0:
+        win = True
+        win_amount = calculate_win(bet, 2)
+    elif bet_type == 'odd' and result > 0 and result % 2 == 1:
+        win = True
+        win_amount = calculate_win(bet, 2)
+    elif bet_type == 'half1' and 1 <= result <= 18:
+        win = True
+        win_amount = calculate_win(bet, 2)
+    elif bet_type == 'half2' and 19 <= result <= 36:
+        win = True
+        win_amount = calculate_win(bet, 2)
+    
+    pool = get_pool()
+    
+    if win:
+        # Проверяем банк
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
+        
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'roulette', bet, win_amount, 'win')
+    else:
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'roulette', bet, -bet, 'loss')
+    
+    return jsonify({
+        'success': True,
+        'result': result,
+        'color': color,
+        'win': win,
+        'win_amount': win_amount if win else -bet,
+        'stats': get_stats(user['user_id']),
+        'pool': get_pool()
+    })
 
-@app.route('/api/roulette/spin', methods=['POST'])
-def roulette_spin():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        bet_type = data.get('bet_type', 'number')
-        amount = float(data.get('amount', 10))
-        number = data.get('number')
-        
-        balance = get_user_balance(user_id)
-        
-        # Проверка баланса
-        if amount > balance:
-            return jsonify({
-                'success': False,
-                'error': 'Недостаточно средств',
-                'balance': balance
-            })
-        
-        result = random.randint(0, 36)
-        color = 'red' if result in [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36] else 'black' if result != 0 else 'green'
-        
-        win = False
-        win_amount = 0
-        
-        if bet_type == 'number' and result == number:
+# 2. СЛОТЫ
+@app.route('/api/game/slots', methods=['POST'])
+@require_auth
+def game_slots(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    symbols = ['🍒', '🍋', '🍊', '🍇', '💎', '⭐', '7️⃣', '🎰']
+    reels = [random.choice(symbols) for _ in range(9)]
+    
+    win = False
+    win_amount = 0
+    
+    # Проверка линий
+    lines = [
+        [0,1,2], [3,4,5], [6,7,8],  # Горизонтальные
+        [0,3,6], [1,4,7], [2,5,8],  # Вертикальные
+        [0,4,8], [2,4,6]            # Диагональные
+    ]
+    
+    for line in lines:
+        if reels[line[0]] == reels[line[1]] == reels[line[2]]:
             win = True
-            win_amount = calculate_win(amount, 35)
-        elif bet_type == 'red' and color == 'red':
-            win = True
-            win_amount = calculate_win(amount, 2)
-        elif bet_type == 'black' and color == 'black':
-            win = True
-            win_amount = calculate_win(amount, 2)
-        elif bet_type == 'even' and result != 0 and result % 2 == 0:
-            win = True
-            win_amount = calculate_win(amount, 2)
-        elif bet_type == 'odd' and result != 0 and result % 2 == 1:
-            win = True
-            win_amount = calculate_win(amount, 2)
-        elif bet_type == 'half1' and 1 <= result <= 18:
-            win = True
-            win_amount = calculate_win(amount, 2)
-        elif bet_type == 'half2' and 19 <= result <= 36:
-            win = True
-            win_amount = calculate_win(amount, 2)
-        elif bet_type == 'dozen' and number:
-            if (number == 1 and 1 <= result <= 12) or (number == 2 and 13 <= result <= 24) or (number == 3 and 25 <= result <= 36):
-                win = True
-                win_amount = calculate_win(amount, 3)
+            win_amount += calculate_win(bet, 5)
+            break
+    
+    pool = get_pool()
+    
+    if win:
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
         
-        pool_balance, _ = get_pool_balance()
-        
-        if win:
-            win_amount = int(win_amount)
-            if pool_balance < win_amount:
-                win_amount = int(pool_balance * 0.9)
-            update_user_balance(user_id, win_amount)
-            update_pool(-win_amount)
-            add_history(user_id, 'roulette', amount, win_amount, 'win')
-        else:
-            loss_amount = int(amount)
-            update_user_balance(user_id, -loss_amount)
-            update_pool(loss_amount)
-            add_history(user_id, 'roulette', amount, -loss_amount, 'loss')
-        
-        return jsonify({
-            'success': True,
-            'result': result,
-            'color': color,
-            'win': win,
-            'win_amount': win_amount if win else -int(amount),
-            'stats': get_user_stats(user_id),
-            'pool_balance': get_pool_balance()[0]
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'slots', bet, win_amount, 'win')
+    else:
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'slots', bet, -bet, 'loss')
+    
+    return jsonify({
+        'success': True,
+        'reels': reels,
+        'win': win,
+        'win_amount': win_amount if win else -bet,
+        'stats': get_stats(user['user_id']),
+        'pool': get_pool()
+    })
 
-# ============================================================
-# ===== СЛОТЫ =====
-# ============================================================
-
-@app.route('/api/slots/spin', methods=['POST'])
-def slots_spin():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        amount = float(data.get('amount', 10))
-        
-        balance = get_user_balance(user_id)
-        
-        if amount > balance:
-            return jsonify({
-                'success': False,
-                'error': 'Недостаточно средств',
-                'balance': balance
-            })
-        
-        symbols = ['🍒', '🍋', '🍊', '🍇', '💎', '⭐', '7️⃣', '🎰']
-        reels = [random.choice(symbols) for _ in range(9)]
-        
-        win = False
-        win_amount = 0
-        
-        for row in range(3):
-            if reels[row*3] == reels[row*3+1] and reels[row*3+1] == reels[row*3+2]:
-                win = True
-                win_amount += calculate_win(amount, 5)
-        for col in range(3):
-            if reels[col] == reels[col+3] and reels[col+3] == reels[col+6]:
-                win = True
-                win_amount += calculate_win(amount, 5)
-        if reels[0] == reels[4] and reels[4] == reels[8]:
-            win = True
-            win_amount += calculate_win(amount, 10)
-        if reels[2] == reels[4] and reels[4] == reels[6]:
-            win = True
-            win_amount += calculate_win(amount, 10)
-        
-        pool_balance, _ = get_pool_balance()
-        
-        if win:
-            win_amount = int(win_amount)
-            if pool_balance < win_amount:
-                win_amount = int(pool_balance * 0.9)
-            update_user_balance(user_id, win_amount)
-            update_pool(-win_amount)
-            add_history(user_id, 'slots', amount, win_amount, 'win')
-        else:
-            loss_amount = int(amount)
-            update_user_balance(user_id, -loss_amount)
-            update_pool(loss_amount)
-            add_history(user_id, 'slots', amount, -loss_amount, 'loss')
-        
-        return jsonify({
-            'success': True,
-            'reels': reels,
-            'win': win,
-            'win_amount': win_amount if win else -int(amount),
-            'stats': get_user_stats(user_id),
-            'pool_balance': get_pool_balance()[0]
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============================================================
-# ===== БЛЭКДЖЕК =====
-# ============================================================
-
+# 3. БЛЭКДЖЕК
 def sum_hand(hand):
     total = sum(hand)
     aces = hand.count(11)
@@ -508,329 +398,174 @@ def sum_hand(hand):
         aces -= 1
     return total
 
-@app.route('/api/blackjack/start', methods=['POST'])
-def blackjack_start():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        amount = float(data.get('amount', 10))
-        
-        balance = get_user_balance(user_id)
-        
-        if amount > balance:
-            return jsonify({
-                'success': False,
-                'error': 'Недостаточно средств',
-                'balance': balance
-            })
-        
-        deck = [2,3,4,5,6,7,8,9,10,10,10,10,11] * 4
-        random.shuffle(deck)
-        
-        player_hand = [deck.pop(), deck.pop()]
-        dealer_hand = [deck.pop(), deck.pop()]
-        
-        player_sum = sum_hand(player_hand)
-        dealer_sum = sum_hand(dealer_hand)
-        
-        if player_sum == 21 and dealer_sum != 21:
-            win_amount = int(calculate_win(amount, 1.5))
-            pool_balance, _ = get_pool_balance()
-            if pool_balance < win_amount:
-                win_amount = int(pool_balance * 0.9)
-            update_user_balance(user_id, win_amount)
-            update_pool(-win_amount)
-            add_history(user_id, 'blackjack', amount, win_amount, 'win')
-            return jsonify({
-                'success': True,
-                'player_hand': player_hand,
-                'dealer_hand': dealer_hand,
-                'game_over': True,
-                'win': True,
-                'win_amount': win_amount,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0]
-            })
-        
+@app.route('/api/game/blackjack', methods=['POST'])
+@require_auth
+def game_blackjack(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    action = data.get('action', 'start')
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    deck = [2,3,4,5,6,7,8,9,10,10,10,10,11] * 4
+    random.shuffle(deck)
+    
+    player_hand = [deck.pop(), deck.pop()]
+    dealer_hand = [deck.pop(), deck.pop()]
+    
+    player_sum = sum_hand(player_hand)
+    dealer_sum = sum_hand(dealer_hand)
+    
+    # Проверка блэкджека
+    if player_sum == 21:
+        win_amount = calculate_win(bet, 1.5)
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'blackjack', bet, win_amount, 'win')
         return jsonify({
             'success': True,
             'player_hand': player_hand,
-            'dealer_hand': [dealer_hand[0], '?'],
-            'deck': deck,
-            'amount': amount,
-            'game_over': False,
-            'balance': get_user_balance(user_id)
+            'dealer_hand': dealer_hand,
+            'game_over': True,
+            'win': True,
+            'win_amount': win_amount,
+            'stats': get_stats(user['user_id'])
         })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    
+    return jsonify({
+        'success': True,
+        'player_hand': player_hand,
+        'dealer_hand': [dealer_hand[0], '?'],
+        'deck': deck,
+        'game_over': False
+    })
 
-@app.route('/api/blackjack/hit', methods=['POST'])
-def blackjack_hit():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        deck = data.get('deck', [])
-        player_hand = data.get('player_hand', [])
-        amount = float(data.get('amount', 10))
+# 4. AVIATOR
+@app.route('/api/game/crash', methods=['POST'])
+@require_auth
+def game_crash(user):
+    data = request.json
+    action = data.get('action', 'start')
+    bet = int(data.get('bet', 0))
+    
+    if action == 'start':
+        if bet <= 0:
+            return jsonify({'success': False, 'error': 'Неверная ставка'})
         
-        player_hand.append(deck.pop())
-        player_sum = sum_hand(player_hand)
+        if bet > user['balance']:
+            return jsonify({'success': False, 'error': 'Недостаточно средств'})
         
-        if player_sum > 21:
-            loss_amount = int(amount)
-            update_user_balance(user_id, -loss_amount)
-            update_pool(loss_amount)
-            add_history(user_id, 'blackjack', amount, -loss_amount, 'loss')
-            return jsonify({
-                'success': True,
-                'player_hand': player_hand,
-                'game_over': True,
-                'win': False,
-                'win_amount': -loss_amount,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0]
-            })
-        
-        return jsonify({
-            'success': True,
-            'player_hand': player_hand,
-            'deck': deck,
-            'game_over': False
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/blackjack/stand', methods=['POST'])
-def blackjack_stand():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        deck = data.get('deck', [])
-        player_hand = data.get('player_hand', [])
-        dealer_hand = data.get('dealer_hand', [])
-        amount = float(data.get('amount', 10))
-        
-        while sum_hand(dealer_hand) < 17:
-            dealer_hand.append(deck.pop())
-        
-        player_sum = sum_hand(player_hand)
-        dealer_sum = sum_hand(dealer_hand)
-        
-        pool_balance, _ = get_pool_balance()
-        
-        if dealer_sum > 21 or player_sum > dealer_sum:
-            win_amount = int(calculate_win(amount, 2))
-            if pool_balance < win_amount:
-                win_amount = int(pool_balance * 0.9)
-            update_user_balance(user_id, win_amount)
-            update_pool(-win_amount)
-            add_history(user_id, 'blackjack', amount, win_amount, 'win')
-            return jsonify({
-                'success': True,
-                'player_hand': player_hand,
-                'dealer_hand': dealer_hand,
-                'game_over': True,
-                'win': True,
-                'win_amount': win_amount,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0]
-            })
-        elif player_sum == dealer_sum:
-            return jsonify({
-                'success': True,
-                'player_hand': player_hand,
-                'dealer_hand': dealer_hand,
-                'game_over': True,
-                'win': None,
-                'win_amount': 0,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0]
-            })
-        else:
-            loss_amount = int(amount)
-            update_user_balance(user_id, -loss_amount)
-            update_pool(loss_amount)
-            add_history(user_id, 'blackjack', amount, -loss_amount, 'loss')
-            return jsonify({
-                'success': True,
-                'player_hand': player_hand,
-                'dealer_hand': dealer_hand,
-                'game_over': True,
-                'win': False,
-                'win_amount': -loss_amount,
-                'stats': get_user_stats(user_id),
-                'pool_balance': get_pool_balance()[0]
-            })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============================================================
-# ===== AVIATOR =====
-# ============================================================
-
-@app.route('/api/crash/start', methods=['POST'])
-def crash_start():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        amount = float(data.get('amount', 10))
-        
-        balance = get_user_balance(user_id)
-        
-        if amount > balance:
-            return jsonify({
-                'success': False,
-                'error': 'Недостаточно средств',
-                'balance': balance
-            })
-        
-        pool_balance, _ = get_pool_balance()
+        # Генерируем точку краша
+        crash_point = round(random.uniform(1.3, 3.5), 2)
         
         # Умная экономика
-        base_crash = random.uniform(1.5, 3.0)
+        if bet > 100:
+            crash_point *= 0.85
+        elif bet < 50:
+            crash_point *= 1.15
         
-        if amount > 100:
-            base_crash = base_crash * 0.85
-        elif amount < 50:
-            base_crash = base_crash * 1.15
+        if user['balance'] > 50000:
+            crash_point *= 0.9
         
-        if balance > 50000:
-            base_crash = base_crash * 0.9
-        elif balance < 1000:
-            base_crash = base_crash * 1.1
-        
-        if pool_balance > 2000000:
-            base_crash = base_crash * 1.1
-        
-        crash_point = max(1.3, min(3.5, base_crash))
+        crash_point = max(1.3, min(3.5, crash_point))
         crash_point = round(crash_point, 2)
         
         return jsonify({
             'success': True,
             'crash_point': crash_point,
-            'amount': amount,
-            'balance': get_user_balance(user_id)
+            'balance': user['balance']
         })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/crash/cashout', methods=['POST'])
-def crash_cashout():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        amount = float(data.get('amount', 10))
+    
+    elif action == 'cashout':
         multiplier = float(data.get('multiplier', 1))
+        win_amount = calculate_win(bet, multiplier)
         
-        win_amount = int(calculate_win(amount, multiplier))
-        pool_balance, _ = get_pool_balance()
+        pool = get_pool()
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
         
-        if pool_balance < win_amount:
-            win_amount = int(pool_balance * 0.9)
-        
-        update_user_balance(user_id, win_amount)
+        update_balance(user['user_id'], win_amount)
         update_pool(-win_amount)
-        add_history(user_id, 'crash', amount, win_amount, 'win')
+        add_history(user['user_id'], 'crash', bet, win_amount, 'win')
         
         return jsonify({
             'success': True,
             'win_amount': win_amount,
-            'stats': get_user_stats(user_id),
-            'pool_balance': get_pool_balance()[0]
+            'stats': get_stats(user['user_id']),
+            'pool': get_pool()
         })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/crash/result', methods=['POST'])
-def crash_result():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        amount = float(data.get('amount', 10))
-        
-        loss_amount = int(amount)
-        current_balance = get_user_balance(user_id)
-        
-        if current_balance < loss_amount:
-            loss_amount = current_balance
-        
-        update_user_balance(user_id, -loss_amount)
-        update_pool(loss_amount)
-        add_history(user_id, 'crash', amount, -loss_amount, 'loss')
+    
+    elif action == 'crash':
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'crash', bet, -bet, 'loss')
         
         return jsonify({
             'success': True,
-            'stats': get_user_stats(user_id),
-            'pool_balance': get_pool_balance()[0]
+            'stats': get_stats(user['user_id']),
+            'pool': get_pool()
         })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    
+    return jsonify({'success': False, 'error': 'Неверное действие'})
 
-# ============================================================
-# ===== КОСТИ =====
-# ============================================================
-
-@app.route('/api/dice/roll', methods=['POST'])
-def dice_roll():
-    try:
-        data = request.get_json(force=True)
-        user_id = data.get('session_id', 'test_user')
-        amount = float(data.get('amount', 10))
-        bet_type = data.get('bet_type', 'over')
-        
-        balance = get_user_balance(user_id)
-        
-        if amount > balance:
-            return jsonify({
-                'success': False,
-                'error': 'Недостаточно средств',
-                'balance': balance
-            })
-        
-        d1 = random.randint(1, 6)
-        d2 = random.randint(1, 6)
-        total = d1 + d2
-        
-        win = False
-        win_amount = 0
-        
-        if bet_type == 'over' and total > 7:
-            win = True
-            win_amount = calculate_win(amount, 3)
-        elif bet_type == 'under' and total < 7:
-            win = True
-            win_amount = calculate_win(amount, 3)
-        elif bet_type == 'seven' and total == 7:
-            win = True
-            win_amount = calculate_win(amount, 5)
-        
-        pool_balance, _ = get_pool_balance()
-        
-        if win:
-            win_amount = int(win_amount)
-            if pool_balance < win_amount:
-                win_amount = int(pool_balance * 0.9)
-            update_user_balance(user_id, win_amount)
-            update_pool(-win_amount)
-            add_history(user_id, 'dice', amount, win_amount, 'win')
-        else:
-            loss_amount = int(amount)
-            update_user_balance(user_id, -loss_amount)
-            update_pool(loss_amount)
-            add_history(user_id, 'dice', amount, -loss_amount, 'loss')
-        
-        return jsonify({
-            'success': True,
-            'd1': d1,
-            'd2': d2,
-            'total': total,
-            'win': win,
-            'win_amount': win_amount if win else -int(amount),
-            'stats': get_user_stats(user_id),
-            'pool_balance': get_pool_balance()[0]
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+# 5. КОСТИ
+@app.route('/api/game/dice', methods=['POST'])
+@require_auth
+def game_dice(user):
+    data = request.json
+    bet = int(data.get('bet', 0))
+    bet_type = data.get('type', 'over')
+    
+    if bet <= 0:
+        return jsonify({'success': False, 'error': 'Неверная ставка'})
+    
+    if bet > user['balance']:
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
+    
+    d1 = random.randint(1, 6)
+    d2 = random.randint(1, 6)
+    total = d1 + d2
+    
+    win = False
+    win_amount = 0
+    
+    if bet_type == 'over' and total > 7:
+        win = True
+        win_amount = calculate_win(bet, 3)
+    elif bet_type == 'under' and total < 7:
+        win = True
+        win_amount = calculate_win(bet, 3)
+    elif bet_type == 'seven' and total == 7:
+        win = True
+        win_amount = calculate_win(bet, 5)
+    
+    pool = get_pool()
+    
+    if win:
+        if pool < win_amount:
+            win_amount = int(pool * 0.9)
+        update_balance(user['user_id'], win_amount)
+        update_pool(-win_amount)
+        add_history(user['user_id'], 'dice', bet, win_amount, 'win')
+    else:
+        update_balance(user['user_id'], -bet)
+        update_pool(bet)
+        add_history(user['user_id'], 'dice', bet, -bet, 'loss')
+    
+    return jsonify({
+        'success': True,
+        'd1': d1,
+        'd2': d2,
+        'total': total,
+        'win': win,
+        'win_amount': win_amount if win else -bet,
+        'stats': get_stats(user['user_id']),
+        'pool': get_pool()
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
