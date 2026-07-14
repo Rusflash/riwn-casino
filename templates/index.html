@@ -1,524 +1,1233 @@
-<script>
-    // ============================================================
-    // ПОЛНЫЙ JAVASCRIPT - ИСПРАВЛЕННАЯ ВЕРСИЯ
-    // ============================================================
-
-    let userId = null;
-    let userBalance = 10000;
-    let userLevel = 1;
-    let currentGame = 'lobby';
-    let sessionId = null;
-
-    // ============================================================
-    // ФУНКЦИИ РАБОТЫ С БАЛАНСОМ (ИСПРАВЛЕННЫЕ!)
-    // ============================================================
-
-    function getCurrentBalance() {
-        const balanceEl = document.getElementById('balance');
-        if (!balanceEl) return 0;
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 RuWin Casino</title>
+    <style>
+        /* ============================================================
+           НЕОНОВЫЙ ДИЗАЙН - ВСЁ В ОДНОМ ФАЙЛЕ
+           ============================================================ */
         
-        // Получаем текст и убираем всё кроме цифр
-        let text = balanceEl.textContent;
-        // Убираем пробелы и все символы кроме цифр
-        let numbers = text.replace(/\s/g, '').replace(/[^0-9]/g, '');
-        // Если ничего не найдено - возвращаем 0
-        if (!numbers) return 0;
-        return parseInt(numbers, 10);
-    }
-
-    function checkBalance(amount) {
-        const balance = getCurrentBalance();
-        console.log('Баланс:', balance, 'Ставка:', amount);
-        if (amount > balance) {
-            showNotification('❌ Недостаточно средств! Баланс: ' + balance.toLocaleString() + ' ₽', 'error');
-            return false;
-        }
-        return true;
-    }
-
-    // ============================================================
-    // АВТОРИЗАЦИЯ
-    // ============================================================
-
-    function showAuthModal() {
-        document.getElementById('authModal').classList.add('active');
-    }
-
-    function closeAuthModal() {
-        document.getElementById('authModal').classList.remove('active');
-    }
-
-    function switchAuthTab(tab) {
-        const tabs = document.querySelectorAll('.auth-tab');
-        const forms = document.querySelectorAll('.auth-form');
-        tabs.forEach((t, i) => {
-            if (i === (tab === 'login' ? 0 : 1)) {
-                t.classList.add('active');
-                forms[i].style.display = 'block';
-            } else {
-                t.classList.remove('active');
-                forms[i].style.display = 'none';
-            }
-        });
-        document.getElementById('loginError').textContent = '';
-        document.getElementById('registerError').textContent = '';
-        document.getElementById('registerSuccess').textContent = '';
-    }
-
-    async function handleLogin(e) {
-        e.preventDefault();
-        const username = document.getElementById('loginUsername').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        const errorEl = document.getElementById('loginError');
-        errorEl.textContent = '⏳ Вход...';
-
-        try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                if (data.need_2fa) {
-                    closeAuthModal();
-                    document.getElementById('twofaModal').classList.add('active');
-                    return;
-                }
-                userId = data.user_id;
-                sessionId = data.user_id;
-                localStorage.setItem('ruwin_user_id', userId);
-                localStorage.setItem('ruwin_username', data.username);
-                closeAuthModal();
-                document.getElementById('app').style.display = 'block';
-                document.getElementById('username').textContent = data.username;
-                if (data.stats) updateUI(data.stats);
-                showNotification('✅ Добро пожаловать, ' + data.username + '!', 'success');
-                initGame();
-            } else {
-                errorEl.textContent = '❌ ' + data.error;
-            }
-        } catch (error) {
-            errorEl.textContent = '❌ Ошибка соединения';
-        }
-        return false;
-    }
-
-    async function handleRegister(e) {
-        e.preventDefault();
-        const username = document.getElementById('regUsername').value.trim();
-        const password = document.getElementById('regPassword').value;
-        const email = document.getElementById('regEmail').value.trim();
-        const errorEl = document.getElementById('registerError');
-        const successEl = document.getElementById('registerSuccess');
-        errorEl.textContent = '';
-        successEl.textContent = '⏳ Регистрация...';
-
-        try {
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, email })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                successEl.textContent = '✅ ' + data.message + ' Теперь войдите!';
-                document.getElementById('regUsername').value = '';
-                document.getElementById('regPassword').value = '';
-                document.getElementById('regEmail').value = '';
-                setTimeout(() => switchAuthTab('login'), 1500);
-            } else {
-                errorEl.textContent = '❌ ' + data.error;
-                successEl.textContent = '';
-            }
-        } catch (error) {
-            errorEl.textContent = '❌ Ошибка соединения';
-            successEl.textContent = '';
-        }
-        return false;
-    }
-
-    function closeTwofa() {
-        document.getElementById('twofaModal').classList.remove('active');
-        document.getElementById('authModal').classList.add('active');
-    }
-
-    async function verifyTwofa() {
-        const code = document.getElementById('twofaCode').value.trim();
-        const errorEl = document.getElementById('twofaError');
-        errorEl.textContent = '⏳ Проверка...';
-
-        try {
-            const response = await fetch('/api/verify_2fa', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                userId = data.user_id;
-                sessionId = data.user_id;
-                localStorage.setItem('ruwin_user_id', userId);
-                localStorage.setItem('ruwin_username', data.username);
-                document.getElementById('twofaModal').classList.remove('active');
-                document.getElementById('app').style.display = 'block';
-                document.getElementById('username').textContent = data.username;
-                if (data.stats) updateUI(data.stats);
-                showNotification('✅ Добро пожаловать, ' + data.username + '!', 'success');
-                initGame();
-            } else {
-                errorEl.textContent = '❌ ' + data.error;
-            }
-        } catch (error) {
-            errorEl.textContent = '❌ Ошибка соединения';
-        }
-    }
-
-    function handleLogout() {
-        userId = null;
-        sessionId = null;
-        localStorage.removeItem('ruwin_user_id');
-        localStorage.removeItem('ruwin_username');
-        document.getElementById('app').style.display = 'none';
-        document.getElementById('authModal').classList.add('active');
-        showNotification('👋 Вы вышли из аккаунта', 'info');
-    }
-
-    // ============================================================
-    // ИНИЦИАЛИЗАЦИЯ
-    // ============================================================
-
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(() => {
-            document.getElementById('loadingOverlay').classList.remove('active');
-        }, 800);
-
-        const savedId = localStorage.getItem('ruwin_user_id');
-        const savedName = localStorage.getItem('ruwin_username');
-
-        if (savedId) {
-            userId = savedId;
-            sessionId = savedId;
-            document.getElementById('username').textContent = savedName || 'Игрок';
-            document.getElementById('app').style.display = 'block';
-            document.getElementById('authModal').classList.remove('active');
-            initGame();
-        } else {
-            document.getElementById('app').style.display = 'none';
-            document.getElementById('authModal').classList.add('active');
+        /* --- ROOT ПЕРЕМЕННЫЕ --- */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #0d0d1a;
+            --bg-card: rgba(20, 20, 40, 0.8);
+            --neon-cyan: #00f0ff;
+            --neon-purple: #8b00ff;
+            --neon-pink: #ff0080;
+            --neon-gold: #ffd700;
+            --neon-green: #00ff88;
+            --neon-red: #ff0040;
+            --neon-orange: #ff6b00;
+            --text-primary: #ffffff;
+            --text-secondary: #aabbcc;
+            --glow-cyan: 0 0 30px rgba(0, 240, 255, 0.3);
+            --glow-purple: 0 0 30px rgba(139, 0, 255, 0.3);
+            --glow-gold: 0 0 30px rgba(255, 215, 0, 0.3);
+            --glow-green: 0 0 30px rgba(0, 255, 136, 0.3);
         }
 
-        startRainTimer();
-        setupNavigation();
-        setupGameCards();
-    });
-
-    // ============================================================
-    // ОСНОВНЫЕ ФУНКЦИИ
-    // ============================================================
-
-    async function initGame() {
-        try {
-            const response = await fetch('/api/init', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId || 'test_user' })
-            });
-            const data = await response.json();
-            if (data.success) {
-                sessionId = data.session_id || 'test_user';
-                if (data.stats) updateUI(data.stats);
-                if (data.pool_balance) {
-                    document.getElementById('bankBalance').textContent = data.pool_balance.toLocaleString() + ' ₽';
-                }
-                if (data.house_edge) {
-                    document.getElementById('houseEdge').textContent = (data.house_edge * 100).toFixed(1) + '%';
-                }
-                document.getElementById('username').textContent = data.stats?.username || 'Игрок';
-            }
-        } catch (error) {
-            console.error('Ошибка инициализации:', error);
-            sessionId = 'test_user';
+        /* --- ГЛОБАЛЬНЫЕ --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
         }
-    }
 
-    function updateUI(stats) {
-        if (!stats) return;
-        if (document.getElementById('balance')) {
-            document.getElementById('balance').textContent = (stats.balance || 10000).toLocaleString() + ' ₽';
-            userBalance = stats.balance || 10000;
+        /* ФОН С ЧАСТИЦАМИ */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(0, 240, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(139, 0, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 20%, rgba(255, 0, 128, 0.02) 0%, transparent 50%);
+            animation: bgFloat 30s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
         }
-        if (document.getElementById('level')) {
-            document.getElementById('level').textContent = stats.level || 1;
-            userLevel = stats.level || 1;
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(2%, -2%) rotate(2deg); }
+            50% { transform: translate(-2%, 2%) rotate(-2deg); }
+            75% { transform: translate(2%, 1%) rotate(1deg); }
         }
-        if (document.getElementById('totalBets')) document.getElementById('totalBets').textContent = stats.total_bets || 0;
-        if (document.getElementById('totalBetsStat')) document.getElementById('totalBetsStat').textContent = stats.total_bets || 0;
-        if (document.getElementById('winsStat')) document.getElementById('winsStat').textContent = stats.wins || 0;
-        if (document.getElementById('winrateStat')) document.getElementById('winrateStat').textContent = (stats.winrate || 0) + '%';
-        if (document.getElementById('levelStat')) document.getElementById('levelStat').textContent = stats.level || 1;
-    }
 
-    // ============================================================
-    // НАВИГАЦИЯ
-    // ============================================================
-
-    function setupNavigation() {
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-
-                const game = this.dataset.game;
-                currentGame = game;
-                const lobby = document.getElementById('lobby');
-                const container = document.getElementById('gameContainer');
-
-                if (game === 'lobby') {
-                    lobby.style.display = 'block';
-                    container.classList.remove('active');
-                    container.innerHTML = '';
-                } else {
-                    lobby.style.display = 'none';
-                    container.classList.add('active');
-                    loadGame(game);
-                }
-            });
-        });
-    }
-
-    function setupGameCards() {
-        document.querySelectorAll('.game-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const game = this.dataset.game;
-                const navBtn = document.querySelector('.nav-btn[data-game="' + game + '"]');
-                if (navBtn) navBtn.click();
-            });
-        });
-    }
-
-    // ============================================================
-    // ЗАГРУЗКА ИГР
-    // ============================================================
-
-    function loadGame(game) {
-        const container = document.getElementById('gameContainer');
-
-        switch(game) {
-            case 'roulette':
-                loadRoulette(container);
-                break;
-            case 'slots':
-                loadSlots(container);
-                break;
-            case 'blackjack':
-                loadBlackjack(container);
-                break;
-            case 'crash':
-                loadCrash(container);
-                break;
-            case 'dice':
-                loadDice(container);
-                break;
-            default:
-                container.innerHTML = `
-                    <div class="game-wrapper">
-                        <h2 class="game-title">🎮 ${game.toUpperCase()}</h2>
-                        <div class="game-result info">Игра в разработке...</div>
-                    </div>
-                `;
+        /* --- ЗАГРУЗКА --- */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
         }
-    }
+        #loadingOverlay:not(.active) { opacity: 0; pointer-events: none; }
+        .loader { font-size: 80px; animation: spin 0.8s linear infinite; filter: drop-shadow(0 0 30px rgba(0,240,255,0.5)); }
+        @keyframes spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+        .loading-text { margin-top: 20px; font-size: 18px; color: var(--text-secondary); letter-spacing: 4px; text-transform: uppercase; animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .loading-progress { margin-top: 20px; width: 200px; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+        .loading-progress::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink)); animation: loadBar 1.5s ease-in-out infinite; }
+        @keyframes loadBar { 0% { left: -100%; } 100% { left: 200%; } }
 
-    // ============================================================
-    // ТАЙМЕР ДОЖДЯ
-    // ============================================================
+        /* --- ХЕДЕР --- */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            padding: 10px 0;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+            animation: headerGlow 3s ease-in-out infinite;
+        }
+        @keyframes headerGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+        .header .container { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 30px rgba(0, 240, 255, 0.3));
+            animation: logoPulse 2s ease-in-out infinite;
+        }
+        @keyframes logoPulse { 0%, 100% { filter: drop-shadow(0 0 30px rgba(0, 240, 255, 0.3)); } 50% { filter: drop-shadow(0 0 50px rgba(0, 240, 255, 0.6)); } }
+        
+        .main-nav { display: flex; gap: 4px; flex-wrap: wrap; }
+        .nav-btn {
+            position: relative;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+            transition: width 0.3s;
+        }
+        .nav-btn:hover { color: var(--text-primary); background: rgba(0, 240, 255, 0.05); }
+        .nav-btn:hover::before { width: 80%; }
+        .nav-btn.active { color: var(--neon-cyan); background: rgba(0, 240, 255, 0.1); box-shadow: 0 0 30px rgba(0, 240, 255, 0.1); }
+        .nav-btn.active::before { width: 80%; }
+        
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .balance {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--neon-green);
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+            padding: 4px 16px;
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            border-radius: 10px;
+        }
+        .level-badge {
+            padding: 4px 12px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--neon-gold);
+        }
+        .profile-btn, .logout-btn {
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .profile-btn:hover, .logout-btn:hover { border-color: var(--neon-cyan); box-shadow: 0 0 30px rgba(0, 240, 255, 0.1); transform: scale(1.05); }
 
-    function startRainTimer() {
-        let hours = 3, minutes = 20, seconds = 55;
-        setInterval(() => {
-            seconds--;
-            if (seconds < 0) {
-                seconds = 59;
-                minutes--;
-                if (minutes < 0) {
-                    minutes = 59;
-                    hours--;
-                    if (hours < 0) {
-                        hours = 5;
-                        minutes = 0;
-                        seconds = 0;
-                        showNotification('🎰 ДОЖДЬ В ЧАТЕ! Введите "!rain" для участия!', 'warning');
-                    }
-                }
-            }
-            document.getElementById('rainHours').textContent = String(hours).padStart(2, '0');
-            document.getElementById('rainMinutes').textContent = String(minutes).padStart(2, '0');
-            document.getElementById('rainSeconds').textContent = String(seconds).padStart(2, '0');
-        }, 1000);
-    }
+        /* --- ОСНОВНОЙ КОНТЕНТ --- */
+        .main-content { padding: 30px 0; position: relative; z-index: 1; }
 
-    // ============================================================
-    // РУЛЕТКА
-    // ============================================================
+        /* --- СТАТИСТИКА --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); border-color: rgba(0, 240, 255, 0.2); box-shadow: 0 10px 40px rgba(0, 240, 255, 0.05); }
+        .stat-icon { font-size: 28px; margin-bottom: 6px; display: block; }
+        .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 4px; }
+        .stat-value { font-size: 26px; font-weight: 800; }
+        .stat-card.green .stat-value { background: linear-gradient(135deg, var(--neon-green), #00cc66); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card.gold .stat-value { background: linear-gradient(135deg, var(--neon-gold), #ffaa00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card.cyan .stat-value { background: linear-gradient(135deg, var(--neon-cyan), #0066ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card.purple .stat-value { background: linear-gradient(135deg, var(--neon-purple), #cc00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-    let rouletteBetType = 'number';
-    let selectedNumber = null;
+        /* --- СЕТКА ИГР --- */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .game-card {
+            position: relative;
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+        }
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.6s;
+        }
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 20px 60px rgba(0, 240, 255, 0.1);
+        }
+        .game-card:hover::before { opacity: 1; }
+        .game-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+            transform: scaleX(0);
+            transition: transform 0.4s;
+        }
+        .game-card:hover::after { transform: scaleX(1); }
+        .game-icon { font-size: 56px; display: block; margin-bottom: 12px; filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.1)); transition: all 0.4s; }
+        .game-card:hover .game-icon { transform: scale(1.1) rotate(-5deg); filter: drop-shadow(0 0 40px rgba(0, 240, 255, 0.2)); }
+        .game-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .game-desc { font-size: 13px; color: var(--text-secondary); }
+        .game-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .game-badge.hot { background: rgba(255, 0, 64, 0.2); color: var(--neon-red); border: 1px solid rgba(255, 0, 64, 0.2); animation: hotPulse 1.5s ease-in-out infinite; }
+        @keyframes hotPulse { 0%, 100% { box-shadow: 0 0 10px rgba(255, 0, 64, 0.2); } 50% { box-shadow: 0 0 30px rgba(255, 0, 64, 0.4); } }
+        .game-badge.new { background: rgba(0, 240, 255, 0.2); color: var(--neon-cyan); border: 1px solid rgba(0, 240, 255, 0.2); animation: newPulse 2s ease-in-out infinite; }
+        @keyframes newPulse { 0%, 100% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); } 50% { box-shadow: 0 0 30px rgba(0, 240, 255, 0.4); } }
 
-    function loadRoulette(container) {
-        container.innerHTML = `
-            <div class="game-wrapper">
-                <h2 class="game-title">🎰 ЕВРОПЕЙСКАЯ РУЛЕТКА</h2>
-                <div class="roulette-layout">
-                    <div class="roulette-board" id="rouletteBoard">
-                        ${generateRouletteNumbers()}
-                    </div>
-                    <div class="roulette-controls">
-                        <div class="game-result info" id="rouletteResult">Сделайте ставку!</div>
-                        <div class="bet-grid">
-                            <button class="bet-btn active" data-type="number">🎯 Число</button>
-                            <button class="bet-btn red" data-type="red">🔴 Красное</button>
-                            <button class="bet-btn" data-type="black">⚫ Чёрное</button>
-                            <button class="bet-btn" data-type="even">2️⃣ Чёт</button>
-                            <button class="bet-btn" data-type="odd">1️⃣ Нечёт</button>
-                            <button class="bet-btn" data-type="half1">⬆ 1-18</button>
-                            <button class="bet-btn" data-type="half2">⬇ 19-36</button>
-                            <button class="bet-btn" data-type="dozen">📊 Дюжина</button>
-                        </div>
-                        <div id="numberSelector">
-                            <label style="font-size:11px;color:var(--text-secondary);">Выберите число:</label>
-                            <div class="number-grid">${generateNumberSelector()}</div>
-                        </div>
-                        <input type="number" id="rouletteBet" class="game-input" value="10" min="1">
-                        <button class="spin-btn" id="rouletteSpin">🎰 СПИН</button>
-                    </div>
+        /* --- ИГРОВОЙ КОНТЕЙНЕР --- */
+        .game-container { display: none; }
+        .game-container.active { display: block; animation: gameAppear 0.5s ease; }
+        @keyframes gameAppear { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .game-wrapper {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .game-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(0, 240, 255, 0.02), transparent 60%),
+                        radial-gradient(ellipse at 70% 50%, rgba(139, 0, 255, 0.02), transparent 60%);
+            pointer-events: none;
+        }
+        .game-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 30px rgba(0, 240, 255, 0.1));
+            position: relative;
+            z-index: 1;
+        }
+        .game-result {
+            text-align: center;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 16px 0;
+            font-size: 20px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+        .game-result.info { background: rgba(0, 240, 255, 0.05); color: var(--neon-cyan); border: 1px solid rgba(0, 240, 255, 0.1); }
+        .game-result.win { background: rgba(0, 255, 136, 0.05); color: var(--neon-green); border: 1px solid rgba(0, 255, 136, 0.2); box-shadow: 0 0 40px rgba(0, 255, 136, 0.05); animation: winPulse 0.8s ease; }
+        @keyframes winPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        .game-result.loss { background: rgba(255, 0, 64, 0.05); color: var(--neon-red); border: 1px solid rgba(255, 0, 64, 0.2); }
+        
+        .game-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+        .game-input:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 30px rgba(0, 240, 255, 0.05); }
+        
+        .spin-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 20px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 12px;
+            position: relative;
+            z-index: 1;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .spin-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0, 240, 255, 0.2); }
+        .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* --- РУЛЕТКА --- */
+        .roulette-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
+            margin: 16px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .roulette-number {
+            padding: 12px 4px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .roulette-number:hover { transform: scale(1.05); border-color: var(--neon-cyan); }
+        .roulette-number.red { background: rgba(255, 0, 64, 0.15); color: var(--neon-red); }
+        .roulette-number.black { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+        .roulette-number.green { background: rgba(0, 255, 136, 0.1); color: var(--neon-green); }
+        .roulette-number.selected { border-color: var(--neon-gold); box-shadow: 0 0 30px rgba(255, 215, 0, 0.2); transform: scale(1.05); }
+        .roulette-board.spinning .roulette-number { animation: flash 0.1s ease infinite alternate; }
+        @keyframes flash { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        .bet-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin: 12px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .bet-btn {
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .bet-btn:hover { background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.1); }
+        .bet-btn.active { background: rgba(0, 240, 255, 0.1); border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 240, 255, 0.05); }
+        .bet-btn.red { color: var(--neon-red); }
+        .bet-btn.red.active { background: rgba(255, 0, 64, 0.1); border-color: var(--neon-red); box-shadow: 0 0 20px rgba(255, 0, 64, 0.05); }
+        
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            margin: 8px 0;
+        }
+        .num-btn {
+            padding: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.02);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .num-btn:hover { background: rgba(0, 240, 255, 0.05); transform: scale(1.05); }
+        .num-btn.selected { border-color: var(--neon-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.1); }
+
+        /* --- СЛОТЫ --- */
+        .slots-reels {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 400px;
+            margin: 0 auto 20px;
+        }
+        .slot-reel {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .slot-symbol {
+            font-size: 48px;
+            text-align: center;
+            padding: 8px;
+            transition: all 0.3s;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+        }
+        .slot-reel.spinning .slot-symbol { animation: slotSpin 0.1s linear infinite; }
+        @keyframes slotSpin { 0% { transform: translateY(-20px); opacity: 0.5; } 100% { transform: translateY(20px); opacity: 1; } }
+        .slot-symbol.win-highlight { background: rgba(255, 215, 0, 0.2); box-shadow: 0 0 30px rgba(255, 215, 0, 0.2); transform: scale(1.1); }
+
+        /* --- БЛЭКДЖЕК --- */
+        .blackjack-table { max-width: 500px; margin: 0 auto; }
+        .blackjack-hand { margin: 16px 0; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; }
+        .blackjack-hand h4 { color: var(--text-secondary); margin-bottom: 8px; }
+        .blackjack-cards { display: flex; gap: 8px; flex-wrap: wrap; }
+        .blackjack-card {
+            width: 50px;
+            height: 70px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: black;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .blackjack-card.red { color: #cc0000; }
+        .blackjack-card:not(.red) { color: #1a1a1a; }
+        .blackjack-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .blackjack-action {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .blackjack-action:first-child { background: var(--neon-green); color: #000; }
+        .blackjack-action:first-child:hover:not(:disabled) { box-shadow: 0 0 30px rgba(0, 255, 136, 0.2); }
+        .blackjack-action:not(:first-child) { background: var(--neon-cyan); color: #000; }
+        .blackjack-action:not(:first-child):hover:not(:disabled) { box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); }
+        .blackjack-action:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* --- AVIATOR --- */
+        .crash-chart {
+            height: 300px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 16px;
+        }
+        .crash-chart::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(0deg, rgba(0, 240, 255, 0.02), transparent);
+        }
+        .crash-multiplier {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 64px;
+            font-weight: 900;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 60px rgba(0, 240, 255, 0.3);
+            transition: all 0.1s;
+        }
+        .crash-multiplier.crashed { color: var(--neon-red); text-shadow: 0 0 60px rgba(255, 0, 64, 0.3); }
+        .crash-controls { display: flex; gap: 8px; margin-top: 12px; }
+        .crash-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .crash-btn.bet { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: white; }
+        .crash-btn.bet:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 240, 255, 0.2); }
+        .crash-btn.cashout { background: var(--neon-green); color: #000; }
+        .crash-btn.cashout:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 255, 136, 0.2); }
+        .crash-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .crash-history { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
+        .crash-history-item {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .crash-history-item.win { color: var(--neon-green); border-color: rgba(0, 255, 136, 0.1); }
+        .crash-history-item.loss { color: var(--neon-red); border-color: rgba(255, 0, 64, 0.1); }
+
+        /* --- КОСТИ --- */
+        .dice-display {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        .die {
+            font-size: 80px;
+            transition: all 0.3s;
+            filter: drop-shadow(0 0 30px rgba(255,255,255,0.05));
+        }
+        .die.rolling { animation: diceRoll 0.5s ease; }
+        @keyframes diceRoll {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.2); }
+            50% { transform: rotate(180deg) scale(0.8); }
+            75% { transform: rotate(270deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .dice-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+        .dice-btn {
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        .dice-btn:hover { background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.1); }
+        .dice-btn.active { background: rgba(0, 240, 255, 0.1); border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 240, 255, 0.05); }
+
+        /* --- МОДАЛЬНОЕ ОКНО --- */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            padding: 4px;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .auth-tab.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .auth-form { display: flex; flex-direction: column; gap: 12px; }
+        .auth-form h2 { text-align: center; margin-bottom: 8px; }
+        .auth-input {
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .auth-input:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 240, 255, 0.1); }
+        .auth-btn {
+            padding: 14px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 240, 255, 0.3); }
+        .auth-error { color: var(--neon-red); font-size: 14px; text-align: center; }
+        .auth-success { color: var(--neon-green); font-size: 14px; text-align: center; }
+
+        /* --- УВЕДОМЛЕНИЯ --- */
+        #notifications {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 350px;
+        }
+        .notification {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .notification.info { background: var(--bg-card); border-left: 4px solid var(--neon-cyan); color: var(--text-primary); }
+        .notification.success { background: var(--bg-card); border-left: 4px solid var(--neon-green); color: var(--neon-green); }
+        .notification.error { background: var(--bg-card); border-left: 4px solid var(--neon-red); color: var(--neon-red); }
+        .notification.warning { background: var(--bg-card); border-left: 4px solid var(--neon-gold); color: var(--neon-gold); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- АДАПТИВ --- */
+        @media (max-width: 768px) {
+            .header .container { flex-wrap: wrap; gap: 8px; }
+            .main-nav { order: 3; width: 100%; justify-content: center; }
+            .nav-btn { font-size: 12px; padding: 6px 12px; }
+            .games-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+            .modal-content { padding: 24px; margin: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .crash-multiplier { font-size: 40px; }
+            .roulette-board { grid-template-columns: repeat(5, 1fr); }
+            .bet-grid { grid-template-columns: repeat(2, 1fr); }
+            .dice-display .die { font-size: 60px; }
+            .slot-symbol { font-size: 36px; }
+        }
+        @media (max-width: 480px) {
+            .logo { font-size: 20px; }
+            .balance { font-size: 16px; padding: 4px 10px; }
+            .level-badge { font-size: 12px; padding: 2px 8px; }
+            .games-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .game-card { padding: 16px; }
+            .game-icon { font-size: 40px; }
+            .stat-value { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ====== ЗАГРУЗКА ====== -->
+    <div id="loadingOverlay" class="active">
+        <div class="loader">🎰</div>
+        <div class="loading-text">Загрузка казино...</div>
+        <div class="loading-progress"></div>
+    </div>
+
+    <!-- ====== ОСНОВНОЕ ПРИЛОЖЕНИЕ ====== -->
+    <div id="app" style="display:none;">
+        
+        <!-- ХЕДЕР -->
+        <header class="header">
+            <div class="container">
+                <div class="header-left" style="display:flex;align-items:center;gap:20px;">
+                    <div class="logo">🎰 RuWin</div>
+                    <nav class="main-nav">
+                        <button class="nav-btn active" data-game="lobby">🏠 Главная</button>
+                        <button class="nav-btn" data-game="slots">🎰 Слоты</button>
+                        <button class="nav-btn" data-game="roulette">🎡 Рулетка</button>
+                        <button class="nav-btn" data-game="blackjack">🃏 Блэкджек</button>
+                        <button class="nav-btn" data-game="crash">✈️ Aviator</button>
+                        <button class="nav-btn" data-game="dice">🎲 Кости</button>
+                    </nav>
+                </div>
+                <div class="header-right">
+                    <div class="balance" id="balance">10 000 ₽</div>
+                    <div class="level-badge">🏆 LVL <span id="level">1</span></div>
+                    <button class="profile-btn" onclick="toggleProfile()">👤</button>
+                    <button class="logout-btn" onclick="handleLogout()">🚪</button>
                 </div>
             </div>
-        `;
+        </header>
 
-        setupRouletteEvents();
-    }
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
+        <main class="main-content">
+            <div class="container">
+                
+                <!-- ЛОББИ -->
+                <div id="lobby">
+                    <div class="stats-grid">
+                        <div class="stat-card green">
+                            <span class="stat-icon">💰</span>
+                            <div class="stat-label">Баланс</div>
+                            <div class="stat-value" id="balanceDisplay">10 000 ₽</div>
+                        </div>
+                        <div class="stat-card cyan">
+                            <span class="stat-icon">🎯</span>
+                            <div class="stat-label">Всего ставок</div>
+                            <div class="stat-value" id="totalBetsStat">0</div>
+                        </div>
+                        <div class="stat-card gold">
+                            <span class="stat-icon">🏆</span>
+                            <div class="stat-label">Побед</div>
+                            <div class="stat-value" id="winsStat">0</div>
+                        </div>
+                        <div class="stat-card purple">
+                            <span class="stat-icon">📊</span>
+                            <div class="stat-label">Винрейт</div>
+                            <div class="stat-value" id="winrateStat">0%</div>
+                        </div>
+                    </div>
 
-    function generateRouletteNumbers() {
-        const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
-        return numbers.map(num => {
-            const color = num === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num) ? 'red' : 'black';
-            return '<div class="roulette-number ' + color + '" data-number="' + num + '">' + num + '</div>';
-        }).join('');
-    }
+                    <div class="games-grid">
+                        <div class="game-card" data-game="slots">
+                            <span class="game-badge hot">🔥 HOT</span>
+                            <span class="game-icon">🎰</span>
+                            <div class="game-name">Слоты</div>
+                            <div class="game-desc">Крути барабаны!</div>
+                        </div>
+                        <div class="game-card" data-game="roulette">
+                            <span class="game-badge new">⭐ NEW</span>
+                            <span class="game-icon">🎡</span>
+                            <div class="game-name">Рулетка</div>
+                            <div class="game-desc">Европейская рулетка</div>
+                        </div>
+                        <div class="game-card" data-game="blackjack">
+                            <span class="game-icon">🃏</span>
+                            <div class="game-name">Блэкджек</div>
+                            <div class="game-desc">21 очко</div>
+                        </div>
+                        <div class="game-card" data-game="crash">
+                            <span class="game-badge hot">🔥 HOT</span>
+                            <span class="game-icon">✈️</span>
+                            <div class="game-name">Aviator</div>
+                            <div class="game-desc">Лети выше!</div>
+                        </div>
+                        <div class="game-card" data-game="dice">
+                            <span class="game-icon">🎲</span>
+                            <div class="game-name">Кости</div>
+                            <div class="game-desc">Брось кубики</div>
+                        </div>
+                    </div>
+                </div>
 
-    function generateNumberSelector() {
-        let html = '';
-        for (let i = 0; i <= 36; i++) {
-            const color = i === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i) ? 'red' : 'black';
-            html += '<button class="num-btn" data-number="' + i + '" style="color:' + (i === 0 ? '#00cc44' : color === 'red' ? '#ff0040' : '#fff') + '">' + i + '</button>';
-        }
-        return html;
-    }
+                <!-- КОНТЕЙНЕР ДЛЯ ИГР -->
+                <div id="gameContainer" class="game-container"></div>
 
-    function setupRouletteEvents() {
-        document.querySelectorAll('.bet-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                rouletteBetType = this.dataset.type;
-                document.getElementById('numberSelector').style.display = rouletteBetType === 'number' ? 'block' : 'none';
-            });
-        });
+            </div>
+        </main>
 
-        document.querySelectorAll('.roulette-number').forEach(el => {
-            el.addEventListener('click', function() {
-                document.querySelectorAll('.roulette-number').forEach(n => n.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedNumber = parseInt(this.dataset.number);
-            });
-        });
+    </div>
 
-        document.querySelectorAll('.num-btn').forEach(el => {
-            el.addEventListener('click', function() {
-                document.querySelectorAll('.num-btn').forEach(n => n.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedNumber = parseInt(this.dataset.number);
-            });
-        });
+    <!-- ====== МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ ====== -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">🔐 Вход</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">📝 Регистрация</button>
+            </div>
+            <div id="loginForm" class="auth-form">
+                <h2>Добро пожаловать!</h2>
+                <input type="text" id="loginUsername" placeholder="Имя пользователя" class="auth-input">
+                <input type="password" id="loginPassword" placeholder="Пароль" class="auth-input">
+                <div id="loginError" class="auth-error"></div>
+                <button onclick="handleLogin(event)" class="auth-btn">🚀 Войти</button>
+            </div>
+            <div id="registerForm" class="auth-form" style="display:none;">
+                <h2>Создай аккаунт!</h2>
+                <input type="text" id="regUsername" placeholder="Имя пользователя" class="auth-input">
+                <input type="email" id="regEmail" placeholder="Email" class="auth-input">
+                <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)" class="auth-input">
+                <div id="registerError" class="auth-error"></div>
+                <div id="registerSuccess" class="auth-success"></div>
+                <button onclick="handleRegister(event)" class="auth-btn">🎉 Зарегистрироваться</button>
+            </div>
+        </div>
+    </div>
 
-        document.getElementById('rouletteSpin').addEventListener('click', rouletteSpin);
-    }
+    <!-- ====== ПРОФИЛЬ ====== -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content" style="max-width:350px;">
+            <div id="profileBody"></div>
+        </div>
+    </div>
 
-    async function rouletteSpin() {
-        const spinBtn = document.getElementById('rouletteSpin');
-        if (spinBtn.disabled) return;
+    <!-- ====== УВЕДОМЛЕНИЯ ====== -->
+    <div id="notifications"></div>
 
-        const amount = parseFloat(document.getElementById('rouletteBet').value);
-        if (isNaN(amount) || amount <= 0) {
-            showNotification('❌ Введите сумму!', 'error');
-            return;
-        }
+    <!-- ====== JAVASCRIPT ====== -->
+    <script>
+        // ============================================================
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+        // ============================================================
+        let userId = null;
+        let userBalance = 10000;
+        let userLevel = 1;
+        let sessionId = null;
+        let currentGame = 'lobby';
 
-        if (!checkBalance(amount)) return;
+        // ============================================================
+        // ЗАГРУЗКА СТРАНИЦЫ
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }, 800);
 
-        let payload = {
-            session_id: sessionId || 'test_user',
-            bet_type: rouletteBetType,
-            amount: amount
-        };
+            const savedId = localStorage.getItem('ruwin_user_id');
+            const savedName = localStorage.getItem('ruwin_username');
 
-        if (rouletteBetType === 'number') {
-            if (selectedNumber === null) {
-                showNotification('❌ Выберите число!', 'error');
-                return;
-            }
-            payload.number = selectedNumber;
-        }
-
-        spinBtn.disabled = true;
-        document.querySelector('.roulette-board').classList.add('spinning');
-        document.getElementById('rouletteResult').className = 'game-result info';
-        document.getElementById('rouletteResult').textContent = '⏳ Крутим...';
-
-        try {
-            const response = await fetch('/api/roulette/spin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                const result = document.getElementById('rouletteResult');
-                result.className = 'game-result ' + (data.win ? 'win' : 'loss');
-                result.innerHTML = 'Выпало: <strong style="color:' + (data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff') + '">' + data.result + '</strong> (' + data.color.toUpperCase() + ')<br>' + (data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽');
-                if (data.win) {
-                    showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
-                } else {
-                    showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
-                }
-                updateUI(data.stats);
+            if (savedId) {
+                userId = savedId;
+                sessionId = savedId;
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('authModal').classList.remove('active');
+                initGame();
             } else {
-                showNotification('❌ ' + data.error, 'error');
+                document.getElementById('app').style.display = 'none';
+                document.getElementById('authModal').classList.add('active');
             }
-        } catch (error) {
-            showNotification('❌ Ошибка соединения!', 'error');
+
+            setupNavigation();
+            setupGameCards();
+        });
+
+        // ============================================================
+        // ОСНОВНЫЕ ФУНКЦИИ
+        // ============================================================
+        async function initGame() {
+            try {
+                const response = await fetch('/api/init', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId || 'test_001' })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    sessionId = data.stats?.user_id || 'test_001';
+                    updateUI(data.stats);
+                }
+            } catch (error) {
+                console.error('Ошибка инициализации:', error);
+                sessionId = 'test_001';
+            }
         }
 
-        setTimeout(() => {
-            spinBtn.disabled = false;
-            document.querySelector('.roulette-board').classList.remove('spinning');
-        }, 3000);
-    }
+        function updateUI(stats) {
+            if (!stats) return;
+            userBalance = stats.balance || 10000;
+            userLevel = stats.level || 1;
+            
+            document.getElementById('balance').textContent = userBalance.toLocaleString() + ' ₽';
+            document.getElementById('balanceDisplay').textContent = userBalance.toLocaleString() + ' ₽';
+            document.getElementById('level').textContent = userLevel;
+            document.getElementById('totalBetsStat').textContent = stats.total_bets || 0;
+            document.getElementById('winsStat').textContent = stats.wins || 0;
+            document.getElementById('winrateStat').textContent = (stats.winrate || 0) + '%';
+        }
 
-    // ============================================================
-    // СЛОТЫ
-    // ============================================================
+        function getCurrentBalance() { return userBalance; }
 
-    function loadSlots(container) {
-        container.innerHTML = `
-            <div class="game-wrapper">
-                <h2 class="game-title">🎲 СЛОТЫ</h2>
-                <div class="slots-machine">
+        function checkBalance(amount) {
+            if (amount > userBalance) {
+                showNotification('❌ Недостаточно средств! Баланс: ' + userBalance.toLocaleString() + ' ₽', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // ============================================================
+        // НАВИГАЦИЯ
+        // ============================================================
+        function setupNavigation() {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    const game = this.dataset.game;
+                    currentGame = game;
+                    const lobby = document.getElementById('lobby');
+                    const container = document.getElementById('gameContainer');
+                    if (game === 'lobby') {
+                        lobby.style.display = 'block';
+                        container.classList.remove('active');
+                        container.innerHTML = '';
+                    } else {
+                        lobby.style.display = 'none';
+                        container.classList.add('active');
+                        loadGame(game);
+                    }
+                });
+            });
+        }
+
+        function setupGameCards() {
+            document.querySelectorAll('.game-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const game = this.dataset.game;
+                    const navBtn = document.querySelector('.nav-btn[data-game="' + game + '"]');
+                    if (navBtn) navBtn.click();
+                });
+            });
+        }
+
+        // ============================================================
+        // ЗАГРУЗКА ИГР
+        // ============================================================
+        function loadGame(game) {
+            const container = document.getElementById('gameContainer');
+            switch(game) {
+                case 'slots': loadSlots(container); break;
+                case 'roulette': loadRoulette(container); break;
+                case 'blackjack': loadBlackjack(container); break;
+                case 'crash': loadCrash(container); break;
+                case 'dice': loadDice(container); break;
+                default: container.innerHTML = `<div class="game-wrapper"><h2 class="game-title">🎮 ${game.toUpperCase()}</h2><div class="game-result info">В разработке...</div></div>`;
+            }
+        }
+
+        // ============================================================
+        // АВТОРИЗАЦИЯ
+        // ============================================================
+        function switchAuthTab(tab) {
+            const tabs = document.querySelectorAll('.auth-tab');
+            const forms = document.querySelectorAll('.auth-form');
+            tabs.forEach((t, i) => {
+                if (i === (tab === 'login' ? 0 : 1)) {
+                    t.classList.add('active');
+                    forms[i].style.display = 'block';
+                } else {
+                    t.classList.remove('active');
+                    forms[i].style.display = 'none';
+                }
+            });
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('registerError').textContent = '';
+            document.getElementById('registerSuccess').textContent = '';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+            errorEl.textContent = '⏳ Вход...';
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    userId = data.user_id;
+                    sessionId = data.user_id;
+                    localStorage.setItem('ruwin_user_id', userId);
+                    localStorage.setItem('ruwin_username', data.username);
+                    document.getElementById('authModal').classList.remove('active');
+                    document.getElementById('app').style.display = 'block';
+                    if (data.stats) updateUI(data.stats);
+                    showNotification('✅ Добро пожаловать, ' + data.username + '!', 'success');
+                    initGame();
+                } else {
+                    errorEl.textContent = '❌ ' + data.error;
+                }
+            } catch (error) {
+                errorEl.textContent = '❌ Ошибка соединения';
+            }
+            return false;
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const email = document.getElementById('regEmail').value.trim();
+            const errorEl = document.getElementById('registerError');
+            const successEl = document.getElementById('registerSuccess');
+            errorEl.textContent = '';
+            successEl.textContent = '⏳ Регистрация...';
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, email })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    successEl.textContent = '✅ ' + data.message + ' Теперь войдите!';
+                    document.getElementById('regUsername').value = '';
+                    document.getElementById('regPassword').value = '';
+                    document.getElementById('regEmail').value = '';
+                    setTimeout(() => switchAuthTab('login'), 1500);
+                } else {
+                    errorEl.textContent = '❌ ' + data.error;
+                    successEl.textContent = '';
+                }
+            } catch (error) {
+                errorEl.textContent = '❌ Ошибка соединения';
+                successEl.textContent = '';
+            }
+            return false;
+        }
+
+        function handleLogout() {
+            userId = null;
+            sessionId = null;
+            localStorage.removeItem('ruwin_user_id');
+            localStorage.removeItem('ruwin_username');
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('authModal').classList.add('active');
+            showNotification('👋 Вы вышли из аккаунта', 'info');
+        }
+
+        function toggleProfile() {
+            const modal = document.getElementById('profileModal');
+            const body = document.getElementById('profileBody');
+            body.innerHTML = `
+                <div style="text-align:center;">
+                    <div style="font-size:48px;margin-bottom:10px;">👤</div>
+                    <h3 style="margin-bottom:4px;color:var(--text-primary);">${localStorage.getItem('ruwin_username') || 'Игрок'}</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:4px;">💰 Баланс: ${userBalance.toLocaleString()} ₽</p>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;">🏆 Уровень: ${userLevel}</p>
+                    <button onclick="document.getElementById('profileModal').classList.remove('active')" style="padding:10px 30px;background:var(--bg-card);border:1px solid var(--neon-cyan);border-radius:10px;color:var(--text-primary);cursor:pointer;">Закрыть</button>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+
+        // ============================================================
+        // УВЕДОМЛЕНИЯ
+        // ============================================================
+        function showNotification(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('notifications');
+            if (!container) return;
+            const notification = document.createElement('div');
+            notification.className = 'notification ' + type;
+            notification.textContent = message;
+            container.appendChild(notification);
+            setTimeout(() => notification.classList.add('show'), 10);
+            const timeout = setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 400);
+            }, duration);
+            notification.addEventListener('click', () => {
+                clearTimeout(timeout);
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 400);
+            });
+        }
+
+        // ============================================================
+        // РУЛЕТКА
+        // ============================================================
+        let rouletteState = { betType: 'number', selectedNumber: null };
+
+        function loadRoulette(container) {
+            container.innerHTML = `
+                <div class="game-wrapper">
+                    <h2 class="game-title">🎡 ЕВРОПЕЙСКАЯ РУЛЕТКА</h2>
+                    <div class="roulette-board" id="rouletteBoard">${generateRouletteNumbers()}</div>
+                    <div class="game-result info" id="rouletteResult">Сделайте ставку!</div>
+                    <div class="bet-grid">
+                        <button class="bet-btn active" data-type="number">🎯 Число</button>
+                        <button class="bet-btn red" data-type="red">🔴 Красное</button>
+                        <button class="bet-btn" data-type="black">⚫ Чёрное</button>
+                        <button class="bet-btn" data-type="even">2️⃣ Чёт</button>
+                        <button class="bet-btn" data-type="odd">1️⃣ Нечёт</button>
+                        <button class="bet-btn" data-type="half1">⬆ 1-18</button>
+                        <button class="bet-btn" data-type="half2">⬇ 19-36</button>
+                    </div>
+                    <div id="numberSelector">
+                        <label style="font-size:11px;color:var(--text-secondary);">Выберите число:</label>
+                        <div class="number-grid">${generateNumberSelector()}</div>
+                    </div>
+                    <input type="number" id="rouletteBet" class="game-input" value="10" min="1">
+                    <button class="spin-btn" id="rouletteSpin">🎰 СПИН</button>
+                </div>
+            `;
+            setupRouletteEvents();
+        }
+
+        function generateRouletteNumbers() {
+            const nums = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+            return nums.map(n => {
+                const c = n === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(n) ? 'red' : 'black';
+                return `<div class="roulette-number ${c}" data-number="${n}">${n}</div>`;
+            }).join('');
+        }
+
+        function generateNumberSelector() {
+            let html = '';
+            for (let i = 0; i <= 36; i++) {
+                const c = i === 0 ? 'green' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i) ? 'red' : 'black';
+                html += `<button class="num-btn" data-number="${i}" style="color:${i === 0 ? '#00cc44' : c === 'red' ? '#ff0040' : '#fff'}">${i}</button>`;
+            }
+            return html;
+        }
+
+        function setupRouletteEvents() {
+            document.querySelectorAll('.bet-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    rouletteState.betType = this.dataset.type;
+                    document.getElementById('numberSelector').style.display = rouletteState.betType === 'number' ? 'block' : 'none';
+                });
+            });
+            document.querySelectorAll('.num-btn').forEach(el => {
+                el.addEventListener('click', function() {
+                    document.querySelectorAll('.num-btn').forEach(n => n.classList.remove('selected'));
+                    this.classList.add('selected');
+                    rouletteState.selectedNumber = parseInt(this.dataset.number);
+                });
+            });
+            document.getElementById('rouletteSpin').addEventListener('click', rouletteSpin);
+        }
+
+        async function rouletteSpin() {
+            const spinBtn = document.getElementById('rouletteSpin');
+            if (spinBtn.disabled) return;
+            const bet = parseInt(document.getElementById('rouletteBet').value);
+            if (isNaN(bet) || bet <= 0) { showNotification('❌ Введите сумму!', 'error'); return; }
+            if (!checkBalance(bet)) return;
+            const payload = { user_id: sessionId || 'test_001', bet: bet, type: rouletteState.betType };
+            if (rouletteState.betType === 'number') {
+                if (rouletteState.selectedNumber === null) { showNotification('❌ Выберите число!', 'error'); return; }
+                payload.number = rouletteState.selectedNumber;
+            }
+            spinBtn.disabled = true;
+            document.getElementById('rouletteResult').className = 'game-result info';
+            document.getElementById('rouletteResult').textContent = '⏳ Крутим...';
+            document.getElementById('rouletteBoard').classList.add('spinning');
+            try {
+                const response = await fetch('/api/game/roulette', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const result = document.getElementById('rouletteResult');
+                    result.className = 'game-result ' + (data.win ? 'win' : 'loss');
+                    result.innerHTML = `Выпало: <strong style="color:${data.color === 'red' ? '#ff0040' : data.color === 'green' ? '#00cc44' : '#fff'}">${data.result}</strong> (${data.color.toUpperCase()})<br>${data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽'}`;
+                    if (data.win) showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
+                    else showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
+                    updateUI(data.stats);
+                } else showNotification('❌ ' + data.error, 'error');
+            } catch (error) { showNotification('❌ Ошибка соединения!', 'error'); }
+            setTimeout(() => {
+                spinBtn.disabled = false;
+                document.getElementById('rouletteBoard').classList.remove('spinning');
+            }, 2000);
+        }
+
+        // ============================================================
+        // СЛОТЫ
+        // ============================================================
+        function loadSlots(container) {
+            container.innerHTML = `
+                <div class="game-wrapper">
+                    <h2 class="game-title">🎰 СЛОТЫ</h2>
                     <div class="slots-reels" id="slotsReels">
                         <div class="slot-reel"><div class="slot-symbol">🎰</div><div class="slot-symbol">🎰</div><div class="slot-symbol">🎰</div></div>
                         <div class="slot-reel"><div class="slot-symbol">🎰</div><div class="slot-symbol">🎰</div><div class="slot-symbol">🎰</div></div>
@@ -528,729 +1237,436 @@
                     <input type="number" id="slotsBet" class="game-input" value="10" min="1">
                     <button class="spin-btn" id="slotsSpinBtn">🎰 КРУТИТЬ</button>
                 </div>
-            </div>
-        `;
-
-        document.getElementById('slotsSpinBtn').addEventListener('click', slotsSpin);
-    }
-
-    async function slotsSpin() {
-        const spinBtn = document.getElementById('slotsSpinBtn');
-        if (spinBtn.disabled) return;
-
-        const amount = parseFloat(document.getElementById('slotsBet').value);
-        if (isNaN(amount) || amount <= 0) {
-            showNotification('❌ Введите сумму!', 'error');
-            return;
+            `;
+            document.getElementById('slotsSpinBtn').addEventListener('click', slotsSpin);
         }
 
-        if (!checkBalance(amount)) return;
-
-        spinBtn.disabled = true;
-        const reels = document.querySelectorAll('.slot-reel');
-        reels.forEach((r, i) => setTimeout(() => r.classList.add('spinning'), i * 100));
-        document.getElementById('slotsResult').className = 'game-result info';
-        document.getElementById('slotsResult').textContent = '⏳ Крутим...';
-
-        try {
-            const response = await fetch('/api/slots/spin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: sessionId || 'test_user', amount: amount })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                reels.forEach((reel, idx) => {
-                    setTimeout(() => {
-                        reel.classList.remove('spinning');
-                        reel.classList.add('stopping');
+        async function slotsSpin() {
+            const spinBtn = document.getElementById('slotsSpinBtn');
+            if (spinBtn.disabled) return;
+            const bet = parseInt(document.getElementById('slotsBet').value);
+            if (isNaN(bet) || bet <= 0) { showNotification('❌ Введите сумму!', 'error'); return; }
+            if (!checkBalance(bet)) return;
+            spinBtn.disabled = true;
+            document.querySelectorAll('.slot-reel').forEach(r => r.classList.add('spinning'));
+            document.getElementById('slotsResult').className = 'game-result info';
+            document.getElementById('slotsResult').textContent = '⏳ Крутим...';
+            try {
+                const response = await fetch('/api/game/slots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: sessionId || 'test_001', bet: bet })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const reels = document.querySelectorAll('.slot-reel');
+                    reels.forEach((reel, idx) => {
                         setTimeout(() => {
+                            reel.classList.remove('spinning');
                             const symbols = reel.querySelectorAll('.slot-symbol');
                             symbols.forEach((sym, row) => {
                                 const pos = idx * 3 + row;
                                 if (data.reels && data.reels[pos]) sym.textContent = data.reels[pos];
-                                sym.classList.remove('win-highlight');
                             });
-                            reel.classList.remove('stopping');
-                            if (data.win) {
-                                setTimeout(() => symbols.forEach(s => s.classList.add('win-highlight')), 200);
-                            }
-                        }, 400);
-                    }, idx * 300 + 800);
-                });
-
-                setTimeout(() => {
-                    const result = document.getElementById('slotsResult');
-                    result.className = 'game-result ' + (data.win ? 'win' : 'loss');
-                    result.textContent = data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
-                    if (data.win) {
-                        showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
-                    } else {
-                        showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
-                    }
-                    updateUI(data.stats);
-                }, 2500);
-            } else {
-                showNotification('❌ ' + data.error, 'error');
-            }
-        } catch (error) {
-            showNotification('❌ Ошибка соединения!', 'error');
+                        }, idx * 300 + 500);
+                    });
+                    setTimeout(() => {
+                        const result = document.getElementById('slotsResult');
+                        result.className = 'game-result ' + (data.win ? 'win' : 'loss');
+                        result.textContent = data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
+                        if (data.win) showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
+                        else showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
+                        updateUI(data.stats);
+                    }, 2000);
+                } else showNotification('❌ ' + data.error, 'error');
+            } catch (error) { showNotification('❌ Ошибка соединения!', 'error'); }
+            setTimeout(() => {
+                spinBtn.disabled = false;
+                document.querySelectorAll('.slot-reel').forEach(r => r.classList.remove('spinning'));
+            }, 3000);
         }
 
-        setTimeout(() => {
-            spinBtn.disabled = false;
-            document.querySelectorAll('.slot-reel').forEach(r => r.classList.remove('spinning', 'stopping'));
-            document.querySelectorAll('.slot-symbol').forEach(s => s.classList.remove('win-highlight'));
-        }, 4000);
-    }
+        // ============================================================
+        // БЛЭКДЖЕК
+        // ============================================================
+        let blackjackState = { deck: [], playerHand: [], dealerHand: [], bet: 0, gameOver: false };
 
-    // ============================================================
-    // БЛЭКДЖЕК
-    // ============================================================
-
-    let blackjackState = { deck: [], playerHand: [], dealerHand: [], amount: 0, gameOver: false };
-
-    function loadBlackjack(container) {
-        container.innerHTML = `
-            <div class="game-wrapper">
-                <h2 class="game-title">🃏 БЛЭКДЖЕК</h2>
-                <div class="blackjack-table">
-                    <div class="blackjack-hand"><h4>👤 Ваши карты</h4><div class="blackjack-cards" id="playerCards"><div class="blackjack-card">?</div><div class="blackjack-card">?</div></div><div style="margin-top:8px;font-size:18px;font-weight:700;color:var(--text-secondary);" id="playerSum">Сумма: 0</div></div>
-                    <div class="blackjack-hand"><h4>🤖 Карты дилера</h4><div class="blackjack-cards" id="dealerCards"><div class="blackjack-card">?</div><div class="blackjack-card">?</div></div><div style="margin-top:8px;font-size:18px;font-weight:700;color:var(--text-secondary);" id="dealerSum">Сумма: 0</div></div>
-                    <div class="game-result info" id="blackjackResult">Сделайте ставку!</div>
-                    <input type="number" id="blackjackBet" class="game-input" value="10" min="1">
-                    <div class="blackjack-actions">
-                        <button class="blackjack-action" id="blackjackStart">🃏 СТАРТ</button>
-                        <button class="blackjack-action" id="blackjackHit" disabled>✋ ВЗЯТЬ</button>
-                        <button class="blackjack-action" id="blackjackStand" disabled>✋ СТОП</button>
+        function loadBlackjack(container) {
+            container.innerHTML = `
+                <div class="game-wrapper">
+                    <h2 class="game-title">🃏 БЛЭКДЖЕК</h2>
+                    <div class="blackjack-table">
+                        <div class="blackjack-hand">
+                            <h4>🤖 Карты дилера</h4>
+                            <div class="blackjack-cards" id="dealerCards"><div class="blackjack-card">?</div><div class="blackjack-card">?</div></div>
+                            <div style="margin-top:8px;font-size:18px;font-weight:700;color:var(--text-secondary);" id="dealerSum">Сумма: 0</div>
+                        </div>
+                        <div class="blackjack-hand">
+                            <h4>👤 Ваши карты</h4>
+                            <div class="blackjack-cards" id="playerCards"><div class="blackjack-card">?</div><div class="blackjack-card">?</div></div>
+                            <div style="margin-top:8px;font-size:18px;font-weight:700;color:var(--text-secondary);" id="playerSum">Сумма: 0</div>
+                        </div>
+                        <div class="game-result info" id="blackjackResult">Сделайте ставку!</div>
+                        <input type="number" id="blackjackBet" class="game-input" value="10" min="1">
+                        <div class="blackjack-actions">
+                            <button class="blackjack-action" id="blackjackStart">🃏 СТАРТ</button>
+                            <button class="blackjack-action" id="blackjackHit" disabled>✋ ВЗЯТЬ</button>
+                            <button class="blackjack-action" id="blackjackStand" disabled>✋ СТОП</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-
-        document.getElementById('blackjackStart').addEventListener('click', blackjackStart);
-        document.getElementById('blackjackHit').addEventListener('click', blackjackHit);
-        document.getElementById('blackjackStand').addEventListener('click', blackjackStand);
-    }
-
-    async function blackjackStart() {
-        const amount = parseFloat(document.getElementById('blackjackBet').value);
-        if (isNaN(amount) || amount <= 0) {
-            showNotification('❌ Введите сумму!', 'error');
-            return;
+            `;
+            document.getElementById('blackjackStart').addEventListener('click', blackjackStart);
+            document.getElementById('blackjackHit').addEventListener('click', blackjackHit);
+            document.getElementById('blackjackStand').addEventListener('click', blackjackStand);
         }
 
-        if (!checkBalance(amount)) return;
+        function sumHand(hand) {
+            let sum = hand.reduce((a, b) => a + b, 0);
+            let aces = hand.filter(c => c === 11).length;
+            while (sum > 21 && aces > 0) { sum -= 10; aces--; }
+            return sum;
+        }
 
-        blackjackState.amount = amount;
+        async function blackjackStart() {
+            const bet = parseInt(document.getElementById('blackjackBet').value);
+            if (isNaN(bet) || bet <= 0) { showNotification('❌ Введите сумму!', 'error'); return; }
+            if (!checkBalance(bet)) return;
+            blackjackState.bet = bet;
+            try {
+                const response = await fetch('/api/game/blackjack', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: sessionId || 'test_001', bet: bet, action: 'start' })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    blackjackState.deck = data.deck || [];
+                    blackjackState.playerHand = data.player_hand || [];
+                    blackjackState.dealerHand = data.dealer_hand || [];
+                    blackjackState.gameOver = data.game_over || false;
+                    updateBlackjackUI(data);
+                    if (data.game_over) updateUI(data.stats);
+                    document.getElementById('blackjackHit').disabled = data.game_over;
+                    document.getElementById('blackjackStand').disabled = data.game_over;
+                } else showNotification('❌ ' + data.error, 'error');
+            } catch (error) { showNotification('❌ Ошибка!', 'error'); }
+        }
 
-        try {
-            const response = await fetch('/api/blackjack/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: sessionId || 'test_user', amount: amount })
-            });
-            const data = await response.json();
-            if (data.success) {
-                blackjackState.deck = data.deck;
-                blackjackState.playerHand = data.player_hand;
-                blackjackState.dealerHand = data.dealer_hand;
-                blackjackState.gameOver = data.game_over || false;
-                updateBlackjackUI(data);
-                if (data.game_over) updateUI(data.stats);
-            } else {
-                showNotification('❌ ' + data.error, 'error');
+        async function blackjackHit() {
+            if (blackjackState.gameOver) return;
+            try {
+                const response = await fetch('/api/game/blackjack/hit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: sessionId || 'test_001', deck: blackjackState.deck, player_hand: blackjackState.playerHand, bet: blackjackState.bet })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    blackjackState.deck = data.deck;
+                    blackjackState.playerHand = data.player_hand;
+                    blackjackState.gameOver = data.game_over || false;
+                    updateBlackjackUI(data);
+                    if (data.game_over) updateUI(data.stats);
+                }
+            } catch (error) { showNotification('❌ Ошибка!', 'error'); }
+        }
+
+        async function blackjackStand() {
+            if (blackjackState.gameOver) return;
+            try {
+                const response = await fetch('/api/game/blackjack/stand', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: sessionId || 'test_001', deck: blackjackState.deck, player_hand: blackjackState.playerHand, dealer_hand: blackjackState.dealerHand, bet: blackjackState.bet })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    blackjackState.gameOver = true;
+                    updateBlackjackUI(data);
+                    updateUI(data.stats);
+                }
+            } catch (error) { showNotification('❌ Ошибка!', 'error'); }
+        }
+
+        function updateBlackjackUI(data) {
+            const playerCards = document.getElementById('playerCards');
+            const dealerCards = document.getElementById('dealerCards');
+            if (data.player_hand) {
+                playerCards.innerHTML = data.player_hand.map(c => {
+                    const color = c > 10 ? 'red' : 'black';
+                    const value = c === 11 ? 'A' : c === 10 ? '10' : c;
+                    return `<div class="blackjack-card ${color}">${value}</div>`;
+                }).join('');
+                document.getElementById('playerSum').textContent = 'Сумма: ' + sumHand(data.player_hand);
             }
-        } catch (error) {
-            showNotification('❌ Ошибка!', 'error');
-        }
-    }
-
-    async function blackjackHit() {
-        if (blackjackState.gameOver) return;
-        try {
-            const response = await fetch('/api/blackjack/hit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    session_id: sessionId || 'test_user',
-                    deck: blackjackState.deck,
-                    player_hand: blackjackState.playerHand,
-                    amount: blackjackState.amount
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                blackjackState.deck = data.deck;
-                blackjackState.playerHand = data.player_hand;
-                blackjackState.gameOver = data.game_over || false;
-                updateBlackjackUI(data);
-                if (data.game_over) updateUI(data.stats);
+            if (data.dealer_hand) {
+                dealerCards.innerHTML = data.dealer_hand.map(c => {
+                    if (c === '?') return '<div class="blackjack-card">?</div>';
+                    const color = c > 10 ? 'red' : 'black';
+                    const value = c === 11 ? 'A' : c === 10 ? '10' : c;
+                    return `<div class="blackjack-card ${color}">${value}</div>`;
+                }).join('');
+                const dealerSum = data.dealer_hand.filter(c => c !== '?').length > 0 ? sumHand(data.dealer_hand.filter(c => c !== '?')) : 0;
+                document.getElementById('dealerSum').textContent = 'Сумма: ' + dealerSum;
             }
-        } catch (error) {
-            showNotification('❌ Ошибка!', 'error');
-        }
-    }
-
-    async function blackjackStand() {
-        if (blackjackState.gameOver) return;
-        try {
-            const response = await fetch('/api/blackjack/stand', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    session_id: sessionId || 'test_user',
-                    deck: blackjackState.deck,
-                    player_hand: blackjackState.playerHand,
-                    dealer_hand: blackjackState.dealerHand,
-                    amount: blackjackState.amount
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                blackjackState.gameOver = true;
-                updateBlackjackUI(data);
-                updateUI(data.stats);
-            }
-        } catch (error) {
-            showNotification('❌ Ошибка!', 'error');
-        }
-    }
-
-    function updateBlackjackUI(data) {
-        const playerCards = document.getElementById('playerCards');
-        const dealerCards = document.getElementById('dealerCards');
-
-        playerCards.innerHTML = data.player_hand.map(c => {
-            const color = c > 10 ? 'red' : 'black';
-            const value = c === 11 ? 'A' : c === 10 ? '10' : c;
-            return '<div class="blackjack-card ' + color + '">' + value + '</div>';
-        }).join('');
-        document.getElementById('playerSum').textContent = 'Сумма: ' + sumHand(data.player_hand);
-
-        if (data.game_over || data.dealer_hand.every(c => c !== '?')) {
-            dealerCards.innerHTML = data.dealer_hand.filter(c => c !== '?').map(c => {
-                const color = c > 10 ? 'red' : 'black';
-                const value = c === 11 ? 'A' : c === 10 ? '10' : c;
-                return '<div class="blackjack-card ' + color + '">' + value + '</div>';
-            }).join('');
-            document.getElementById('dealerSum').textContent = 'Сумма: ' + sumHand(data.dealer_hand.filter(c => c !== '?'));
-        }
-
-        document.getElementById('blackjackHit').disabled = data.game_over;
-        document.getElementById('blackjackStand').disabled = data.game_over;
-
-        const result = document.getElementById('blackjackResult');
-        if (data.game_over) {
-            if (data.win === true) {
-                result.className = 'game-result win';
-                result.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽';
-                showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
-            } else if (data.win === false) {
-                result.className = 'game-result loss';
-                result.textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
-                showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
+            const result = document.getElementById('blackjackResult');
+            if (data.game_over) {
+                if (data.win === true) {
+                    result.className = 'game-result win';
+                    result.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽';
+                    showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
+                } else if (data.win === false) {
+                    result.className = 'game-result loss';
+                    result.textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
+                    showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
+                } else {
+                    result.className = 'game-result info';
+                    result.textContent = '🤝 НИЧЬЯ';
+                }
+                document.getElementById('blackjackHit').disabled = true;
+                document.getElementById('blackjackStand').disabled = true;
             } else {
                 result.className = 'game-result info';
-                result.textContent = '🤝 НИЧЬЯ';
+                result.textContent = 'Игра продолжается...';
             }
-        } else {
-            result.className = 'game-result info';
-            result.textContent = 'Игра продолжается...';
         }
-    }
 
-    function sumHand(hand) {
-        let sum = hand.reduce((a, b) => a + b, 0);
-        let aces = hand.filter(c => c === 11).length;
-        while (sum > 21 && aces > 0) { sum -= 10;
-            aces--; }
-        return sum;
-    }
+        // ============================================================
+        // AVIATOR
+        // ============================================================
+        let crashState = { multiplier: 1, isActive: false, isBetPlaced: false, crashPoint: 0, bet: 0, interval: null, startTime: 0, isCrashed: false };
 
-    // ============================================================
-    // AVIATOR
-    // ============================================================
-
-    let crashState = { 
-        multiplier: 1, 
-        isActive: false, 
-        isBetPlaced: false, 
-        crashPoint: 0, 
-        amount: 0, 
-        interval: null,
-        startTime: 0,
-        isCrashed: false
-    };
-
-    function loadCrash(container) {
-        container.innerHTML = `
-            <div class="game-wrapper">
-                <h2 class="game-title">✈️ AVIATOR</h2>
-                <div class="crash-chart" id="crashChart">
-                    <div class="crash-multiplier" id="crashMultiplier">1.00x</div>
+        function loadCrash(container) {
+            container.innerHTML = `
+                <div class="game-wrapper">
+                    <h2 class="game-title">✈️ AVIATOR</h2>
+                    <div class="crash-chart" id="crashChart">
+                        <div class="crash-multiplier" id="crashMultiplier">1.00x</div>
+                    </div>
+                    <div class="game-result info" id="crashResult">Сделайте ставку!</div>
+                    <input type="number" id="crashBet" class="game-input" value="10" min="1">
+                    <div class="crash-controls">
+                        <button class="crash-btn bet" id="crashStart">🚀 СТАВКА</button>
+                        <button class="crash-btn cashout" id="crashCashout" disabled>💰 ЗАБРАТЬ</button>
+                    </div>
+                    <div class="crash-history" id="crashHistory"></div>
                 </div>
-                <div class="game-result info" id="crashResult">Сделайте ставку!</div>
-                <input type="number" id="crashBet" class="game-input" value="10" min="1">
-                <div class="crash-controls">
-                    <button class="crash-btn bet" id="crashStart">🚀 СТАВКА</button>
-                    <button class="crash-btn cashout" id="crashCashout" disabled>💰 ЗАБРАТЬ</button>
-                </div>
-                <div class="crash-history" id="crashHistory"></div>
-            </div>
-        `;
-
-        document.getElementById('crashStart').addEventListener('click', crashStart);
-        document.getElementById('crashCashout').addEventListener('click', crashCashout);
-        resetCrash();
-    }
-
-    async function crashStart() {
-        if (crashState.isActive || crashState.isBetPlaced) return;
-
-        const amount = parseFloat(document.getElementById('crashBet').value);
-        if (isNaN(amount) || amount <= 0) {
-            showNotification('❌ Введите сумму!', 'error');
-            return;
-        }
-
-        if (!checkBalance(amount)) return;
-
-        crashState.amount = amount;
-        crashState.isBetPlaced = true;
-        crashState.isActive = true;
-        crashState.isCrashed = false;
-        crashState.multiplier = 1;
-        crashState.startTime = Date.now();
-
-        document.getElementById('crashStart').disabled = true;
-        document.getElementById('crashCashout').disabled = false;
-        document.getElementById('crashResult').className = 'game-result info';
-        document.getElementById('crashResult').textContent = '✈️ Самолет взлетает...';
-        document.getElementById('crashMultiplier').classList.remove('crashed');
-        document.getElementById('crashMultiplier').textContent = '1.00x';
-
-        try {
-            const response = await fetch('/api/crash/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    session_id: sessionId || 'test_user', 
-                    amount: amount 
-                })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                crashState.crashPoint = data.crash_point;
-                
-                let lastMultiplier = 1;
-                crashState.interval = setInterval(() => {
-                    if (crashState.isCrashed) return;
-                    
-                    const elapsed = (Date.now() - crashState.startTime) / 1000;
-                    const progress = Math.min(elapsed / 4, 1);
-                    
-                    if (progress < 1) {
-                        const ease = 1 - Math.pow(1 - progress, 1.5);
-                        crashState.multiplier = 1 + ease * (crashState.crashPoint - 1);
-                    } else {
-                        crashState.multiplier = crashState.crashPoint;
-                    }
-                    
-                    const displayMultiplier = Math.round(crashState.multiplier * 100) / 100;
-                    document.getElementById('crashMultiplier').textContent = displayMultiplier.toFixed(2) + 'x';
-                    
-                    if (displayMultiplier > lastMultiplier + 0.05) {
-                        const el = document.getElementById('crashMultiplier');
-                        el.style.transform = 'scale(1.05)';
-                        setTimeout(() => el.style.transform = 'scale(1)', 100);
-                        lastMultiplier = displayMultiplier;
-                    }
-                    
-                    if (crashState.multiplier >= crashState.crashPoint - 0.005) {
-                        clearInterval(crashState.interval);
-                        crashCrash();
-                    }
-                }, 50);
-            } else {
-                showNotification('❌ ' + data.error, 'error');
-                resetCrash();
-            }
-        } catch (error) {
-            showNotification('❌ Ошибка!', 'error');
-            resetCrash();
-        }
-    }
-
-    async function crashCashout() {
-        if (!crashState.isActive || !crashState.isBetPlaced || crashState.isCrashed) return;
-
-        clearInterval(crashState.interval);
-        crashState.isActive = false;
-        document.getElementById('crashCashout').disabled = true;
-        
-        const currentMultiplier = Math.round(crashState.multiplier * 100) / 100;
-        
-        try {
-            const response = await fetch('/api/crash/cashout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    session_id: sessionId || 'test_user',
-                    amount: crashState.amount,
-                    multiplier: currentMultiplier
-                })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                const result = document.getElementById('crashResult');
-                result.className = 'game-result win';
-                result.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽ (' + currentMultiplier.toFixed(2) + 'x)';
-                showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
-                updateUI(data.stats);
-                addCrashHistory(currentMultiplier, true);
-                createConfetti(50);
-                resetCrash();
-            }
-        } catch (error) {
-            showNotification('❌ Ошибка!', 'error');
-            resetCrash();
-        }
-    }
-
-    async function crashCrash() {
-        if (crashState.isCrashed) return;
-        
-        crashState.isCrashed = true;
-        crashState.isActive = false;
-        document.getElementById('crashCashout').disabled = true;
-        document.getElementById('crashMultiplier').classList.add('crashed');
-        
-        const finalMultiplier = Math.round(crashState.multiplier * 100) / 100;
-        
-        const result = document.getElementById('crashResult');
-        result.className = 'game-result loss';
-        result.textContent = '💥 КРАШ! (' + finalMultiplier.toFixed(2) + 'x)';
-        
-        try {
-            const response = await fetch('/api/crash/result', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    session_id: sessionId || 'test_user', 
-                    amount: crashState.amount 
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                updateUI(data.stats);
-                showNotification('💥 КРАШ! Проигрыш ' + crashState.amount + ' ₽', 'error');
-                addCrashHistory(finalMultiplier, false);
-            }
-        } catch (error) {}
-        
-        resetCrash();
-    }
-
-    function resetCrash() {
-        crashState.isActive = false;
-        crashState.isBetPlaced = false;
-        crashState.isCrashed = false;
-        crashState.multiplier = 1;
-        
-        if (crashState.interval) {
-            clearInterval(crashState.interval);
-            crashState.interval = null;
-        }
-        
-        document.getElementById('crashStart').disabled = false;
-        document.getElementById('crashCashout').disabled = true;
-        document.getElementById('crashMultiplier').classList.remove('crashed');
-        document.getElementById('crashMultiplier').textContent = '1.00x';
-    }
-
-    function addCrashHistory(point, win) {
-        const history = document.getElementById('crashHistory');
-        const item = document.createElement('span');
-        item.className = 'crash-history-item ' + (win ? 'win' : 'loss');
-        item.textContent = point.toFixed(2) + 'x';
-        history.prepend(item);
-        if (history.children.length > 10) history.removeChild(history.lastChild);
-    }
-
-    function createConfetti(count = 50) {
-        const container = document.createElement('div');
-        container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden;';
-        document.body.appendChild(container);
-        
-        const colors = ['#ffd700', '#ff0040', '#00ff88', '#00d4ff', '#8b00ff', '#ff6b00', '#ff1493'];
-        
-        for (let i = 0; i < count; i++) {
-            const piece = document.createElement('div');
-            const size = Math.random() * 8 + 4;
-            const x = Math.random() * 100;
-            const delay = Math.random() * 1.5;
-            const duration = Math.random() * 2 + 1.5;
-            
-            piece.style.cssText = `
-                position: absolute;
-                left: ${x}%;
-                top: -10px;
-                width: ${size}px;
-                height: ${size * 1.5}px;
-                background: ${colors[Math.floor(Math.random() * colors.length)]};
-                border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-                opacity: 1;
-                transform: rotate(${Math.random() * 360}deg);
-                animation: confettiFall ${duration}s ease-out ${delay}s forwards;
             `;
-            container.appendChild(piece);
-        }
-        
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes confettiFall {
-                0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
-                100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        setTimeout(() => {
-            container.remove();
-            style.remove();
-        }, 4000);
-    }
-
-    // ============================================================
-    // КОСТИ
-    // ============================================================
-
-    let diceBetType = 'over';
-
-    function loadDice(container) {
-        container.innerHTML = `
-            <div class="game-wrapper">
-                <h2 class="game-title">🎲 КОСТИ</h2>
-                <div class="dice-display">
-                    <div class="die" id="die1">⚀</div>
-                    <div class="die" id="die2">⚀</div>
-                </div>
-                <div class="game-result info" id="diceResult">Бросьте кости!</div>
-                <div class="dice-options">
-                    <button class="dice-btn active" data-type="over">⬆ Больше 7</button>
-                    <button class="dice-btn" data-type="under">⬇ Меньше 7</button>
-                    <button class="dice-btn" data-type="seven">🎯 Ровно 7</button>
-                </div>
-                <input type="number" id="diceBet" class="game-input" value="10" min="1">
-                <button class="spin-btn" id="diceBtn">🎲 БРОСИТЬ</button>
-            </div>
-        `;
-
-        document.querySelectorAll('.dice-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.dice-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                diceBetType = this.dataset.type;
-            });
-        });
-
-        document.getElementById('diceBtn').addEventListener('click', rollDice);
-    }
-
-    async function rollDice() {
-        const btn = document.getElementById('diceBtn');
-        if (btn.disabled) return;
-
-        const amount = parseFloat(document.getElementById('diceBet').value);
-        if (isNaN(amount) || amount <= 0) {
-            showNotification('❌ Введите сумму!', 'error');
-            return;
+            document.getElementById('crashStart').addEventListener('click', crashStart);
+            document.getElementById('crashCashout').addEventListener('click', crashCashout);
+            resetCrash();
         }
 
-        if (!checkBalance(amount)) return;
+        async function crashStart() {
+            if (crashState.isActive || crashState.isBetPlaced) return;
+            const bet = parseInt(document.getElementById('crashBet').value);
+            if (isNaN(bet) || bet <= 0) { showNotification('❌ Введите сумму!', 'error'); return; }
+            if (!checkBalance(bet)) return;
+            crashState.bet = bet;
+            crashState.isBetPlaced = true;
+            crashState.isActive = true;
+            crashState.isCrashed = false;
+            crashState.multiplier = 1;
+            crashState.startTime = Date.now();
+            document.getElementById('crashStart').disabled = true;
+            document.getElementById('crashCashout').disabled = false;
+            document.getElementById('crashResult').className = 'game-result info';
+            document.getElementById('crashResult').textContent = '✈️ Самолет взлетает...';
+            document.getElementById('crashMultiplier').classList.remove('crashed');
+            document.getElementById('crashMultiplier').textContent = '1.00x';
+            try {
+                const response = await fetch('/api/game/crash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: sessionId || 'test_001', action: 'start', bet: bet })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    crashState.crashPoint = data.crash_point;
+                    let lastMultiplier = 1;
+                    crashState.interval = setInterval(() => {
+                        if (crashState.isCrashed) return;
+                        const elapsed = (Date.now() - crashState.startTime) / 1000;
+                        const progress = Math.min(elapsed / 4, 1);
+                        if (progress < 1) {
+                            const ease = 1 - Math.pow(1 - progress, 1.5);
+                            crashState.multiplier = 1 + ease * (crashState.crashPoint - 1);
+                        } else {
+                            crashState.multiplier = crashState.crashPoint;
+                        }
+                        const displayMultiplier = Math.round(crashState.multiplier * 100) / 100;
+                        document.getElementById('crashMultiplier').textContent = displayMultiplier.toFixed(2) + 'x';
+                        if (displayMultiplier > lastMultiplier + 0.05) {
+                            const el = document.getElementById('crashMultiplier');
+                            el.style.transform = 'scale(1.05)';
+                            setTimeout(() => el.style.transform = 'scale(1)', 100);
+                            lastMultiplier = displayMultiplier;
+                        }
+                        if (crashState.multiplier >= crashState.crashPoint - 0.005) {
+                            clearInterval(crashState.interval);
+                            crashCrash();
+                        }
+                    }, 50);
+                } else { showNotification('❌ ' + data.error, 'error'); resetCrash(); }
+            } catch (error) { showNotification('❌ Ошибка!', 'error'); resetCrash(); }
+        }
 
-        btn.disabled = true;
-        document.getElementById('die1').classList.add('rolling');
-        document.getElementById('die2').classList.add('rolling');
-        document.getElementById('diceResult').className = 'game-result info';
-        document.getElementById('diceResult').textContent = '⏳ Бросаем...';
-
-        try {
-            const response = await fetch('/api/dice/roll', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    session_id: sessionId || 'test_user',
-                    amount: amount,
-                    bet_type: diceBetType
-                })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-                document.getElementById('die1').textContent = diceSymbols[data.d1 - 1];
-                document.getElementById('die2').textContent = diceSymbols[data.d2 - 1];
-
-                setTimeout(() => {
-                    document.getElementById('die1').classList.remove('rolling');
-                    document.getElementById('die2').classList.remove('rolling');
-                }, 500);
-
-                const result = document.getElementById('diceResult');
-                result.className = 'game-result ' + (data.win ? 'win' : 'loss');
-                result.textContent = data.win ?
-                    '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽ (выпало ' + data.total + ')' :
-                    '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽ (выпало ' + data.total + ')';
-
-                if (data.win) {
+        async function crashCashout() {
+            if (!crashState.isActive || !crashState.isBetPlaced || crashState.isCrashed) return;
+            clearInterval(crashState.interval);
+            crashState.isActive = false;
+            document.getElementById('crashCashout').disabled = true;
+            const currentMultiplier = Math.round(crashState.multiplier * 100) / 100;
+            try {
+                const response = await fetch('/api/game/crash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: sessionId || 'test_001', action: 'cashout', bet: crashState.bet, multiplier: currentMultiplier })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const result = document.getElementById('crashResult');
+                    result.className = 'game-result win';
+                    result.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽ (' + currentMultiplier.toFixed(2) + 'x)';
                     showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
-                } else {
-                    showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
+                    updateUI(data.stats);
+                    addCrashHistory(currentMultiplier, true);
+                    resetCrash();
                 }
-                updateUI(data.stats);
-            } else {
-                showNotification('❌ ' + data.error, 'error');
-            }
-        } catch (error) {
-            showNotification('❌ Ошибка соединения!', 'error');
+            } catch (error) { showNotification('❌ Ошибка!', 'error'); resetCrash(); }
         }
 
-        setTimeout(() => {
-            btn.disabled = false;
-        }, 1500);
-    }
-
-    // ============================================================
-    // ОБЩИЕ ФУНКЦИИ
-    // ============================================================
-
-    function showNotification(message, type = 'info', duration = 4000) {
-        const container = document.getElementById('notifications');
-        if (!container) return;
-
-        const notification = document.createElement('div');
-        notification.className = 'notification ' + type;
-        notification.textContent = message;
-        container.appendChild(notification);
-
-        setTimeout(() => notification.classList.add('show'), 10);
-
-        const timeout = setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 400);
-        }, duration);
-
-        notification.addEventListener('click', () => {
-            clearTimeout(timeout);
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 400);
-        });
-    }
-
-    function sendChat() {
-        const input = document.getElementById('chatInput');
-        const msg = input.value.trim();
-        if (!msg) return;
-
-        const container = document.getElementById('chatMessages');
-        const div = document.createElement('div');
-        div.className = 'msg';
-        const username = document.getElementById('username').textContent || 'Игрок';
-        div.innerHTML = `
-            <span class="user">👤 ${username}:</span>
-            <span class="text">${msg}</span>
-            <span class="time">только что</span>
-        `;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-        input.value = '';
-
-        if (msg.toLowerCase().includes('!rain')) {
-            setTimeout(() => {
-                const botDiv = document.createElement('div');
-                botDiv.className = 'msg';
-                botDiv.innerHTML = `
-                    <span class="user" style="color:var(--neon-gold);">🎰 Бот:</span>
-                    <span class="text">🎉 Вы участвуете в дожде! Удачи!</span>
-                    <span class="time">только что</span>
-                `;
-                container.appendChild(botDiv);
-                container.scrollTop = container.scrollHeight;
-            }, 1000);
+        async function crashCrash() {
+            if (crashState.isCrashed) return;
+            crashState.isCrashed = true;
+            crashState.isActive = false;
+            document.getElementById('crashCashout').disabled = true;
+            document.getElementById('crashMultiplier').classList.add('crashed');
+            const finalMultiplier = Math.round(crashState.multiplier * 100) / 100;
+            const result = document.getElementById('crashResult');
+            result.className = 'game-result loss';
+            result.textContent = '💥 КРАШ! (' + finalMultiplier.toFixed(2) + 'x)';
+            try {
+                const response = await fetch('/api/game/crash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: sessionId || 'test_001', action: 'crash', bet: crashState.bet })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    updateUI(data.stats);
+                    showNotification('💥 КРАШ! Проигрыш ' + crashState.bet + ' ₽', 'error');
+                    addCrashHistory(finalMultiplier, false);
+                }
+            } catch (error) {}
+            resetCrash();
         }
-    }
 
-    function sendChatOnEnter(event) {
-        if (event.key === 'Enter') sendChat();
-    }
+        function resetCrash() {
+            crashState.isActive = false;
+            crashState.isBetPlaced = false;
+            crashState.isCrashed = false;
+            crashState.multiplier = 1;
+            if (crashState.interval) { clearInterval(crashState.interval); crashState.interval = null; }
+            document.getElementById('crashStart').disabled = false;
+            document.getElementById('crashCashout').disabled = true;
+            document.getElementById('crashMultiplier').classList.remove('crashed');
+            document.getElementById('crashMultiplier').textContent = '1.00x';
+        }
 
-    function showBonus() {
-        showNotification('🎁 Бонус +80 ₽ зачислен на баланс!', 'success');
-        updateUI({ balance: userBalance + 80 });
-    }
+        function addCrashHistory(point, win) {
+            const history = document.getElementById('crashHistory');
+            const item = document.createElement('span');
+            item.className = 'crash-history-item ' + (win ? 'win' : 'loss');
+            item.textContent = point.toFixed(2) + 'x';
+            history.prepend(item);
+            if (history.children.length > 10) history.removeChild(history.lastChild);
+        }
 
-    function toggleProfile() {
-        const modal = document.getElementById('profileModal');
-        const body = document.getElementById('profileBody');
-        body.innerHTML = `
-            <div style="text-align:center;">
-                <div style="font-size:48px;margin-bottom:10px;">👤</div>
-                <h3 style="margin-bottom:4px;color:var(--text-primary);">${document.getElementById('username').textContent || 'Игрок'}</h3>
-                <p style="color:var(--text-secondary);margin-bottom:4px;">💰 Баланс: ${userBalance.toLocaleString()} ₽</p>
-                <p style="color:var(--text-secondary);margin-bottom:16px;">🏆 Уровень: ${userLevel}</p>
-                <button onclick="closeProfileModal()" style="padding:10px 30px;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:10px;color:var(--text-primary);cursor:pointer;font-size:14px;">Закрыть</button>
-            </div>
-        `;
-        modal.classList.add('active');
-    }
+        // ============================================================
+        // КОСТИ
+        // ============================================================
+        let diceBetType = 'over';
 
-    function closeProfileModal() {
-        document.getElementById('profileModal').classList.remove('active');
-    }
+        function loadDice(container) {
+            container.innerHTML = `
+                <div class="game-wrapper">
+                    <h2 class="game-title">🎲 КОСТИ</h2>
+                    <div class="dice-display">
+                        <div class="die" id="die1">⚀</div>
+                        <div class="die" id="die2">⚀</div>
+                    </div>
+                    <div class="game-result info" id="diceResult">Бросьте кости!</div>
+                    <div class="dice-options">
+                        <button class="dice-btn active" data-type="over">⬆ Больше 7</button>
+                        <button class="dice-btn" data-type="under">⬇ Меньше 7</button>
+                        <button class="dice-btn" data-type="seven">🎯 Ровно 7</button>
+                    </div>
+                    <input type="number" id="diceBet" class="game-input" value="10" min="1">
+                    <button class="spin-btn" id="diceBtn">🎲 БРОСИТЬ</button>
+                </div>
+            `;
+            document.querySelectorAll('.dice-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.dice-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    diceBetType = this.dataset.type;
+                });
+            });
+            document.getElementById('diceBtn').addEventListener('click', rollDice);
+        }
 
-    function filterBets(type) {
-        document.querySelectorAll('.bets-box .filter button').forEach(b => b.classList.remove('active'));
-        const btn = document.querySelector('.bets-box .filter button[onclick="filterBets(\'' + type + '\')"]');
-        if (btn) btn.classList.add('active');
+        async function rollDice() {
+            const btn = document.getElementById('diceBtn');
+            if (btn.disabled) return;
+            const bet = parseInt(document.getElementById('diceBet').value);
+            if (isNaN(bet) || bet <= 0) { showNotification('❌ Введите сумму!', 'error'); return; }
+            if (!checkBalance(bet)) return;
+            btn.disabled = true;
+            document.getElementById('die1').classList.add('rolling');
+            document.getElementById('die2').classList.add('rolling');
+            document.getElementById('diceResult').className = 'game-result info';
+            document.getElementById('diceResult').textContent = '⏳ Бросаем...';
+            try {
+                const response = await fetch('/api/game/dice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: sessionId || 'test_001', bet: bet, type: diceBetType })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const diceSymbols = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+                    document.getElementById('die1').textContent = diceSymbols[data.d1 - 1];
+                    document.getElementById('die2').textContent = diceSymbols[data.d2 - 1];
+                    setTimeout(() => {
+                        document.getElementById('die1').classList.remove('rolling');
+                        document.getElementById('die2').classList.remove('rolling');
+                    }, 500);
+                    const result = document.getElementById('diceResult');
+                    result.className = 'game-result ' + (data.win ? 'win' : 'loss');
+                    result.textContent = data.win ? '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽ (выпало ' + data.total + ')' : '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽ (выпало ' + data.total + ')';
+                    if (data.win) showNotification('🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!', 'success');
+                    else showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
+                    updateUI(data.stats);
+                } else showNotification('❌ ' + data.error, 'error');
+            } catch (error) { showNotification('❌ Ошибка соединения!', 'error'); }
+            setTimeout(() => { btn.disabled = false; }, 1500);
+        }
 
-        document.querySelectorAll('.bet-row').forEach(row => {
-            const amount = row.querySelector('.bet-amount');
-            if (type === 'all') {
-                row.style.display = 'grid';
-            } else if (type === 'win') {
-                row.style.display = amount && amount.classList.contains('win') ? 'grid' : 'none';
-            } else if (type === 'loss') {
-                row.style.display = amount && amount.classList.contains('loss') ? 'grid' : 'none';
-            }
+        // ============================================================
+        // ЗАКРЫТИЕ МОДАЛЬНЫХ ОКОН ПО КЛИКУ ВНЕ
+        // ============================================================
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
         });
-    }
 
-    // ============================================================
-    // ГЛОБАЛЬНЫЕ ФУНКЦИИ
-    // ============================================================
-
-    window.sendChat = sendChat;
-    window.sendChatOnEnter = sendChatOnEnter;
-    window.showBonus = showBonus;
-    window.toggleProfile = toggleProfile;
-    window.closeProfileModal = closeProfileModal;
-    window.filterBets = filterBets;
-    window.closeAuthModal = closeAuthModal;
-    window.switchAuthTab = switchAuthTab;
-    window.handleLogin = handleLogin;
-    window.handleRegister = handleRegister;
-    window.closeTwofa = closeTwofa;
-    window.verifyTwofa = verifyTwofa;
-    window.handleLogout = handleLogout;
-    window.updateUI = updateUI;
-    window.getCurrentBalance = getCurrentBalance;
-    window.checkBalance = checkBalance;
-
-    console.log('✅ RuWin Casino загружен!');
-    console.log('Баланс:', getCurrentBalance());
-</script>
+        console.log('🎰 RuWin Casino загружен!');
+        console.log('💰 Баланс:', userBalance);
+    </script>
+</body>
+</html>
