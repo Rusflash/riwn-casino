@@ -15,7 +15,6 @@
             background: #0a0a0f;
             color: #fff;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
         /* ХЕДЕР */
@@ -81,11 +80,6 @@
             padding: 1px 5px;
             border-radius: 8px;
             margin-left: 4px;
-            animation: badgePulse 1s infinite;
-        }
-        @keyframes badgePulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
         }
 
         .header-right {
@@ -224,6 +218,7 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
+            position: relative;
         }
         .game-card:hover {
             transform: translateY(-4px);
@@ -253,9 +248,6 @@
             font-weight: 700;
             text-transform: uppercase;
         }
-        .game-card {
-            position: relative;
-        }
         .badge.hot {
             background: rgba(255, 0, 64, 0.15);
             color: #ff0040;
@@ -274,7 +266,7 @@
             50% { opacity: 0.5; }
         }
 
-        /* ===== КОНТЕЙНЕР ИГРЫ ===== */
+        /* КОНТЕЙНЕР ИГРЫ */
         .game-container {
             display: none;
         }
@@ -283,14 +275,8 @@
             animation: fadeIn 0.3s ease;
         }
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .game-wrapper {
@@ -372,7 +358,7 @@
         }
 
         /* ============================================================
-           AVIATOR - КРАСИВАЯ РАКЕТА
+           AVIATOR - ПРОСТАЯ РАБОЧАЯ РАКЕТА
            ============================================================ */
         .crash-wrapper {
             position: relative;
@@ -397,122 +383,37 @@
             z-index: 0;
         }
 
-        /* РАКЕТА - ГЛАВНЫЙ ЭЛЕМЕНТ */
-        .rocket-wrap {
+        /* РАКЕТА - ПРОСТАЯ ВЕРСИЯ */
+        #rocket {
             position: absolute;
             z-index: 3;
-            pointer-events: none;
-            transition: all 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            will-change: left, bottom, transform;
-            width: 70px;
-            height: 70px;
-            left: 8%;
-            bottom: 18%;
-        }
-
-        .rocket {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.15s ease;
-        }
-
-        /* КОРПУС РАКЕТЫ */
-        .rocket-body {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             font-size: 48px;
-            line-height: 1;
+            pointer-events: none;
+            left: 8%;
+            bottom: 20%;
+            transition: all 0.05s linear;
             filter: drop-shadow(0 0 30px rgba(255, 165, 0, 0.3));
-            animation: rocketIdle 1s ease-in-out infinite;
+            will-change: left, bottom;
         }
-        .rocket.flying .rocket-body {
-            animation: rocketFly 0.12s linear infinite;
+        #rocket.flying {
+            animation: rocketShake 0.1s infinite;
         }
-        .rocket.explode .rocket-body {
-            animation: rocketExplode 0.6s ease forwards;
+        @keyframes rocketShake {
+            0% { transform: translateY(0) rotate(-45deg) scale(1); }
+            50% { transform: translateY(-3px) rotate(-45deg) scale(1.02); }
+            100% { transform: translateY(0) rotate(-45deg) scale(1); }
         }
-
-        @keyframes rocketIdle {
-            0%, 100% { transform: translate(-50%, -50%) scale(1) translateY(0); }
-            50% { transform: translate(-50%, -50%) scale(1.02) translateY(-4px); }
+        #rocket.explode {
+            animation: rocketBoom 0.6s ease forwards;
         }
-        @keyframes rocketFly {
-            0% { transform: translate(-50%, -50%) scale(1) translateY(0); }
-            50% { transform: translate(-50%, -50%) scale(1.05) translateY(-5px); }
-            100% { transform: translate(-50%, -50%) scale(1) translateY(0); }
-        }
-        @keyframes rocketExplode {
-            0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
-            20% { transform: translate(-50%, -50%) scale(2) rotate(15deg); opacity: 0.8; }
-            50% { transform: translate(-50%, -50%) scale(3.5) rotate(-20deg); opacity: 0.5; }
-            100% { transform: translate(-50%, -50%) scale(0) rotate(360deg); opacity: 0; }
-        }
-
-        /* ОГОНЬ РАКЕТЫ */
-        .rocket-fire {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 18px;
-            height: 30px;
-            background: linear-gradient(to bottom, #ff6b00, #ff4400, transparent);
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            opacity: 0.7;
-            animation: fireIdle 0.3s ease-in-out infinite alternate;
-            z-index: -1;
-        }
-        .rocket.flying .rocket-fire {
-            animation: fireFly 0.08s ease-in-out infinite alternate;
-            height: 45px;
-            opacity: 0.9;
-        }
-        .rocket.explode .rocket-fire {
-            opacity: 0;
-            animation: none;
-        }
-        @keyframes fireIdle {
-            0% { transform: translateX(-50%) scaleY(0.7); opacity: 0.5; }
-            100% { transform: translateX(-50%) scaleY(1.2); opacity: 0.8; }
-        }
-        @keyframes fireFly {
-            0% { transform: translateX(-50%) scaleY(0.7) rotate(-4deg); opacity: 0.6; }
-            100% { transform: translateX(-50%) scaleY(1.4) rotate(4deg); opacity: 1; }
-        }
-
-        /* СЛЕД РАКЕТЫ */
-        .rocket-trail {
-            position: absolute;
-            bottom: -40px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 30px;
-            background: linear-gradient(to top, transparent, rgba(255, 165, 0, 0.2), rgba(255, 69, 0, 0.5));
-            border-radius: 2px;
-            z-index: 1;
-            opacity: 0.3;
-            transition: all 0.1s ease;
-        }
-        .rocket.flying .rocket-trail {
-            animation: trailFly 0.12s linear infinite;
-            height: 55px;
-            opacity: 0.6;
-        }
-        .rocket.explode .rocket-trail {
-            opacity: 0;
-            animation: none;
-        }
-        @keyframes trailFly {
-            0% { transform: translateX(-50%) scaleY(0.6); opacity: 0.3; }
-            100% { transform: translateX(-50%) scaleY(1.6); opacity: 0.7; }
+        @keyframes rocketBoom {
+            0% { transform: scale(1) rotate(-45deg); opacity: 1; }
+            50% { transform: scale(3) rotate(20deg); opacity: 0.5; }
+            100% { transform: scale(0) rotate(360deg); opacity: 0; }
         }
 
         /* МУЛЬТИПЛИКАТОР */
-        .crash-multiplier {
+        #multiplier {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -524,16 +425,15 @@
             z-index: 2;
             pointer-events: none;
             transition: all 0.1s ease;
-            letter-spacing: -2px;
         }
-        .crash-multiplier.bump {
+        #multiplier.bump {
             animation: multiBump 0.15s ease;
         }
         @keyframes multiBump {
             0%, 100% { transform: translate(-50%, -50%) scale(1); }
             50% { transform: translate(-50%, -50%) scale(1.08); }
         }
-        .crash-multiplier.crashed {
+        #multiplier.crashed {
             color: #ff0040;
             text-shadow: 0 0 60px rgba(255, 0, 64, 0.3);
             animation: crashShake 0.5s ease;
@@ -547,7 +447,7 @@
         }
 
         /* ЛИНИЯ КРАША */
-        .crash-line {
+        #crashLine {
             position: absolute;
             bottom: 0;
             left: 0;
@@ -560,14 +460,9 @@
             transform: scaleX(0);
             transform-origin: left center;
         }
-        .crash-line.show {
+        #crashLine.show {
             opacity: 0.8;
             transform: scaleX(1);
-            animation: lineFlash 0.5s ease 3;
-        }
-        @keyframes lineFlash {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 0.2; }
         }
 
         .crash-controls {
@@ -622,11 +517,6 @@
             font-weight: 600;
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.03);
-            animation: historyIn 0.3s ease;
-        }
-        @keyframes historyIn {
-            from { transform: scale(0); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
         }
         .crash-history-item.win {
             color: #00ff88;
@@ -859,14 +749,10 @@
             .crash-wrapper {
                 height: 250px;
             }
-            .crash-multiplier {
+            #multiplier {
                 font-size: 40px;
             }
-            .rocket-wrap {
-                width: 50px;
-                height: 50px;
-            }
-            .rocket-body {
+            #rocket {
                 font-size: 34px;
             }
             .modal-content {
@@ -1300,7 +1186,6 @@
                         cells.forEach((el, i) => {
                             if (data.reels && data.reels[i]) {
                                 el.textContent = data.reels[i];
-                                el.style.borderColor = data.win ? '#ffd700' : 'rgba(255,255,255,0.03)';
                             }
                         });
 
@@ -1308,10 +1193,12 @@
                             resultEl.className = 'game-result win';
                             resultEl.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!';
                             showNotification('🎉 +' + data.win_amount + ' ₽!', 'success');
+                            cells.forEach(el => el.style.borderColor = '#ffd700');
                         } else {
                             resultEl.className = 'game-result loss';
                             resultEl.textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
                             showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
+                            cells.forEach(el => el.style.borderColor = 'rgba(255,255,255,0.03)');
                         }
 
                         if (data.balance !== undefined) {
@@ -1332,7 +1219,6 @@
 
                 setTimeout(() => {
                     this.disabled = false;
-                    cells.forEach(el => el.style.borderColor = 'rgba(255,255,255,0.03)');
                 }, 1000);
             });
         }
@@ -1681,7 +1567,7 @@
         }
 
         // ============================================================
-        // AVIATOR - КРАСИВАЯ РАКЕТА
+        // AVIATOR - ПРОСТАЯ РАБОЧАЯ РАКЕТА
         // ============================================================
         let crashState = {
             multiplier: 1,
@@ -1702,15 +1588,9 @@
                     <div class="crash-wrapper">
                         <div class="crash-chart" id="crashChart">
                             <canvas id="crashCanvas"></canvas>
-                            <div class="rocket-wrap" id="rocketWrap">
-                                <div class="rocket" id="rocket">
-                                    <div class="rocket-body">🚀</div>
-                                    <div class="rocket-fire" id="rocketFire"></div>
-                                </div>
-                                <div class="rocket-trail" id="rocketTrail"></div>
-                            </div>
-                            <div class="crash-multiplier" id="crashMultiplier">1.00x</div>
-                            <div class="crash-line" id="crashLine"></div>
+                            <div id="rocket">🚀</div>
+                            <div id="multiplier">1.00x</div>
+                            <div id="crashLine"></div>
                         </div>
                     </div>
                     <div class="game-result info" id="crashResult">Сделайте ставку!</div>
@@ -1726,10 +1606,10 @@
             document.getElementById('crashStart').addEventListener('click', crashStart);
             document.getElementById('crashCashout').addEventListener('click', crashCashout);
             resetCrash();
-            initCrashCanvas();
+            initCanvas();
         }
 
-        function initCrashCanvas() {
+        function initCanvas() {
             const canvas = document.getElementById('crashCanvas');
             if (!canvas) return;
 
@@ -1787,12 +1667,13 @@
             document.getElementById('crashCashout').disabled = false;
             document.getElementById('crashResult').className = 'game-result info';
             document.getElementById('crashResult').textContent = '✈️ Взлетает...';
-            document.getElementById('crashMultiplier').classList.remove('crashed');
-            document.getElementById('crashMultiplier').textContent = '1.00x';
+            document.getElementById('multiplier').classList.remove('crashed');
+            document.getElementById('multiplier').textContent = '1.00x';
             document.getElementById('crashLine').classList.remove('show');
 
             const rocket = document.getElementById('rocket');
             rocket.classList.add('flying');
+            rocket.style.transform = 'rotate(-45deg)';
 
             try {
                 const response = await fetch('/api/game/crash', {
@@ -1829,7 +1710,7 @@
 
                         const dm = Math.round(crashState.multiplier * 100) / 100;
 
-                        const el = document.getElementById('crashMultiplier');
+                        const el = document.getElementById('multiplier');
                         el.textContent = dm.toFixed(2) + 'x';
 
                         if (dm > lastMultiplier + 0.03) {
@@ -1839,25 +1720,22 @@
                             lastMultiplier = dm;
                         }
 
-                        // ДВИЖЕНИЕ РАКЕТЫ
-                        const wrap = document.getElementById('rocketWrap');
-                        const maxX = 0.85;
-                        const maxY = 0.85;
-                        const xPos = 0.08 + (Math.min(elapsed / 3, 1) * (maxX - 0.08));
-                        const yPos = 0.15 + Math.min((dm - 1) * 0.12, maxY - 0.15);
-
-                        wrap.style.left = (xPos * 100) + '%';
-                        wrap.style.bottom = (yPos * 100) + '%';
-
-                        // ПОВОРОТ РАКЕТЫ
-                        const angle = -45 + (yPos - 0.15) * 25;
+                        // ДВИЖЕНИЕ РАКЕТЫ - ПРОСТОЕ И ПОНЯТНОЕ
                         const rocketEl = document.getElementById('rocket');
-                        rocketEl.style.transform = 'rotate(' + angle + 'deg)';
+                        const maxX = 85;
+                        const maxY = 85;
+                        const xPos = 8 + (Math.min(elapsed / 3, 1) * (maxX - 8));
+                        const yPos = 18 + Math.min((dm - 1) * 12, maxY - 18);
+
+                        rocketEl.style.left = xPos + '%';
+                        rocketEl.style.bottom = yPos + '%';
 
                         // Рисуем график
                         frameCount++;
                         if (frameCount % 2 === 0) {
-                            crashState.path.push({ x: xPos, y: yPos });
+                            const graphX = (xPos - 8) / (maxX - 8);
+                            const graphY = (yPos - 18) / (maxY - 18);
+                            crashState.path.push({ x: graphX, y: graphY });
                             drawGraph(ctx, canvas, crashState.path, crashState.crashPoint, dm);
                         }
 
@@ -1900,7 +1778,6 @@
                 ctx.stroke();
             }
 
-            // График
             if (path.length < 2) return;
 
             const maxY = canvas.height * 0.85;
@@ -1928,7 +1805,6 @@
             ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Точка краша
             if (crashState.isCrashed) {
                 const endX = minX + 0.85 * (maxX - minX);
                 const endY = canvas.height - (minY + 0.85 * (maxY - minY));
@@ -1994,7 +1870,7 @@
             crashState.isCrashed = true;
             crashState.isActive = false;
             document.getElementById('crashCashout').disabled = true;
-            document.getElementById('crashMultiplier').classList.add('crashed');
+            document.getElementById('multiplier').classList.add('crashed');
             document.getElementById('crashLine').classList.add('show');
 
             const rocket = document.getElementById('rocket');
@@ -2048,22 +1924,21 @@
 
             document.getElementById('crashStart').disabled = false;
             document.getElementById('crashCashout').disabled = true;
-            document.getElementById('crashMultiplier').classList.remove('crashed');
-            document.getElementById('crashMultiplier').textContent = '1.00x';
+            document.getElementById('multiplier').classList.remove('crashed');
+            document.getElementById('multiplier').textContent = '1.00x';
             document.getElementById('crashLine').classList.remove('show');
 
             const rocket = document.getElementById('rocket');
-            const wrap = document.getElementById('rocketWrap');
             rocket.classList.remove('flying', 'explode');
             rocket.style.transform = 'rotate(-45deg)';
-            wrap.style.left = '8%';
-            wrap.style.bottom = '18%';
+            rocket.style.left = '8%';
+            rocket.style.bottom = '20%';
 
             const canvas = document.getElementById('crashCanvas');
             if (canvas) {
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                initCrashCanvas();
+                initCanvas();
             }
         }
 
