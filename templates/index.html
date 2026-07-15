@@ -5,118 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎰 RuWin Casino</title>
     <style>
-        /* ============================================================
-           ROOT ПЕРЕМЕННЫЕ
-           ============================================================ */
-        :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #0d0d1a;
-            --bg-card: rgba(20, 20, 40, 0.85);
-            --neon-cyan: #00f0ff;
-            --neon-purple: #8b00ff;
-            --neon-pink: #ff0080;
-            --neon-gold: #ffd700;
-            --neon-green: #00ff88;
-            --neon-red: #ff0040;
-            --text-primary: #ffffff;
-            --text-secondary: #aabbcc;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            background: #0a0a0f;
+            color: #fff;
             min-height: 100vh;
             overflow-x: hidden;
         }
 
-        /* ===== ФОН ===== */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            background: 
-                radial-gradient(ellipse at 20% 50%, rgba(0,240,255,0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 50%, rgba(139,0,255,0.04) 0%, transparent 50%);
-            animation: bgFloat 20s ease-in-out infinite;
-        }
-        @keyframes bgFloat {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            25% { transform: scale(1.03) rotate(1deg); }
-            75% { transform: scale(0.97) rotate(-1deg); }
-        }
-
-        /* ===== ЗАГРУЗКА ===== */
-        #loading {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-primary);
-            transition: opacity 0.8s ease;
-        }
-        #loading.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .loader-ring {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            border-top-color: var(--neon-cyan);
-            animation: spin 0.8s linear infinite;
-            position: relative;
-        }
-        .loader-ring::after {
-            content: '🎰';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 28px;
-            animation: pulse 1s ease-in-out infinite;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
-        .loader-text {
-            margin-top: 16px;
-            font-size: 14px;
-            color: var(--text-secondary);
-            letter-spacing: 4px;
-            animation: textPulse 1.5s ease-in-out infinite;
-        }
-        @keyframes textPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-
-        /* ===== ХЕДЕР ===== */
+        /* ХЕДЕР */
         .header {
+            background: rgba(10, 10, 15, 0.95);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            padding: 8px 0;
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(10, 10, 15, 0.92);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(0, 240, 255, 0.08);
-            padding: 8px 0;
         }
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
-            animation: headerGlow 3s ease-in-out infinite;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
         }
-        @keyframes headerGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-        
-        .container { max-width: 1400px; margin: 0 auto; padding: 0 16px; }
         .header .container {
             display: flex;
             justify-content: space-between;
@@ -124,143 +39,137 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-        
         .logo {
             font-size: 24px;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            cursor: pointer;
-            animation: logoPulse 2s ease-in-out infinite;
+            color: #00f0ff;
+            text-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
         }
-        @keyframes logoPulse { 0%, 100% { filter: drop-shadow(0 0 20px rgba(0,240,255,0.2)); } 50% { filter: drop-shadow(0 0 40px rgba(0,240,255,0.4)); } }
-        .logo small { font-size: 10px; -webkit-text-fill-color: var(--text-secondary); font-weight: 400; }
-
-        .nav-menu { display: flex; gap: 4px; flex-wrap: wrap; }
+        .logo small {
+            font-size: 10px;
+            color: #8899aa;
+            font-weight: 400;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
         .nav-btn {
             padding: 6px 14px;
             background: transparent;
             border: none;
-            color: var(--text-secondary);
+            color: #8899aa;
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
             font-weight: 500;
-            transition: all 0.3s ease;
-            position: relative;
+            transition: all 0.2s;
         }
-        .nav-btn::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) scaleX(0);
-            width: 60%;
-            height: 2px;
-            background: var(--neon-cyan);
-            transition: transform 0.3s ease;
+        .nav-btn:hover {
+            color: #fff;
+            background: rgba(0, 240, 255, 0.05);
         }
-        .nav-btn:hover { color: var(--text-primary); background: rgba(0,240,255,0.05); }
-        .nav-btn:hover::before { transform: translateX(-50%) scaleX(1); }
-        .nav-btn.active { color: var(--neon-cyan); background: rgba(0,240,255,0.08); }
-        .nav-btn.active::before { transform: translateX(-50%) scaleX(1); }
+        .nav-btn.active {
+            color: #00f0ff;
+            background: rgba(0, 240, 255, 0.08);
+        }
         .nav-btn .badge {
-            position: absolute;
-            top: -2px;
-            right: -2px;
-            background: var(--neon-red);
+            background: #ff0040;
             color: #fff;
             font-size: 7px;
             padding: 1px 5px;
             border-radius: 8px;
+            margin-left: 4px;
             animation: badgePulse 1s infinite;
         }
-        @keyframes badgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes badgePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
 
-        .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
         .balance-box {
             padding: 2px 14px;
-            background: rgba(0,255,136,0.05);
-            border: 1px solid rgba(0,255,136,0.1);
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.1);
             border-radius: 8px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
         }
-        .balance-box::before {
-            content: '';
-            position: absolute;
-            inset: -50%;
-            background: radial-gradient(circle, rgba(0,255,136,0.03), transparent 70%);
-            animation: balanceShine 3s ease-in-out infinite;
+        .balance-box .label {
+            font-size: 8px;
+            color: #8899aa;
+            text-transform: uppercase;
         }
-        @keyframes balanceShine { 0%, 100% { transform: translate(-10%, -10%); } 50% { transform: translate(10%, 10%); } }
-        .balance-box .label { font-size: 8px; color: var(--text-secondary); text-transform: uppercase; position: relative; z-index: 1; }
         .balance-box .amount {
             font-size: 18px;
             font-weight: 800;
-            color: var(--neon-green);
-            position: relative;
-            z-index: 1;
-            transition: all 0.3s ease;
-        }
-        .balance-box .amount.bump {
-            animation: balanceBump 0.4s ease;
-        }
-        @keyframes balanceBump {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); color: var(--neon-gold); }
-            100% { transform: scale(1); }
+            color: #00ff88;
         }
         .header-btn {
             padding: 4px 12px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 6px;
-            color: var(--text-primary);
+            color: #fff;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
             font-size: 14px;
         }
-        .header-btn:hover { border-color: var(--neon-cyan); transform: scale(1.05); }
-        .header-btn.danger:hover { border-color: var(--neon-red); }
+        .header-btn:hover {
+            border-color: #00f0ff;
+        }
 
-        /* ===== ОСНОВНОЙ ===== */
-        .main { padding: 16px 0; position: relative; z-index: 1; }
-        
-        /* ===== СТАТИСТИКА ===== */
+        /* ОСНОВНОЙ */
+        .main {
+            padding: 16px 0;
+        }
+
+        /* СТАТИСТИКА */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
             margin-bottom: 20px;
         }
         .stat-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.03);
-            border-radius: 12px;
-            padding: 14px;
+            background: rgba(20, 20, 40, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 12px;
             text-align: center;
-            transition: all 0.3s ease;
         }
-        .stat-card:hover { transform: translateY(-3px); border-color: rgba(0,240,255,0.1); }
-        .stat-card .icon { font-size: 22px; display: block; }
-        .stat-card .label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; }
-        .stat-card .value {
+        .stat-card .icon {
             font-size: 20px;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            display: block;
         }
-        .stat-card.green .value { background: linear-gradient(135deg, var(--neon-green), #00cc66); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat-card.gold .value { background: linear-gradient(135deg, var(--neon-gold), #ffaa00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat-card.cyan .value { background: linear-gradient(135deg, var(--neon-cyan), #0066ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat-card.purple .value { background: linear-gradient(135deg, var(--neon-purple), #cc00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-card .label {
+            font-size: 9px;
+            color: #8899aa;
+            text-transform: uppercase;
+        }
+        .stat-card .value {
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .stat-card.green .value {
+            color: #00ff88;
+        }
+        .stat-card.gold .value {
+            color: #ffd700;
+        }
+        .stat-card.cyan .value {
+            color: #00f0ff;
+        }
+        .stat-card.purple .value {
+            color: #8b00ff;
+        }
 
-        /* ===== ИГРЫ ===== */
+        /* ИГРЫ */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -269,217 +178,209 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-        .section-title { font-size: 20px; font-weight: 700; }
-        .section-title .highlight { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .filter-group { display: flex; gap: 4px; flex-wrap: wrap; }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .section-title .highlight {
+            color: #00f0ff;
+        }
+        .filter-group {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
         .filter-btn {
             padding: 3px 14px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 6px;
-            color: var(--text-secondary);
+            color: #8899aa;
             cursor: pointer;
             font-size: 11px;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
         }
-        .filter-btn:hover { border-color: var(--neon-cyan); color: var(--text-primary); }
-        .filter-btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); background: rgba(0,240,255,0.05); }
+        .filter-btn:hover {
+            border-color: #00f0ff;
+            color: #fff;
+        }
+        .filter-btn.active {
+            border-color: #00f0ff;
+            color: #00f0ff;
+            background: rgba(0, 240, 255, 0.05);
+        }
 
         .games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
             margin-bottom: 20px;
         }
         .game-card {
-            position: relative;
-            background: var(--bg-card);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.03);
-            border-radius: 14px;
-            padding: 22px 14px 18px;
+            background: rgba(20, 20, 40, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px 12px 16px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow: hidden;
-        }
-        .game-card::before {
-            content: '';
-            position: absolute;
-            inset: -50%;
-            background: radial-gradient(circle at 50% 50%, rgba(0,240,255,0.04), transparent 70%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
+            transition: all 0.3s;
         }
         .game-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: var(--neon-cyan);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            transform: translateY(-4px);
+            border-color: #00f0ff;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
-        .game-card:hover::before { opacity: 1; }
-        .game-card::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
-            transform: scaleX(0);
-            transition: transform 0.4s ease;
-        }
-        .game-card:hover::after { transform: scaleX(1); }
         .game-card .icon {
-            font-size: 40px;
+            font-size: 36px;
             display: block;
-            margin-bottom: 8px;
-            transition: all 0.4s ease;
+            margin-bottom: 6px;
         }
-        .game-card:hover .icon { transform: scale(1.1) rotate(-5deg); }
-        .game-card .name { font-size: 15px; font-weight: 600; }
-        .game-card .desc { font-size: 11px; color: var(--text-secondary); }
+        .game-card .name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .game-card .desc {
+            font-size: 10px;
+            color: #8899aa;
+        }
         .game-card .badge {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 1px 10px;
-            border-radius: 12px;
-            font-size: 8px;
+            top: 6px;
+            right: 6px;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 7px;
             font-weight: 700;
             text-transform: uppercase;
         }
-        .badge.hot { background: rgba(255,0,64,0.15); color: var(--neon-red); animation: hotPulse 1.5s infinite; }
-        @keyframes hotPulse { 0%, 100% { box-shadow: 0 0 10px rgba(255,0,64,0.1); } 50% { box-shadow: 0 0 30px rgba(255,0,64,0.2); } }
-        .badge.new { background: rgba(0,240,255,0.1); color: var(--neon-cyan); animation: newPulse 2s infinite; }
-        @keyframes newPulse { 0%, 100% { box-shadow: 0 0 10px rgba(0,240,255,0.1); } 50% { box-shadow: 0 0 30px rgba(0,240,255,0.2); } }
-        .badge.live { background: rgba(255,0,64,0.15); color: var(--neon-red); animation: livePulse 1s infinite; }
-        @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .game-card {
+            position: relative;
+        }
+        .badge.hot {
+            background: rgba(255, 0, 64, 0.15);
+            color: #ff0040;
+        }
+        .badge.new {
+            background: rgba(0, 240, 255, 0.1);
+            color: #00f0ff;
+        }
+        .badge.live {
+            background: rgba(255, 0, 64, 0.15);
+            color: #ff0040;
+            animation: livePulse 1s infinite;
+        }
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
 
         /* ===== КОНТЕЙНЕР ИГРЫ ===== */
-        .game-container { display: none; }
-        .game-container.active { display: block; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
+        .game-container {
+            display: none;
+        }
+        .game-container.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .game-wrapper {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid rgba(255,255,255,0.03);
+            background: rgba(20, 20, 40, 0.85);
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
         }
         .game-title {
             text-align: center;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 900;
             margin-bottom: 16px;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+            background: linear-gradient(135deg, #00f0ff, #8b00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         .game-result {
             text-align: center;
-            padding: 12px;
-            border-radius: 10px;
-            margin: 12px 0;
-            font-size: 18px;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 16px;
             font-weight: 700;
-            transition: all 0.3s ease;
         }
-        .game-result.info { background: rgba(0,240,255,0.03); color: var(--neon-cyan); border: 1px solid rgba(0,240,255,0.05); }
+        .game-result.info {
+            background: rgba(0, 240, 255, 0.03);
+            color: #00f0ff;
+            border: 1px solid rgba(0, 240, 255, 0.05);
+        }
         .game-result.win {
-            background: rgba(0,255,136,0.05);
-            color: var(--neon-green);
-            border: 1px solid rgba(0,255,136,0.1);
-            animation: winPulse 0.6s ease;
+            background: rgba(0, 255, 136, 0.03);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.1);
         }
-        @keyframes winPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
         .game-result.loss {
-            background: rgba(255,0,64,0.03);
-            color: var(--neon-red);
-            border: 1px solid rgba(255,0,64,0.05);
+            background: rgba(255, 0, 64, 0.03);
+            color: #ff0040;
+            border: 1px solid rgba(255, 0, 64, 0.05);
         }
-        
+
         .game-input {
             width: 100%;
             padding: 10px 14px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 15px;
-            transition: all 0.3s ease;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.2s;
         }
-        .game-input:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 30px rgba(0,240,255,0.02); }
-        
+        .game-input:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
+
         .spin-btn {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            background: linear-gradient(135deg, #00f0ff, #8b00ff);
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 800;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
+            transition: all 0.2s;
+            margin-top: 8px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        .spin-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,240,255,0.1); }
-        .spin-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        /* ============================================================
-           СЛОТЫ
-           ============================================================ */
-        .slots-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            max-width: 280px;
-            margin: 0 auto 12px;
+        .spin-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 240, 255, 0.1);
         }
-        .slot-cell {
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 16px;
-            text-align: center;
-            font-size: 32px;
-            border: 1px solid rgba(255,255,255,0.03);
-            transition: all 0.3s ease;
-            min-height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .slot-cell.win-highlight {
-            border-color: var(--neon-gold);
-            box-shadow: 0 0 30px rgba(255,215,0,0.2);
-            animation: slotWin 0.5s ease;
-        }
-        @keyframes slotWin {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        .slot-cell.spinning {
-            animation: slotSpin 0.1s linear infinite;
-        }
-        @keyframes slotSpin {
-            0% { transform: translateY(-10px) rotate(-10deg); opacity: 0.5; }
-            100% { transform: translateY(10px) rotate(10deg); opacity: 1; }
+        .spin-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
 
         /* ============================================================
-           AVIATOR - ПЛАВНАЯ РАКЕТА
+           AVIATOR - КРАСИВАЯ РАКЕТА
            ============================================================ */
         .crash-wrapper {
             position: relative;
-            background: rgba(0,0,0,0.4);
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 12px;
             overflow: hidden;
-            height: 340px;
-            border: 1px solid rgba(255,255,255,0.03);
+            height: 350px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
         }
         .crash-chart {
             position: relative;
@@ -495,115 +396,121 @@
             height: 100%;
             z-index: 0;
         }
-        
-        /* КОНТЕЙНЕР РАКЕТЫ */
-        .rocket-container {
+
+        /* РАКЕТА - ГЛАВНЫЙ ЭЛЕМЕНТ */
+        .rocket-wrap {
             position: absolute;
             z-index: 3;
             pointer-events: none;
-            transition: all 0.06s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            will-change: transform, left, bottom;
-            width: 60px;
-            height: 60px;
+            transition: all 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: left, bottom, transform;
+            width: 70px;
+            height: 70px;
+            left: 8%;
+            bottom: 18%;
         }
-        
-        /* РАКЕТА С ПОВОРОТОМ */
+
         .rocket {
             position: relative;
             width: 100%;
             height: 100%;
             transition: transform 0.15s ease;
-            filter: drop-shadow(0 0 30px rgba(255,165,0,0.3));
         }
+
+        /* КОРПУС РАКЕТЫ */
         .rocket-body {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 44px;
+            font-size: 48px;
             line-height: 1;
-            transition: all 0.1s ease;
+            filter: drop-shadow(0 0 30px rgba(255, 165, 0, 0.3));
+            animation: rocketIdle 1s ease-in-out infinite;
         }
-        
-        /* АНИМАЦИЯ ПОЛЕТА */
         .rocket.flying .rocket-body {
-            animation: rocketFly 0.15s linear infinite;
+            animation: rocketFly 0.12s linear infinite;
         }
         .rocket.explode .rocket-body {
             animation: rocketExplode 0.6s ease forwards;
         }
-        
+
+        @keyframes rocketIdle {
+            0%, 100% { transform: translate(-50%, -50%) scale(1) translateY(0); }
+            50% { transform: translate(-50%, -50%) scale(1.02) translateY(-4px); }
+        }
         @keyframes rocketFly {
             0% { transform: translate(-50%, -50%) scale(1) translateY(0); }
-            50% { transform: translate(-50%, -50%) scale(1.05) translateY(-4px); }
+            50% { transform: translate(-50%, -50%) scale(1.05) translateY(-5px); }
             100% { transform: translate(-50%, -50%) scale(1) translateY(0); }
         }
         @keyframes rocketExplode {
             0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
-            30% { transform: translate(-50%, -50%) scale(2.5) rotate(30deg); opacity: 0.8; }
-            60% { transform: translate(-50%, -50%) scale(4) rotate(-30deg); opacity: 0.4; }
+            20% { transform: translate(-50%, -50%) scale(2) rotate(15deg); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(3.5) rotate(-20deg); opacity: 0.5; }
             100% { transform: translate(-50%, -50%) scale(0) rotate(360deg); opacity: 0; }
         }
-        
+
         /* ОГОНЬ РАКЕТЫ */
         .rocket-fire {
             position: absolute;
-            bottom: -25px;
+            bottom: -20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 16px;
-            height: 35px;
+            width: 18px;
+            height: 30px;
             background: linear-gradient(to bottom, #ff6b00, #ff4400, transparent);
             border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            opacity: 0.8;
-            animation: firePulse 0.2s ease-in-out infinite alternate;
+            opacity: 0.7;
+            animation: fireIdle 0.3s ease-in-out infinite alternate;
             z-index: -1;
         }
         .rocket.flying .rocket-fire {
             animation: fireFly 0.08s ease-in-out infinite alternate;
             height: 45px;
+            opacity: 0.9;
         }
         .rocket.explode .rocket-fire {
             opacity: 0;
             animation: none;
         }
-        @keyframes firePulse {
+        @keyframes fireIdle {
             0% { transform: translateX(-50%) scaleY(0.7); opacity: 0.5; }
-            100% { transform: translateX(-50%) scaleY(1.2); opacity: 1; }
+            100% { transform: translateX(-50%) scaleY(1.2); opacity: 0.8; }
         }
         @keyframes fireFly {
-            0% { transform: translateX(-50%) scaleY(0.8) rotate(-3deg); opacity: 0.6; }
-            100% { transform: translateX(-50%) scaleY(1.4) rotate(3deg); opacity: 1; }
+            0% { transform: translateX(-50%) scaleY(0.7) rotate(-4deg); opacity: 0.6; }
+            100% { transform: translateX(-50%) scaleY(1.4) rotate(4deg); opacity: 1; }
         }
-        
+
         /* СЛЕД РАКЕТЫ */
         .rocket-trail {
             position: absolute;
-            bottom: -50px;
+            bottom: -40px;
             left: 50%;
             transform: translateX(-50%);
             width: 4px;
             height: 30px;
-            background: linear-gradient(to top, transparent, rgba(255,165,0,0.2), rgba(255,69,0,0.5));
+            background: linear-gradient(to top, transparent, rgba(255, 165, 0, 0.2), rgba(255, 69, 0, 0.5));
             border-radius: 2px;
             z-index: 1;
-            opacity: 0.4;
+            opacity: 0.3;
             transition: all 0.1s ease;
         }
         .rocket.flying .rocket-trail {
             animation: trailFly 0.12s linear infinite;
-            height: 50px;
-            opacity: 0.7;
+            height: 55px;
+            opacity: 0.6;
         }
         .rocket.explode .rocket-trail {
             opacity: 0;
             animation: none;
         }
         @keyframes trailFly {
-            0% { transform: translateX(-50%) scaleY(0.7); opacity: 0.4; }
-            100% { transform: translateX(-50%) scaleY(1.5); opacity: 0.8; }
+            0% { transform: translateX(-50%) scaleY(0.6); opacity: 0.3; }
+            100% { transform: translateX(-50%) scaleY(1.6); opacity: 0.7; }
         }
-        
+
         /* МУЛЬТИПЛИКАТОР */
         .crash-multiplier {
             position: absolute;
@@ -612,12 +519,11 @@
             transform: translate(-50%, -50%);
             font-size: 72px;
             font-weight: 900;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 60px rgba(0,240,255,0.2), 0 0 120px rgba(0,240,255,0.1);
+            color: #00f0ff;
+            text-shadow: 0 0 60px rgba(0, 240, 255, 0.2);
             z-index: 2;
             pointer-events: none;
             transition: all 0.1s ease;
-            font-variant-numeric: tabular-nums;
             letter-spacing: -2px;
         }
         .crash-multiplier.bump {
@@ -628,8 +534,8 @@
             50% { transform: translate(-50%, -50%) scale(1.08); }
         }
         .crash-multiplier.crashed {
-            color: var(--neon-red);
-            text-shadow: 0 0 60px rgba(255,0,64,0.3), 0 0 120px rgba(255,0,64,0.2);
+            color: #ff0040;
+            text-shadow: 0 0 60px rgba(255, 0, 64, 0.3);
             animation: crashShake 0.5s ease;
         }
         @keyframes crashShake {
@@ -639,7 +545,7 @@
             60% { transform: translate(-50%, -50%) scale(1.05) rotate(-2deg); }
             80% { transform: translate(-50%, -50%) scale(0.95) rotate(2deg); }
         }
-        
+
         /* ЛИНИЯ КРАША */
         .crash-line {
             position: absolute;
@@ -647,12 +553,12 @@
             left: 0;
             width: 100%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, var(--neon-red), transparent);
+            background: linear-gradient(90deg, transparent, #ff0040, transparent);
             z-index: 1;
             opacity: 0;
             transition: opacity 0.5s ease;
-            transform-origin: left center;
             transform: scaleX(0);
+            transform-origin: left center;
         }
         .crash-line.show {
             opacity: 0.8;
@@ -664,25 +570,44 @@
             50% { opacity: 0.2; }
         }
 
-        .crash-controls { display: flex; gap: 8px; margin-top: 10px; }
+        .crash-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
         .crash-btn {
             flex: 1;
             padding: 12px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-weight: 700;
             font-size: 15px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .crash-btn.bet { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: white; }
-        .crash-btn.bet:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,240,255,0.1); }
-        .crash-btn.cashout { background: linear-gradient(135deg, var(--neon-green), #00cc66); color: #000; }
-        .crash-btn.cashout:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,255,136,0.1); }
-        .crash-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        
+        .crash-btn.bet {
+            background: linear-gradient(135deg, #00f0ff, #8b00ff);
+            color: white;
+        }
+        .crash-btn.bet:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 240, 255, 0.1);
+        }
+        .crash-btn.cashout {
+            background: #00ff88;
+            color: #000;
+        }
+        .crash-btn.cashout:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.1);
+        }
+        .crash-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
         .crash-history {
             display: flex;
             gap: 4px;
@@ -695,195 +620,114 @@
             border-radius: 4px;
             font-size: 12px;
             font-weight: 600;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.03);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
             animation: historyIn 0.3s ease;
         }
-        @keyframes historyIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .crash-history-item.win { color: var(--neon-green); border-color: rgba(0,255,136,0.05); }
-        .crash-history-item.loss { color: var(--neon-red); border-color: rgba(255,0,64,0.05); }
-
-        /* ============================================================
-           КОСТИ
-           ============================================================ */
-        .dice-display {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            font-size: 64px;
-            margin: 12px 0;
+        @keyframes historyIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
-        .die {
-            transition: all 0.3s ease;
+        .crash-history-item.win {
+            color: #00ff88;
+            border-color: rgba(0, 255, 136, 0.05);
         }
-        .die.rolling {
-            animation: diceRoll 0.6s ease;
-        }
-        @keyframes diceRoll {
-            0% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(90deg) scale(1.2); }
-            50% { transform: rotate(180deg) scale(0.8); }
-            75% { transform: rotate(270deg) scale(1.2); }
-            100% { transform: rotate(360deg) scale(1); }
+        .crash-history-item.loss {
+            color: #ff0040;
+            border-color: rgba(255, 0, 64, 0.05);
         }
 
-        /* ============================================================
-           МАЙНС
-           ============================================================ */
-        .mines-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            max-width: 280px;
-            margin: 0 auto 12px;
-        }
-        .mine-cell {
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 14px;
-            text-align: center;
-            font-size: 20px;
-            cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.03);
-            transition: all 0.3s ease;
-            min-height: 55px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .mine-cell:hover:not(.revealed) {
-            border-color: var(--neon-cyan);
-            transform: scale(1.05);
-        }
-        .mine-cell.revealed { cursor: default; }
-        .mine-cell.mine {
-            background: rgba(255,0,64,0.15);
-            border-color: var(--neon-red);
-            animation: mineExplode 0.5s ease;
-        }
-        @keyframes mineExplode { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-        .mine-cell.diamond {
-            background: rgba(0,255,136,0.1);
-            border-color: var(--neon-green);
-            animation: diamondFind 0.5s ease;
-        }
-        @keyframes diamondFind { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-
-        /* ============================================================
-           РУЛЕТКА
-           ============================================================ */
-        .roulette-grid {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 3px;
-            margin: 8px 0;
-        }
-        .roulette-cell {
-            padding: 6px 2px;
-            text-align: center;
-            border-radius: 4px;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.03);
-            background: rgba(255,255,255,0.02);
-            transition: all 0.3s ease;
-        }
-        .roulette-cell:hover {
-            transform: scale(1.05);
-            border-color: var(--neon-cyan);
-        }
-        .roulette-cell.selected {
-            border-color: var(--neon-gold) !important;
-            box-shadow: 0 0 20px rgba(255,215,0,0.2);
-        }
-        .roulette-cell.spinning {
-            animation: rouletteFlash 0.1s ease infinite alternate;
-        }
-        @keyframes rouletteFlash {
-            0% { opacity: 0.5; transform: scale(0.95); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        /* ============================================================
-           БЛЭКДЖЕК
-           ============================================================ */
-        .bj-hand {
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            padding: 12px;
-            margin: 8px 0;
-        }
-        .bj-hand .label { font-size: 14px; color: var(--text-secondary); }
-        .bj-hand .cards { font-size: 16px; font-weight: 600; letter-spacing: 2px; }
-
-        /* ============================================================
-           БОНУСЫ
-           ============================================================ */
+        /* БОНУСЫ */
         .bonus-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
             margin-top: 16px;
         }
         .bonus-card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid rgba(255,215,0,0.08);
-            transition: all 0.3s ease;
+            background: rgba(20, 20, 40, 0.85);
+            border-radius: 10px;
+            padding: 14px;
+            border: 1px solid rgba(255, 215, 0, 0.08);
+            transition: all 0.3s;
         }
-        .bonus-card:hover { transform: translateY(-3px); border-color: rgba(255,215,0,0.15); }
-        .bonus-card .icon { font-size: 28px; display: block; }
-        .bonus-card .name { font-weight: 700; font-size: 15px; }
-        .bonus-card .desc { font-size: 12px; color: var(--text-secondary); }
+        .bonus-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 215, 0, 0.15);
+        }
+        .bonus-card .icon {
+            font-size: 24px;
+            display: block;
+        }
+        .bonus-card .name {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .bonus-card .desc {
+            font-size: 11px;
+            color: #8899aa;
+        }
         .bonus-card .claim-btn {
-            margin-top: 8px;
-            padding: 4px 20px;
+            margin-top: 6px;
+            padding: 4px 16px;
             border: none;
             border-radius: 6px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 13px;
+            transition: all 0.2s;
+            font-size: 12px;
         }
-        .bonus-card .claim-btn:hover { transform: scale(1.05); }
-        .bonus-card.gold .claim-btn { background: var(--neon-gold); color: #000; }
-        .bonus-card.cyan .claim-btn { background: var(--neon-cyan); color: #000; }
-        .bonus-card.pink .claim-btn { background: var(--neon-red); color: #fff; }
+        .bonus-card .claim-btn:hover {
+            transform: scale(1.05);
+        }
+        .bonus-card.gold .claim-btn {
+            background: #ffd700;
+            color: #000;
+        }
+        .bonus-card.cyan .claim-btn {
+            background: #00f0ff;
+            color: #000;
+        }
+        .bonus-card.pink .claim-btn {
+            background: #ff0040;
+            color: #fff;
+        }
 
-        /* ============================================================
-           МОДАЛКИ
-           ============================================================ */
+        /* МОДАЛКИ */
         .modal {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(10px);
         }
-        .modal.active { display: flex; }
+        .modal.active {
+            display: flex;
+        }
         .modal-content {
-            background: var(--bg-secondary);
-            border: 1px solid rgba(0,240,255,0.1);
-            border-radius: 16px;
-            padding: 28px;
+            background: #0d0d1a;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 14px;
+            padding: 24px;
             max-width: 400px;
             width: 100%;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
             animation: modalIn 0.3s ease;
         }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
         .modal-tabs {
             display: flex;
             gap: 4px;
             margin-bottom: 16px;
-            background: var(--bg-primary);
-            border-radius: 10px;
+            background: #0a0a0f;
+            border-radius: 8px;
             padding: 4px;
         }
         .modal-tab {
@@ -891,112 +735,194 @@
             padding: 10px;
             border: none;
             background: transparent;
-            color: var(--text-secondary);
-            border-radius: 8px;
+            color: #8899aa;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s ease;
+            font-size: 13px;
+            transition: all 0.2s;
         }
-        .modal-tab.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .modal-form { display: flex; flex-direction: column; gap: 10px; }
-        .modal-form h2 { text-align: center; font-size: 22px; }
+        .modal-tab.active {
+            background: rgba(20, 20, 40, 0.85);
+            color: #fff;
+        }
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-form h2 {
+            text-align: center;
+            font-size: 20px;
+        }
         .modal-input {
-            padding: 12px 16px;
-            background: var(--bg-primary);
-            border: 1px solid rgba(255,255,255,0.05);
+            padding: 10px 14px;
+            background: #0a0a0f;
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 8px;
-            color: var(--text-primary);
+            color: #fff;
             font-size: 14px;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
         }
-        .modal-input:focus { outline: none; border-color: var(--neon-cyan); }
+        .modal-input:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
         .modal-btn {
-            padding: 12px;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            padding: 10px;
+            background: linear-gradient(135deg, #00f0ff, #8b00ff);
             border: none;
             border-radius: 8px;
             color: white;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
         }
-        .modal-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,240,255,0.1); }
-        .modal-error { color: var(--neon-red); font-size: 14px; text-align: center; }
-        .modal-success { color: var(--neon-green); font-size: 14px; text-align: center; }
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 240, 255, 0.1);
+        }
+        .modal-error {
+            color: #ff0040;
+            font-size: 13px;
+            text-align: center;
+        }
+        .modal-success {
+            color: #00ff88;
+            font-size: 13px;
+            text-align: center;
+        }
 
-        /* ============================================================
-           УВЕДОМЛЕНИЯ
-           ============================================================ */
+        /* УВЕДОМЛЕНИЯ */
         #notifications {
             position: fixed;
-            top: 80px;
+            top: 70px;
             right: 16px;
             z-index: 999;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            max-width: 340px;
+            gap: 4px;
+            max-width: 320px;
         }
         .notification {
-            padding: 12px 20px;
-            border-radius: 10px;
+            padding: 10px 16px;
+            border-radius: 8px;
             font-weight: 500;
+            font-size: 14px;
             animation: notifIn 0.3s ease;
             cursor: pointer;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
         }
-        .notification.info { background: rgba(0,240,255,0.05); border-left: 3px solid var(--neon-cyan); color: var(--text-primary); }
-        .notification.success { background: rgba(0,255,136,0.05); border-left: 3px solid var(--neon-green); color: var(--neon-green); }
-        .notification.error { background: rgba(255,0,64,0.05); border-left: 3px solid var(--neon-red); color: var(--neon-red); }
-        .notification.warning { background: rgba(255,215,0,0.05); border-left: 3px solid var(--neon-gold); color: var(--neon-gold); }
-        @keyframes notifIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .notification.info {
+            background: rgba(0, 240, 255, 0.05);
+            border-left: 3px solid #00f0ff;
+            color: #fff;
+        }
+        .notification.success {
+            background: rgba(0, 255, 136, 0.05);
+            border-left: 3px solid #00ff88;
+            color: #00ff88;
+        }
+        .notification.error {
+            background: rgba(255, 0, 64, 0.05);
+            border-left: 3px solid #ff0040;
+            color: #ff0040;
+        }
+        @keyframes notifIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
 
-        /* ============================================================
-           АДАПТИВ
-           ============================================================ */
+        /* АДАПТИВ */
         @media (max-width: 768px) {
-            .header .container { flex-wrap: wrap; }
-            .nav-menu { order: 3; width: 100%; justify-content: center; }
-            .nav-btn { font-size: 12px; padding: 4px 10px; }
-            .games-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .crash-wrapper { height: 240px; }
-            .crash-multiplier { font-size: 40px; }
-            .modal-content { padding: 20px; margin: 12px; }
-            .game-title { font-size: 22px; }
-            .rocket-body { font-size: 30px; }
-            .slots-grid { max-width: 200px; }
-            .slot-cell { font-size: 24px; padding: 12px; min-height: 55px; }
-            .mines-grid { max-width: 200px; }
-            .mine-cell { font-size: 16px; padding: 10px; min-height: 45px; }
-            .roulette-grid { grid-template-columns: repeat(5, 1fr); }
+            .header .container {
+                flex-wrap: wrap;
+            }
+            .nav-menu {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+            .nav-btn {
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+            .games-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 8px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .crash-wrapper {
+                height: 250px;
+            }
+            .crash-multiplier {
+                font-size: 40px;
+            }
+            .rocket-wrap {
+                width: 50px;
+                height: 50px;
+            }
+            .rocket-body {
+                font-size: 34px;
+            }
+            .modal-content {
+                padding: 16px;
+                margin: 12px;
+            }
+            .game-title {
+                font-size: 20px;
+            }
         }
         @media (max-width: 480px) {
-            .games-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-            .game-card { padding: 14px 10px; }
-            .game-card .icon { font-size: 30px; }
-            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-            .stat-card { padding: 10px; }
-            .stat-card .value { font-size: 16px; }
-            .logo { font-size: 18px; }
-            .balance-box .amount { font-size: 14px; }
+            .games-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+            .game-card {
+                padding: 12px 8px;
+            }
+            .game-card .icon {
+                font-size: 28px;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .stat-card {
+                padding: 8px;
+            }
+            .stat-card .value {
+                font-size: 14px;
+            }
+            .logo {
+                font-size: 18px;
+            }
+            .balance-box .amount {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
 
     <!-- ====== ЗАГРУЗКА ====== -->
-    <div id="loading">
-        <div class="loader-ring"></div>
-        <div class="loader-text">ЗАГРУЗКА</div>
+    <div id="loading" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0f;transition:opacity 0.8s;">
+        <div style="font-size:60px;animation:spin 0.8s linear infinite;">🎰</div>
+        <div style="margin-top:12px;font-size:14px;color:#8899aa;letter-spacing:4px;">ЗАГРУЗКА</div>
     </div>
+    <style>
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 
     <!-- ====== ОСНОВНОЕ ПРИЛОЖЕНИЕ ====== -->
     <div id="app" style="display:none;">
-        
+
         <!-- ХЕДЕР -->
         <header class="header">
             <div class="container">
@@ -1016,7 +942,7 @@
                         <div class="amount" id="balance">10 000 ₽</div>
                     </div>
                     <button class="header-btn" onclick="toggleProfile()">👤</button>
-                    <button class="header-btn danger" onclick="handleLogout()">🚪</button>
+                    <button class="header-btn" onclick="handleLogout()" style="color:#ff0040;">🚪</button>
                 </div>
             </div>
         </header>
@@ -1024,7 +950,7 @@
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <main class="main">
             <div class="container">
-                
+
                 <!-- ЛОББИ -->
                 <div id="lobby">
                     <div class="stats-grid">
@@ -1061,16 +987,16 @@
 
                     <div class="games-grid" id="gamesGrid">
                         <div class="game-card" data-game="slots" data-tag="hot">
-                            <span class="badge hot">🔥 HOT</span>
+                            <span class="badge hot">🔥</span>
                             <span class="icon">🎰</span>
                             <div class="name">Слоты</div>
-                            <div class="desc">Крути барабаны!</div>
+                            <div class="desc">Крути!</div>
                         </div>
                         <div class="game-card" data-game="roulette" data-tag="new">
-                            <span class="badge new">⭐ NEW</span>
+                            <span class="badge new">⭐</span>
                             <span class="icon">🎡</span>
                             <div class="name">Рулетка</div>
-                            <div class="desc">Угадай число</div>
+                            <div class="desc">Угадай</div>
                         </div>
                         <div class="game-card" data-game="blackjack">
                             <span class="icon">🃏</span>
@@ -1078,21 +1004,21 @@
                             <div class="desc">21 очко</div>
                         </div>
                         <div class="game-card" data-game="crash" data-tag="hot">
-                            <span class="badge live">🔴 LIVE</span>
+                            <span class="badge live">🔴</span>
                             <span class="icon">✈️</span>
                             <div class="name">Aviator</div>
-                            <div class="desc">Лети выше!</div>
+                            <div class="desc">Лети!</div>
                         </div>
                         <div class="game-card" data-game="dice">
                             <span class="icon">🎲</span>
                             <div class="name">Кости</div>
-                            <div class="desc">Брось кубики</div>
+                            <div class="desc">Брось!</div>
                         </div>
                         <div class="game-card" data-game="mines" data-tag="new">
-                            <span class="badge new">⭐ NEW</span>
+                            <span class="badge new">⭐</span>
                             <span class="icon">💣</span>
                             <div class="name">Майнс</div>
-                            <div class="desc">Найди алмазы</div>
+                            <div class="desc">Алмазы</div>
                         </div>
                     </div>
 
@@ -1135,14 +1061,14 @@
             </div>
             <div id="loginForm" class="modal-form">
                 <h2>Добро пожаловать!</h2>
-                <input type="text" id="loginUsername" placeholder="Имя пользователя" class="modal-input">
+                <input type="text" id="loginUsername" placeholder="Имя" class="modal-input">
                 <input type="password" id="loginPassword" placeholder="Пароль" class="modal-input">
                 <div id="loginError" class="modal-error"></div>
                 <button onclick="handleLogin(event)" class="modal-btn">🚀 Войти</button>
             </div>
             <div id="registerForm" class="modal-form" style="display:none;">
                 <h2>Создай аккаунт!</h2>
-                <input type="text" id="regUsername" placeholder="Имя пользователя" class="modal-input">
+                <input type="text" id="regUsername" placeholder="Имя" class="modal-input">
                 <input type="email" id="regEmail" placeholder="Email" class="modal-input">
                 <input type="password" id="regPassword" placeholder="Пароль (6+)" class="modal-input">
                 <div id="registerError" class="modal-error"></div>
@@ -1175,7 +1101,7 @@
         // ===== ЗАГРУЗКА =====
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
-                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('loading').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
             }, 800);
 
@@ -1242,14 +1168,7 @@
         }
 
         function updateBalanceDisplay() {
-            const el = document.querySelector('.balance-box .amount');
-            if (el) {
-                el.textContent = userBalance.toLocaleString() + ' ₽';
-                el.classList.remove('bump');
-                void el.offsetWidth;
-                el.classList.add('bump');
-            }
-            document.querySelectorAll('#balanceDisplay, #balance').forEach(el => {
+            document.querySelectorAll('.balance-box .amount, #balance, #balanceDisplay').forEach(el => {
                 if (el) el.textContent = userBalance.toLocaleString() + ' ₽';
             });
         }
@@ -1257,7 +1176,8 @@
         function updateStatsDisplay() {
             document.getElementById('totalBetsStat').textContent = totalBets;
             document.getElementById('winsStat').textContent = wins;
-            document.getElementById('winrateStat').textContent = totalBets > 0 ? Math.round((wins / totalBets) * 100) + '%' : '0%';
+            document.getElementById('winrateStat').textContent = totalBets > 0 ? Math.round((wins / totalBets) * 100) + '%' :
+                '0%';
         }
 
         function checkBalance(amount) {
@@ -1313,14 +1233,28 @@
         // ===== ЗАГРУЗКА ИГР =====
         function loadGame(game) {
             const container = document.getElementById('gameContainer');
-            switch(game) {
-                case 'slots': loadSlots(container); break;
-                case 'roulette': loadRoulette(container); break;
-                case 'blackjack': loadBlackjack(container); break;
-                case 'crash': loadCrash(container); break;
-                case 'dice': loadDice(container); break;
-                case 'mines': loadMines(container); break;
-                default: container.innerHTML = `<div class="game-wrapper"><h2 class="game-title">🎮 ${game.toUpperCase()}</h2><div class="game-result info">В разработке...</div></div>`;
+            switch (game) {
+                case 'slots':
+                    loadSlots(container);
+                    break;
+                case 'roulette':
+                    loadRoulette(container);
+                    break;
+                case 'blackjack':
+                    loadBlackjack(container);
+                    break;
+                case 'crash':
+                    loadCrash(container);
+                    break;
+                case 'dice':
+                    loadDice(container);
+                    break;
+                case 'mines':
+                    loadMines(container);
+                    break;
+                default:
+                    container.innerHTML =
+                        `<div class="game-wrapper"><h2 class="game-title">🎮 ${game.toUpperCase()}</h2><div class="game-result info">В разработке...</div></div>`;
             }
         }
 
@@ -1331,8 +1265,8 @@
             container.innerHTML = `
                 <div class="game-wrapper">
                     <h2 class="game-title">🎰 СЛОТЫ</h2>
-                    <div class="slots-grid" id="slotsGrid">
-                        ${Array(9).fill().map(() => `<div class="slot-cell">🎰</div>`).join('')}
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:250px;margin:0 auto 12px;" id="slotsGrid">
+                        ${Array(9).fill().map(() => `<div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:14px;text-align:center;font-size:28px;border:1px solid rgba(255,255,255,0.03);">🎰</div>`).join('')}
                     </div>
                     <div class="game-result info" id="slotsResult">Сделайте ставку!</div>
                     <input type="number" id="slotsBet" class="game-input" value="10" min="1">
@@ -1348,13 +1282,11 @@
                 }
                 if (!checkBalance(bet)) return;
 
-                const cells = document.querySelectorAll('.slot-cell');
+                const cells = document.querySelectorAll('#slotsGrid div');
                 const resultEl = document.getElementById('slotsResult');
                 resultEl.className = 'game-result info';
                 resultEl.textContent = '⏳ Крутим...';
                 this.disabled = true;
-
-                cells.forEach(c => c.classList.add('spinning'));
 
                 try {
                     const response = await fetch('/api/game/slots', {
@@ -1365,38 +1297,29 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        cells.forEach(c => c.classList.remove('spinning'));
-
                         cells.forEach((el, i) => {
-                            setTimeout(() => {
-                                if (data.reels && data.reels[i]) {
-                                    el.textContent = data.reels[i];
-                                }
-                                el.classList.remove('win-highlight');
-                            }, i * 150);
+                            if (data.reels && data.reels[i]) {
+                                el.textContent = data.reels[i];
+                                el.style.borderColor = data.win ? '#ffd700' : 'rgba(255,255,255,0.03)';
+                            }
                         });
 
-                        setTimeout(() => {
-                            if (data.win) {
-                                resultEl.className = 'game-result win';
-                                resultEl.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!';
-                                showNotification('🎉 +' + data.win_amount + ' ₽!', 'success');
-                                cells.forEach(el => el.classList.add('win-highlight'));
-                            } else {
-                                resultEl.className = 'game-result loss';
-                                resultEl.textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
-                                showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
-                            }
+                        if (data.win) {
+                            resultEl.className = 'game-result win';
+                            resultEl.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!';
+                            showNotification('🎉 +' + data.win_amount + ' ₽!', 'success');
+                        } else {
+                            resultEl.className = 'game-result loss';
+                            resultEl.textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
+                            showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
+                        }
 
-                            if (data.balance !== undefined) {
-                                userBalance = data.balance;
-                                updateBalanceDisplay();
-                                updateStatsDisplay();
-                            }
-                        }, 600);
-
+                        if (data.balance !== undefined) {
+                            userBalance = data.balance;
+                            updateBalanceDisplay();
+                            updateStatsDisplay();
+                        }
                     } else {
-                        cells.forEach(c => c.classList.remove('spinning'));
                         showNotification('❌ ' + data.error, 'error');
                         if (data.balance !== undefined) {
                             userBalance = data.balance;
@@ -1404,14 +1327,13 @@
                         }
                     }
                 } catch (e) {
-                    cells.forEach(c => c.classList.remove('spinning'));
                     showNotification('❌ Ошибка соединения!', 'error');
                 }
 
                 setTimeout(() => {
                     this.disabled = false;
-                    cells.forEach(c => c.classList.remove('spinning', 'win-highlight'));
-                }, 2000);
+                    cells.forEach(el => el.style.borderColor = 'rgba(255,255,255,0.03)');
+                }, 1000);
             });
         }
 
@@ -1425,10 +1347,10 @@
             container.innerHTML = `
                 <div class="game-wrapper">
                     <h2 class="game-title">🎡 РУЛЕТКА</h2>
-                    <div class="roulette-grid" id="rouletteGrid">
+                    <div style="display:grid;grid-template-columns:repeat(10,1fr);gap:3px;margin:8px 0;" id="rouletteGrid">
                         ${[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26].map(n => {
                             const c = n === 0 ? '#00cc44' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(n) ? '#ff0040' : '#fff';
-                            return `<div class="roulette-cell" style="color:${c};" data-num="${n}">${n}</div>`;
+                            return `<div style="background:rgba(255,255,255,0.02);padding:6px 2px;text-align:center;border-radius:4px;color:${c};font-weight:700;font-size:12px;cursor:pointer;border:1px solid rgba(255,255,255,0.03);" data-num="${n}">${n}</div>`;
                         }).join('')}
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin:6px 0;">
@@ -1448,10 +1370,11 @@
 
             window.rouletteType = 'number';
 
-            document.querySelectorAll('#rouletteGrid .roulette-cell').forEach(el => {
+            document.querySelectorAll('#rouletteGrid div').forEach(el => {
                 el.addEventListener('click', function() {
-                    document.querySelectorAll('#rouletteGrid .roulette-cell').forEach(d => d.classList.remove('selected'));
-                    this.classList.add('selected');
+                    document.querySelectorAll('#rouletteGrid div').forEach(d => d.style.borderColor =
+                        'rgba(255,255,255,0.03)');
+                    this.style.borderColor = '#ffd700';
                     selected = parseInt(this.dataset.num);
                     showNotification('✅ Выбрано число ' + selected, 'info');
                 });
@@ -1484,8 +1407,6 @@
                 resultEl.textContent = '⏳ Крутим...';
                 this.disabled = true;
 
-                document.querySelectorAll('#rouletteGrid .roulette-cell').forEach(el => el.classList.add('spinning'));
-
                 try {
                     const response = await fetch('/api/game/roulette', {
                         method: 'POST',
@@ -1494,11 +1415,10 @@
                     });
                     const data = await response.json();
 
-                    document.querySelectorAll('#rouletteGrid .roulette-cell').forEach(el => el.classList.remove('spinning'));
-
                     if (data.success) {
                         const colorMap = { red: '#ff0040', green: '#00cc44', black: '#fff' };
-                        resultEl.innerHTML = `Выпало: <strong style="color:${colorMap[data.color] || '#fff'}">${data.result}</strong> (${data.color.toUpperCase()})<br>`;
+                        resultEl.innerHTML =
+                            `Выпало: <strong style="color:${colorMap[data.color] || '#fff'}">${data.result}</strong> (${data.color.toUpperCase()})<br>`;
 
                         if (data.win) {
                             resultEl.className = 'game-result win';
@@ -1523,7 +1443,6 @@
                         }
                     }
                 } catch (e) {
-                    document.querySelectorAll('#rouletteGrid .roulette-cell').forEach(el => el.classList.remove('spinning'));
                     showNotification('❌ Ошибка соединения!', 'error');
                 }
 
@@ -1538,30 +1457,29 @@
             container.innerHTML = `
                 <div class="game-wrapper">
                     <h2 class="game-title">🃏 БЛЭКДЖЕК</h2>
-                    <div class="bj-hand">
-                        <div class="label">🤖 Дилер:</div>
-                        <div class="cards" id="bjDealer">? ?</div>
-                    </div>
-                    <div class="bj-hand">
-                        <div class="label">👤 Вы:</div>
-                        <div class="cards" id="bjPlayer">? ?</div>
+                    <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin:8px 0;">
+                        <div style="font-size:14px;color:#8899aa;">🤖 Дилер: <span id="bjDealer">? ?</span></div>
+                        <div style="font-size:14px;color:#8899aa;">👤 Вы: <span id="bjPlayer">? ?</span></div>
                     </div>
                     <div class="game-result info" id="bjResult">Сделайте ставку!</div>
                     <input type="number" id="bjBet" class="game-input" value="10" min="1">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
                         <button class="spin-btn" id="bjStart" style="font-size:13px;">🃏 СТАРТ</button>
-                        <button class="spin-btn" id="bjHit" style="font-size:13px;background:var(--neon-green);color:#000;" disabled>✋ ВЗЯТЬ</button>
-                        <button class="spin-btn" id="bjStand" style="font-size:13px;background:var(--neon-gold);color:#000;" disabled>✋ СТОП</button>
-                        <button class="spin-btn" id="bjReset" style="font-size:13px;background:var(--neon-red);">🔄 СБРОС</button>
+                        <button class="spin-btn" id="bjHit" style="font-size:13px;background:#00ff88;color:#000;" disabled>✋ ВЗЯТЬ</button>
+                        <button class="spin-btn" id="bjStand" style="font-size:13px;background:#ffd700;color:#000;" disabled>✋ СТОП</button>
+                        <button class="spin-btn" id="bjReset" style="font-size:13px;background:#ff0040;">🔄 СБРОС</button>
                     </div>
                 </div>
             `;
 
-            let deck = [], playerHand = [], dealerHand = [], gameOver = true;
+            let deck = [],
+                playerHand = [],
+                dealerHand = [],
+                gameOver = true;
 
             function createDeck() {
-                const suits = ['♠','♥','♦','♣'];
-                const values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+                const suits = ['♠', '♥', '♦', '♣'];
+                const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
                 return suits.flatMap(s => values.map(v => ({ suit: s, value: v })));
             }
 
@@ -1575,7 +1493,7 @@
 
             function cardValue(c) {
                 if (c.value === 'A') return 11;
-                if (['J','Q','K'].includes(c.value)) return 10;
+                if (['J', 'Q', 'K'].includes(c.value)) return 10;
                 return parseInt(c.value);
             }
 
@@ -1616,12 +1534,14 @@
                         gameOver = data.game_over || false;
 
                         document.getElementById('bjPlayer').textContent = playerHand.map(cardDisplay).join(' ');
-                        document.getElementById('bjDealer').textContent = dealerHand.map(c => c === '?' ? '?' : cardDisplay(c)).join(' ');
+                        document.getElementById('bjDealer').textContent = dealerHand.map(c => c === '?' ? '?' : cardDisplay(c))
+                            .join(' ');
 
                         if (data.game_over) {
                             if (data.win) {
                                 document.getElementById('bjResult').className = 'game-result win';
-                                document.getElementById('bjResult').textContent = '🎉 БЛЭКДЖЕК! +' + data.win_amount + ' ₽';
+                                document.getElementById('bjResult').textContent = '🎉 БЛЭКДЖЕК! +' + data.win_amount +
+                                    ' ₽';
                                 showNotification('🎉 +' + data.win_amount + ' ₽!', 'success');
                             }
                             if (data.balance !== undefined) {
@@ -1675,7 +1595,8 @@
 
                             if (data.win === false) {
                                 document.getElementById('bjResult').className = 'game-result loss';
-                                document.getElementById('bjResult').textContent = '😞 ПЕРЕБОР! -' + Math.abs(data.win_amount) + ' ₽';
+                                document.getElementById('bjResult').textContent = '😞 ПЕРЕБОР! -' + Math.abs(data
+                                    .win_amount) + ' ₽';
                                 showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
                             }
 
@@ -1725,7 +1646,8 @@
                             showNotification('🎉 +' + data.win_amount + ' ₽!', 'success');
                         } else if (data.win === false) {
                             document.getElementById('bjResult').className = 'game-result loss';
-                            document.getElementById('bjResult').textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
+                            document.getElementById('bjResult').textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) +
+                                ' ₽';
                             showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
                         } else {
                             document.getElementById('bjResult').className = 'game-result info';
@@ -1759,7 +1681,7 @@
         }
 
         // ============================================================
-        // AVIATOR - ПЛАВНАЯ РАКЕТА
+        // AVIATOR - КРАСИВАЯ РАКЕТА
         // ============================================================
         let crashState = {
             multiplier: 1,
@@ -1780,7 +1702,7 @@
                     <div class="crash-wrapper">
                         <div class="crash-chart" id="crashChart">
                             <canvas id="crashCanvas"></canvas>
-                            <div class="rocket-container" id="rocketContainer">
+                            <div class="rocket-wrap" id="rocketWrap">
                                 <div class="rocket" id="rocket">
                                     <div class="rocket-body">🚀</div>
                                     <div class="rocket-fire" id="rocketFire"></div>
@@ -1810,15 +1732,15 @@
         function initCrashCanvas() {
             const canvas = document.getElementById('crashCanvas');
             if (!canvas) return;
-            
+
             const parent = canvas.parentElement;
             canvas.width = parent.clientWidth;
             canvas.height = parent.clientHeight;
-            
+
             const ctx = canvas.getContext('2d');
             ctx.strokeStyle = 'rgba(255,255,255,0.03)';
             ctx.lineWidth = 1;
-            
+
             for (let i = 0; i < 8; i++) {
                 const y = (i / 8) * canvas.height;
                 ctx.beginPath();
@@ -1826,7 +1748,6 @@
                 ctx.lineTo(canvas.width, y);
                 ctx.stroke();
             }
-            
             for (let i = 0; i < 12; i++) {
                 const x = (i / 12) * canvas.width;
                 ctx.beginPath();
@@ -1834,8 +1755,8 @@
                 ctx.lineTo(x, canvas.height);
                 ctx.stroke();
             }
-            
-            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+
+            ctx.fillStyle = 'rgba(255,255,255,0.06)';
             ctx.font = '10px sans-serif';
             for (let i = 1; i <= 5; i++) {
                 const y = canvas.height - (i / 5) * canvas.height * 0.8;
@@ -1889,16 +1810,16 @@
                     crashState.crashPoint = data.crash_point;
                     let lastMultiplier = 1;
                     let frameCount = 0;
-                    
+
                     const canvas = document.getElementById('crashCanvas');
                     const ctx = canvas.getContext('2d');
-                    
+
                     crashState.interval = setInterval(() => {
                         if (crashState.isCrashed) return;
 
                         const elapsed = (Date.now() - crashState.startTime) / 1000;
                         const progress = Math.min(elapsed / 4.5, 1);
-                        
+
                         if (progress < 1) {
                             const ease = 1 - Math.pow(1 - progress, 1.8);
                             crashState.multiplier = 1 + ease * (crashState.crashPoint - 1);
@@ -1907,10 +1828,10 @@
                         }
 
                         const dm = Math.round(crashState.multiplier * 100) / 100;
-                        
+
                         const el = document.getElementById('crashMultiplier');
                         el.textContent = dm.toFixed(2) + 'x';
-                        
+
                         if (dm > lastMultiplier + 0.03) {
                             el.classList.remove('bump');
                             void el.offsetWidth;
@@ -1918,25 +1839,25 @@
                             lastMultiplier = dm;
                         }
 
-                        // ПЛАВНАЯ ПОЗИЦИЯ РАКЕТЫ С ПОВОРОТОМ
-                        const container = document.getElementById('rocketContainer');
-                        const rocket = document.getElementById('rocket');
+                        // ДВИЖЕНИЕ РАКЕТЫ
+                        const wrap = document.getElementById('rocketWrap');
                         const maxX = 0.85;
                         const maxY = 0.85;
                         const xPos = 0.08 + (Math.min(elapsed / 3, 1) * (maxX - 0.08));
                         const yPos = 0.15 + Math.min((dm - 1) * 0.12, maxY - 0.15);
-                        
-                        container.style.left = (xPos * 100) + '%';
-                        container.style.bottom = (yPos * 100) + '%';
-                        
-                        // ПОВОРОТ РАКЕТЫ В ЗАВИСИМОСТИ ОТ ТРАЕКТОРИИ
-                        const angle = -45 + (yPos - 0.15) * 30;
-                        rocket.style.transform = 'rotate(' + angle + 'deg)';
-                        
+
+                        wrap.style.left = (xPos * 100) + '%';
+                        wrap.style.bottom = (yPos * 100) + '%';
+
+                        // ПОВОРОТ РАКЕТЫ
+                        const angle = -45 + (yPos - 0.15) * 25;
+                        const rocketEl = document.getElementById('rocket');
+                        rocketEl.style.transform = 'rotate(' + angle + 'deg)';
+
                         // Рисуем график
                         frameCount++;
                         if (frameCount % 2 === 0) {
-                            crashState.path.push({x: xPos, y: yPos});
+                            crashState.path.push({ x: xPos, y: yPos });
                             drawGraph(ctx, canvas, crashState.path, crashState.crashPoint, dm);
                         }
 
@@ -1958,9 +1879,9 @@
 
         function drawGraph(ctx, canvas, path, crashPoint, currentMultiplier) {
             if (!ctx || !canvas) return;
-            
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+
             // Сетка
             ctx.strokeStyle = 'rgba(255,255,255,0.03)';
             ctx.lineWidth = 1;
@@ -1978,21 +1899,21 @@
                 ctx.lineTo(x, canvas.height);
                 ctx.stroke();
             }
-            
+
             // График
             if (path.length < 2) return;
-            
+
             const maxY = canvas.height * 0.85;
             const minY = canvas.height * 0.15;
             const maxX = canvas.width * 0.85;
             const minX = canvas.width * 0.08;
-            
+
             ctx.beginPath();
             ctx.strokeStyle = '#00f0ff';
             ctx.lineWidth = 2;
             ctx.shadowColor = 'rgba(0, 240, 255, 0.2)';
             ctx.shadowBlur = 10;
-            
+
             let first = true;
             for (const point of path) {
                 const x = minX + point.x * (maxX - minX);
@@ -2006,7 +1927,7 @@
             }
             ctx.stroke();
             ctx.shadowBlur = 0;
-            
+
             // Точка краша
             if (crashState.isCrashed) {
                 const endX = minX + 0.85 * (maxX - minX);
@@ -2051,13 +1972,14 @@
                     }
 
                     document.getElementById('crashResult').className = 'game-result win';
-                    document.getElementById('crashResult').textContent = '🎉 +' + data.win_amount + ' ₽ (' + currentMultiplier.toFixed(2) + 'x)';
+                    document.getElementById('crashResult').textContent = '🎉 +' + data.win_amount + ' ₽ (' + currentMultiplier
+                        .toFixed(2) + 'x)';
                     showNotification('🎉 +' + data.win_amount + ' ₽!', 'success');
                     addCrashHistory(currentMultiplier, true);
-                    
+
                     const rocket = document.getElementById('rocket');
                     rocket.classList.remove('flying');
-                    
+
                     resetCrash();
                 }
             } catch (e) {
@@ -2118,7 +2040,7 @@
             crashState.isBetPlaced = false;
             crashState.isCrashed = false;
             crashState.path = [];
-            
+
             if (crashState.interval) {
                 clearInterval(crashState.interval);
                 crashState.interval = null;
@@ -2131,12 +2053,12 @@
             document.getElementById('crashLine').classList.remove('show');
 
             const rocket = document.getElementById('rocket');
-            const container = document.getElementById('rocketContainer');
+            const wrap = document.getElementById('rocketWrap');
             rocket.classList.remove('flying', 'explode');
             rocket.style.transform = 'rotate(-45deg)';
-            container.style.left = '10%';
-            container.style.bottom = '20%';
-            
+            wrap.style.left = '8%';
+            wrap.style.bottom = '18%';
+
             const canvas = document.getElementById('crashCanvas');
             if (canvas) {
                 const ctx = canvas.getContext('2d');
@@ -2165,7 +2087,7 @@
             container.innerHTML = `
                 <div class="game-wrapper">
                     <h2 class="game-title">🎲 КОСТИ</h2>
-                    <div class="dice-display">
+                    <div style="display:flex;justify-content:center;gap:24px;font-size:64px;margin:12px 0;">
                         <div class="die" id="d1">⚀</div>
                         <div class="die" id="d2">⚀</div>
                     </div>
@@ -2227,7 +2149,8 @@
                                 showNotification('🎉 +' + data.win_amount + ' ₽!', 'success');
                             } else {
                                 resultEl.className = 'game-result loss';
-                                resultEl.textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽ (' + data.total + ')';
+                                resultEl.textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽ (' + data
+                                    .total + ')';
                                 showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
                             }
 
@@ -2269,8 +2192,8 @@
             container.innerHTML = `
                 <div class="game-wrapper">
                     <h2 class="game-title">💣 МАЙНС</h2>
-                    <div class="mines-grid" id="minesGrid">
-                        ${Array(25).fill().map((_, i) => `<div class="mine-cell" data-idx="${i}">❓</div>`).join('')}
+                    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;max-width:280px;margin:0 auto 12px;" id="minesGrid">
+                        ${Array(25).fill().map((_, i) => `<div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:14px;text-align:center;font-size:20px;cursor:pointer;border:1px solid rgba(255,255,255,0.03);" data-idx="${i}">❓</div>`).join('')}
                     </div>
                     <div class="game-result info" id="minesResult">Сделайте ставку!</div>
                     <input type="number" id="minesBet" class="game-input" value="10" min="1">
@@ -2286,7 +2209,7 @@
                 if (revealed.includes(idx)) return;
 
                 revealed.push(idx);
-                const cell = document.querySelector(`.mine-cell[data-idx="${idx}"]`);
+                const cell = document.querySelector(`[data-idx="${idx}"]`);
                 cell.textContent = '⏳';
 
                 try {
@@ -2306,14 +2229,17 @@
                     if (data.success) {
                         if (data.hit) {
                             cell.textContent = '💣';
-                            cell.classList.add('mine', 'revealed');
+                            cell.style.background = 'rgba(255,0,64,0.15)';
+                            cell.style.borderColor = '#ff0040';
                             gameActive = false;
                             document.getElementById('minesResult').className = 'game-result loss';
-                            document.getElementById('minesResult').textContent = '💥 МИНА! -' + Math.abs(data.win_amount) + ' ₽';
+                            document.getElementById('minesResult').textContent = '💥 МИНА! -' + Math.abs(data
+                                .win_amount) + ' ₽';
                             showNotification('💥 МИНА! -' + Math.abs(data.win_amount) + ' ₽', 'error');
                         } else {
                             cell.textContent = '💎';
-                            cell.classList.add('diamond', 'revealed');
+                            cell.style.background = 'rgba(0,255,136,0.1)';
+                            cell.style.borderColor = '#00ff88';
                             document.getElementById('minesResult').className = 'game-result win';
                             document.getElementById('minesResult').textContent = '💎 АЛМАЗ! +' + data.win_amount + ' ₽';
                             showNotification('💎 АЛМАЗ! +' + data.win_amount + ' ₽', 'success');
@@ -2357,9 +2283,10 @@
                         revealed = [];
                         gameActive = true;
 
-                        document.querySelectorAll('.mine-cell').forEach(el => {
+                        document.querySelectorAll('#minesGrid div').forEach(el => {
                             el.textContent = '❓';
-                            el.className = 'mine-cell';
+                            el.style.background = 'rgba(0,0,0,0.3)';
+                            el.style.borderColor = 'rgba(255,255,255,0.03)';
                         });
 
                         document.getElementById('minesResult').className = 'game-result info';
@@ -2380,7 +2307,8 @@
         function switchAuthTab(tab) {
             document.querySelectorAll('.modal-tab').forEach((t, i) => {
                 t.classList.toggle('active', i === (tab === 'login' ? 0 : 1));
-                document.querySelectorAll('.modal-form')[i].style.display = i === (tab === 'login' ? 0 : 1) ? 'flex' : 'none';
+                document.querySelectorAll('.modal-form')[i].style.display = i === (tab === 'login' ? 0 : 1) ? 'flex' :
+                    'none';
             });
         }
 
@@ -2478,11 +2406,11 @@
                 <div style="text-align:center;">
                     <div style="font-size:40px;margin-bottom:6px;">👤</div>
                     <h3 style="margin-bottom:4px;">${localStorage.getItem('ruwin_username') || 'Игрок'}</h3>
-                    <p style="color:var(--text-secondary);">💰 Баланс: ${userBalance.toLocaleString()} ₽</p>
-                    <p style="color:var(--text-secondary);">🏆 Уровень: ${userLevel}</p>
-                    <p style="color:var(--text-secondary);">🎯 Ставок: ${totalBets}</p>
-                    <p style="color:var(--text-secondary);">🏆 Побед: ${wins}</p>
-                    <button onclick="document.getElementById('profileModal').classList.remove('active')" style="margin-top:10px;padding:8px 24px;background:var(--bg-card);border:1px solid var(--neon-cyan);border-radius:8px;color:var(--text-primary);cursor:pointer;">Закрыть</button>
+                    <p style="color:#8899aa;">💰 Баланс: ${userBalance.toLocaleString()} ₽</p>
+                    <p style="color:#8899aa;">🏆 Уровень: ${userLevel}</p>
+                    <p style="color:#8899aa;">🎯 Ставок: ${totalBets}</p>
+                    <p style="color:#8899aa;">🏆 Побед: ${wins}</p>
+                    <button onclick="document.getElementById('profileModal').classList.remove('active')" style="margin-top:10px;padding:8px 24px;background:rgba(20,20,40,0.85);border:1px solid #00f0ff;border-radius:8px;color:#fff;cursor:pointer;">Закрыть</button>
                 </div>
             `;
             modal.classList.add('active');
