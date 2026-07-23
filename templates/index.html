@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>🎰 RuWin Casino</title>
     <style>
+        /* ===== БАЗА ===== */
         * {
             margin: 0;
             padding: 0;
@@ -15,9 +16,10 @@
             background: #0a0a0f;
             color: #fff;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* ХЕДЕР */
+        /* ===== ХЕДЕР ===== */
         .header {
             background: rgba(10, 10, 15, 0.95);
             border-bottom: 1px solid rgba(0, 240, 255, 0.1);
@@ -80,6 +82,16 @@
             padding: 1px 5px;
             border-radius: 8px;
             margin-left: 4px;
+            animation: badgePulse 1s infinite;
+        }
+        @keyframes badgePulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .header-right {
@@ -103,6 +115,22 @@
             font-size: 18px;
             font-weight: 800;
             color: #00ff88;
+            transition: all 0.3s;
+        }
+        .balance-box .amount.bump {
+            animation: balanceBump 0.4s ease;
+        }
+        @keyframes balanceBump {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+                color: #ffd700;
+            }
+            100% {
+                transform: scale(1);
+            }
         }
         .header-btn {
             padding: 4px 12px;
@@ -118,12 +146,12 @@
             border-color: #00f0ff;
         }
 
-        /* ОСНОВНОЙ */
+        /* ===== ОСНОВНОЙ ===== */
         .main {
             padding: 16px 0;
         }
 
-        /* СТАТИСТИКА */
+        /* ===== СТАТИСТИКА ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -136,6 +164,10 @@
             border-radius: 10px;
             padding: 12px;
             text-align: center;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
         }
         .stat-card .icon {
             font-size: 20px;
@@ -163,7 +195,7 @@
             color: #8b00ff;
         }
 
-        /* ИГРЫ */
+        /* ===== ИГРЫ ===== */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -178,30 +210,6 @@
         }
         .section-title .highlight {
             color: #00f0ff;
-        }
-        .filter-group {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-        }
-        .filter-btn {
-            padding: 3px 14px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 6px;
-            color: #8899aa;
-            cursor: pointer;
-            font-size: 11px;
-            transition: all 0.2s;
-        }
-        .filter-btn:hover {
-            border-color: #00f0ff;
-            color: #fff;
-        }
-        .filter-btn.active {
-            border-color: #00f0ff;
-            color: #00f0ff;
-            background: rgba(0, 240, 255, 0.05);
         }
 
         .games-grid {
@@ -229,6 +237,10 @@
             font-size: 36px;
             display: block;
             margin-bottom: 6px;
+            transition: transform 0.3s;
+        }
+        .game-card:hover .icon {
+            transform: scale(1.1) rotate(-5deg);
         }
         .game-card .name {
             font-size: 14px;
@@ -262,11 +274,16 @@
             animation: livePulse 1s infinite;
         }
         @keyframes livePulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
         }
 
-        /* КОНТЕЙНЕР ИГРЫ */
+        /* ===== КОНТЕЙНЕР ИГРЫ ===== */
         .game-container {
             display: none;
         }
@@ -275,8 +292,14 @@
             animation: fadeIn 0.3s ease;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .game-wrapper {
@@ -301,6 +324,7 @@
             margin: 10px 0;
             font-size: 16px;
             font-weight: 700;
+            transition: all 0.3s;
         }
         .game-result.info {
             background: rgba(0, 240, 255, 0.03);
@@ -311,6 +335,16 @@
             background: rgba(0, 255, 136, 0.03);
             color: #00ff88;
             border: 1px solid rgba(0, 255, 136, 0.1);
+            animation: winPulse 0.6s ease;
+        }
+        @keyframes winPulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.03);
+            }
         }
         .game-result.loss {
             background: rgba(255, 0, 64, 0.03);
@@ -358,7 +392,7 @@
         }
 
         /* ============================================================
-           AVIATOR - ПРОСТАЯ РАБОЧАЯ РАКЕТА
+           AVIATOR - КАЧЕСТВЕННАЯ АНИМАЦИЯ РАКЕТЫ
            ============================================================ */
         .crash-wrapper {
             position: relative;
@@ -383,7 +417,7 @@
             z-index: 0;
         }
 
-        /* РАКЕТА - ПРОСТАЯ ВЕРСИЯ */
+        /* РАКЕТА */
         #rocket {
             position: absolute;
             z-index: 3;
@@ -391,25 +425,46 @@
             pointer-events: none;
             left: 8%;
             bottom: 20%;
-            transition: all 0.05s linear;
+            transition: all 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             filter: drop-shadow(0 0 30px rgba(255, 165, 0, 0.3));
-            will-change: left, bottom;
+            will-change: left, bottom, transform;
         }
+
         #rocket.flying {
-            animation: rocketShake 0.1s infinite;
+            animation: rocketFly 0.15s linear infinite;
         }
-        @keyframes rocketShake {
-            0% { transform: translateY(0) rotate(-45deg) scale(1); }
-            50% { transform: translateY(-3px) rotate(-45deg) scale(1.02); }
-            100% { transform: translateY(0) rotate(-45deg) scale(1); }
+        @keyframes rocketFly {
+            0% {
+                transform: translateY(0) rotate(-45deg) scale(1);
+            }
+            50% {
+                transform: translateY(-4px) rotate(-45deg) scale(1.03);
+            }
+            100% {
+                transform: translateY(0) rotate(-45deg) scale(1);
+            }
         }
+
         #rocket.explode {
-            animation: rocketBoom 0.6s ease forwards;
+            animation: rocketExplode 0.6s ease forwards;
         }
-        @keyframes rocketBoom {
-            0% { transform: scale(1) rotate(-45deg); opacity: 1; }
-            50% { transform: scale(3) rotate(20deg); opacity: 0.5; }
-            100% { transform: scale(0) rotate(360deg); opacity: 0; }
+        @keyframes rocketExplode {
+            0% {
+                transform: scale(1) rotate(-45deg);
+                opacity: 1;
+            }
+            30% {
+                transform: scale(2.5) rotate(20deg);
+                opacity: 0.8;
+            }
+            60% {
+                transform: scale(4) rotate(-20deg);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(0) rotate(360deg);
+                opacity: 0;
+            }
         }
 
         /* МУЛЬТИПЛИКАТОР */
@@ -425,13 +480,19 @@
             z-index: 2;
             pointer-events: none;
             transition: all 0.1s ease;
+            letter-spacing: -2px;
         }
         #multiplier.bump {
             animation: multiBump 0.15s ease;
         }
         @keyframes multiBump {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.08); }
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.08);
+            }
         }
         #multiplier.crashed {
             color: #ff0040;
@@ -439,11 +500,22 @@
             animation: crashShake 0.5s ease;
         }
         @keyframes crashShake {
-            0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-            20% { transform: translate(-50%, -50%) scale(1.1) rotate(-3deg); }
-            40% { transform: translate(-50%, -50%) scale(0.9) rotate(3deg); }
-            60% { transform: translate(-50%, -50%) scale(1.05) rotate(-2deg); }
-            80% { transform: translate(-50%, -50%) scale(0.95) rotate(2deg); }
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+            }
+            20% {
+                transform: translate(-50%, -50%) scale(1.1) rotate(-3deg);
+            }
+            40% {
+                transform: translate(-50%, -50%) scale(0.9) rotate(3deg);
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.05) rotate(-2deg);
+            }
+            80% {
+                transform: translate(-50%, -50%) scale(0.95) rotate(2deg);
+            }
         }
 
         /* ЛИНИЯ КРАША */
@@ -456,7 +528,7 @@
             background: linear-gradient(90deg, transparent, #ff0040, transparent);
             z-index: 1;
             opacity: 0;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.5s ease, transform 0.5s ease;
             transform: scaleX(0);
             transform-origin: left center;
         }
@@ -517,6 +589,17 @@
             font-weight: 600;
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.03);
+            animation: historyIn 0.3s ease;
+        }
+        @keyframes historyIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
         .crash-history-item.win {
             color: #00ff88;
@@ -527,63 +610,142 @@
             border-color: rgba(255, 0, 64, 0.05);
         }
 
-        /* БОНУСЫ */
-        .bonus-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 10px;
-            margin-top: 16px;
+        /* ============================================================
+           КОСТИ
+           ============================================================ */
+        .die {
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-size: 64px;
         }
-        .bonus-card {
-            background: rgba(20, 20, 40, 0.85);
-            border-radius: 10px;
-            padding: 14px;
-            border: 1px solid rgba(255, 215, 0, 0.08);
-            transition: all 0.3s;
+        .die.rolling {
+            animation: diceRoll 0.6s ease;
         }
-        .bonus-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(255, 215, 0, 0.15);
-        }
-        .bonus-card .icon {
-            font-size: 24px;
-            display: block;
-        }
-        .bonus-card .name {
-            font-weight: 700;
-            font-size: 14px;
-        }
-        .bonus-card .desc {
-            font-size: 11px;
-            color: #8899aa;
-        }
-        .bonus-card .claim-btn {
-            margin-top: 6px;
-            padding: 4px 16px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 12px;
-        }
-        .bonus-card .claim-btn:hover {
-            transform: scale(1.05);
-        }
-        .bonus-card.gold .claim-btn {
-            background: #ffd700;
-            color: #000;
-        }
-        .bonus-card.cyan .claim-btn {
-            background: #00f0ff;
-            color: #000;
-        }
-        .bonus-card.pink .claim-btn {
-            background: #ff0040;
-            color: #fff;
+        @keyframes diceRoll {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            25% {
+                transform: rotate(90deg) scale(1.2);
+            }
+            50% {
+                transform: rotate(180deg) scale(0.8);
+            }
+            75% {
+                transform: rotate(270deg) scale(1.2);
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
         }
 
-        /* МОДАЛКИ */
+        /* ============================================================
+           СЛОТЫ
+           ============================================================ */
+        .slot-cell {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 14px;
+            text-align: center;
+            font-size: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all 0.3s;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slot-cell.win {
+            border-color: #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+            animation: slotWin 0.5s ease;
+        }
+        @keyframes slotWin {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* ============================================================
+           МАЙНС
+           ============================================================ */
+        .mine-cell {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+            font-size: 20px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all 0.3s;
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mine-cell:hover:not(.revealed) {
+            border-color: #00f0ff;
+            transform: scale(1.05);
+        }
+        .mine-cell.mine {
+            background: rgba(255, 0, 64, 0.15);
+            border-color: #ff0040;
+            animation: mineExplode 0.5s ease;
+        }
+        @keyframes mineExplode {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+        .mine-cell.diamond {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+            animation: diamondFind 0.5s ease;
+        }
+        @keyframes diamondFind {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.15);
+            }
+        }
+
+        /* ============================================================
+           РУЛЕТКА
+           ============================================================ */
+        .roulette-cell {
+            padding: 6px 2px;
+            text-align: center;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.3s;
+        }
+        .roulette-cell:hover {
+            transform: scale(1.05);
+            border-color: #00f0ff;
+        }
+        .roulette-cell.selected {
+            border-color: #ffd700 !important;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        }
+
+        /* ============================================================
+           МОДАЛКИ
+           ============================================================ */
         .modal {
             position: fixed;
             inset: 0;
@@ -608,8 +770,14 @@
             animation: modalIn 0.3s ease;
         }
         @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.95) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .modal-tabs {
@@ -684,7 +852,9 @@
             text-align: center;
         }
 
-        /* УВЕДОМЛЕНИЯ */
+        /* ============================================================
+           УВЕДОМЛЕНИЯ
+           ============================================================ */
         #notifications {
             position: fixed;
             top: 70px;
@@ -721,11 +891,19 @@
             color: #ff0040;
         }
         @keyframes notifIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
-        /* АДАПТИВ */
+        /* ============================================================
+           АДАПТИВ
+           ============================================================ */
         @media (max-width: 768px) {
             .header .container {
                 flex-wrap: wrap;
@@ -755,12 +933,8 @@
             #rocket {
                 font-size: 34px;
             }
-            .modal-content {
-                padding: 16px;
-                margin: 12px;
-            }
-            .game-title {
-                font-size: 20px;
+            .die {
+                font-size: 48px;
             }
         }
         @media (max-width: 480px) {
@@ -802,7 +976,9 @@
     </div>
     <style>
         @keyframes spin {
-            100% { transform: rotate(360deg); }
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 
@@ -862,15 +1038,6 @@
                         </div>
                     </div>
 
-                    <div class="section-header">
-                        <div class="section-title">🎮 <span class="highlight">Игры</span></div>
-                        <div class="filter-group">
-                            <button class="filter-btn active" onclick="filterGames('all')">Все</button>
-                            <button class="filter-btn" onclick="filterGames('hot')">🔥 Hot</button>
-                            <button class="filter-btn" onclick="filterGames('new')">⭐ Новые</button>
-                        </div>
-                    </div>
-
                     <div class="games-grid" id="gamesGrid">
                         <div class="game-card" data-game="slots" data-tag="hot">
                             <span class="badge hot">🔥</span>
@@ -905,27 +1072,6 @@
                             <span class="icon">💣</span>
                             <div class="name">Майнс</div>
                             <div class="desc">Алмазы</div>
-                        </div>
-                    </div>
-
-                    <div class="bonus-grid">
-                        <div class="bonus-card gold">
-                            <span class="icon">🎉</span>
-                            <div class="name">Приветственный</div>
-                            <div class="desc">+100% до 10 000 ₽</div>
-                            <button class="claim-btn" onclick="claimBonus('welcome')">Забрать</button>
-                        </div>
-                        <div class="bonus-card cyan">
-                            <span class="icon">🔄</span>
-                            <div class="name">Кешбэк 10%</div>
-                            <div class="desc">Возврат проигрышей</div>
-                            <button class="claim-btn" onclick="claimBonus('cashback')">Активировать</button>
-                        </div>
-                        <div class="bonus-card pink">
-                            <span class="icon">🔥</span>
-                            <div class="name">Ежедневный</div>
-                            <div class="desc">Фриспины каждый день</div>
-                            <button class="claim-btn" onclick="claimBonus('daily')">Забрать</button>
                         </div>
                     </div>
                 </div>
@@ -1054,7 +1200,14 @@
         }
 
         function updateBalanceDisplay() {
-            document.querySelectorAll('.balance-box .amount, #balance, #balanceDisplay').forEach(el => {
+            const el = document.querySelector('.balance-box .amount');
+            if (el) {
+                el.textContent = userBalance.toLocaleString() + ' ₽';
+                el.classList.remove('bump');
+                void el.offsetWidth;
+                el.classList.add('bump');
+            }
+            document.querySelectorAll('#balanceDisplay, #balance').forEach(el => {
                 if (el) el.textContent = userBalance.toLocaleString() + ' ₽';
             });
         }
@@ -1062,8 +1215,8 @@
         function updateStatsDisplay() {
             document.getElementById('totalBetsStat').textContent = totalBets;
             document.getElementById('winsStat').textContent = wins;
-            document.getElementById('winrateStat').textContent = totalBets > 0 ? Math.round((wins / totalBets) * 100) + '%' :
-                '0%';
+            document.getElementById('winrateStat').textContent = totalBets > 0 ? Math.round((wins / totalBets) * 100) +
+                '%' : '0%';
         }
 
         function checkBalance(amount) {
@@ -1107,15 +1260,6 @@
             });
         }
 
-        function filterGames(tag) {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.querySelector(`.filter-btn[onclick="filterGames('${tag}')"]`);
-            if (btn) btn.classList.add('active');
-            document.querySelectorAll('.game-card').forEach(card => {
-                card.style.display = (tag === 'all' || card.dataset.tag === tag) ? '' : 'none';
-            });
-        }
-
         // ===== ЗАГРУЗКА ИГР =====
         function loadGame(game) {
             const container = document.getElementById('gameContainer');
@@ -1152,7 +1296,7 @@
                 <div class="game-wrapper">
                     <h2 class="game-title">🎰 СЛОТЫ</h2>
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:250px;margin:0 auto 12px;" id="slotsGrid">
-                        ${Array(9).fill().map(() => `<div style="background:rgba(0,0,0,0.3);border-radius:6px;padding:14px;text-align:center;font-size:28px;border:1px solid rgba(255,255,255,0.03);">🎰</div>`).join('')}
+                        ${Array(9).fill().map(() => `<div class="slot-cell">🎰</div>`).join('')}
                     </div>
                     <div class="game-result info" id="slotsResult">Сделайте ставку!</div>
                     <input type="number" id="slotsBet" class="game-input" value="10" min="1">
@@ -1168,7 +1312,7 @@
                 }
                 if (!checkBalance(bet)) return;
 
-                const cells = document.querySelectorAll('#slotsGrid div');
+                const cells = document.querySelectorAll('.slot-cell');
                 const resultEl = document.getElementById('slotsResult');
                 resultEl.className = 'game-result info';
                 resultEl.textContent = '⏳ Крутим...';
@@ -1187,18 +1331,18 @@
                             if (data.reels && data.reels[i]) {
                                 el.textContent = data.reels[i];
                             }
+                            el.classList.remove('win');
                         });
 
                         if (data.win) {
                             resultEl.className = 'game-result win';
                             resultEl.textContent = '🎉 ВЫИГРЫШ +' + data.win_amount + ' ₽!';
                             showNotification('🎉 +' + data.win_amount + ' ₽!', 'success');
-                            cells.forEach(el => el.style.borderColor = '#ffd700');
+                            cells.forEach(el => el.classList.add('win'));
                         } else {
                             resultEl.className = 'game-result loss';
                             resultEl.textContent = '😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽';
                             showNotification('😞 ПРОИГРЫШ ' + Math.abs(data.win_amount) + ' ₽', 'error');
-                            cells.forEach(el => el.style.borderColor = 'rgba(255,255,255,0.03)');
                         }
 
                         if (data.balance !== undefined) {
@@ -1219,6 +1363,7 @@
 
                 setTimeout(() => {
                     this.disabled = false;
+                    cells.forEach(el => el.classList.remove('win'));
                 }, 1000);
             });
         }
@@ -1236,7 +1381,7 @@
                     <div style="display:grid;grid-template-columns:repeat(10,1fr);gap:3px;margin:8px 0;" id="rouletteGrid">
                         ${[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26].map(n => {
                             const c = n === 0 ? '#00cc44' : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(n) ? '#ff0040' : '#fff';
-                            return `<div style="background:rgba(255,255,255,0.02);padding:6px 2px;text-align:center;border-radius:4px;color:${c};font-weight:700;font-size:12px;cursor:pointer;border:1px solid rgba(255,255,255,0.03);" data-num="${n}">${n}</div>`;
+                            return `<div class="roulette-cell" style="color:${c};" data-num="${n}">${n}</div>`;
                         }).join('')}
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin:6px 0;">
@@ -1256,11 +1401,11 @@
 
             window.rouletteType = 'number';
 
-            document.querySelectorAll('#rouletteGrid div').forEach(el => {
+            document.querySelectorAll('#rouletteGrid .roulette-cell').forEach(el => {
                 el.addEventListener('click', function() {
-                    document.querySelectorAll('#rouletteGrid div').forEach(d => d.style.borderColor =
-                        'rgba(255,255,255,0.03)');
-                    this.style.borderColor = '#ffd700';
+                    document.querySelectorAll('#rouletteGrid .roulette-cell').forEach(d => d.classList.remove(
+                    'selected'));
+                    this.classList.add('selected');
                     selected = parseInt(this.dataset.num);
                     showNotification('✅ Выбрано число ' + selected, 'info');
                 });
@@ -1420,8 +1565,8 @@
                         gameOver = data.game_over || false;
 
                         document.getElementById('bjPlayer').textContent = playerHand.map(cardDisplay).join(' ');
-                        document.getElementById('bjDealer').textContent = dealerHand.map(c => c === '?' ? '?' : cardDisplay(c))
-                            .join(' ');
+                        document.getElementById('bjDealer').textContent = dealerHand.map(c => c === '?' ? '?' : cardDisplay(
+                            c)).join(' ');
 
                         if (data.game_over) {
                             if (data.win) {
@@ -1567,7 +1712,7 @@
         }
 
         // ============================================================
-        // AVIATOR - ПРОСТАЯ РАБОЧАЯ РАКЕТА
+        // AVIATOR
         // ============================================================
         let crashState = {
             multiplier: 1,
@@ -1612,15 +1757,12 @@
         function initCanvas() {
             const canvas = document.getElementById('crashCanvas');
             if (!canvas) return;
-
             const parent = canvas.parentElement;
             canvas.width = parent.clientWidth;
             canvas.height = parent.clientHeight;
-
             const ctx = canvas.getContext('2d');
             ctx.strokeStyle = 'rgba(255,255,255,0.03)';
             ctx.lineWidth = 1;
-
             for (let i = 0; i < 8; i++) {
                 const y = (i / 8) * canvas.height;
                 ctx.beginPath();
@@ -1635,7 +1777,6 @@
                 ctx.lineTo(x, canvas.height);
                 ctx.stroke();
             }
-
             ctx.fillStyle = 'rgba(255,255,255,0.06)';
             ctx.font = '10px sans-serif';
             for (let i = 1; i <= 5; i++) {
@@ -1720,7 +1861,7 @@
                             lastMultiplier = dm;
                         }
 
-                        // ДВИЖЕНИЕ РАКЕТЫ - ПРОСТОЕ И ПОНЯТНОЕ
+                        // ДВИЖЕНИЕ РАКЕТЫ
                         const rocketEl = document.getElementById('rocket');
                         const maxX = 85;
                         const maxY = 85;
@@ -1760,7 +1901,6 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Сетка
             ctx.strokeStyle = 'rgba(255,255,255,0.03)';
             ctx.lineWidth = 1;
             for (let i = 0; i < 8; i++) {
@@ -1963,8 +2103,8 @@
                 <div class="game-wrapper">
                     <h2 class="game-title">🎲 КОСТИ</h2>
                     <div style="display:flex;justify-content:center;gap:24px;font-size:64px;margin:12px 0;">
-                        <div class="die" id="d1">⚀</div>
-                        <div class="die" id="d2">⚀</div>
+                        <span class="die" id="d1">⚀</span>
+                        <span class="die" id="d2">⚀</span>
                     </div>
                     <div class="game-result info" id="diceResult">Бросьте кости!</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:6px 0;">
@@ -2068,7 +2208,7 @@
                 <div class="game-wrapper">
                     <h2 class="game-title">💣 МАЙНС</h2>
                     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;max-width:280px;margin:0 auto 12px;" id="minesGrid">
-                        ${Array(25).fill().map((_, i) => `<div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:14px;text-align:center;font-size:20px;cursor:pointer;border:1px solid rgba(255,255,255,0.03);" data-idx="${i}">❓</div>`).join('')}
+                        ${Array(25).fill().map((_, i) => `<div class="mine-cell" data-idx="${i}">❓</div>`).join('')}
                     </div>
                     <div class="game-result info" id="minesResult">Сделайте ставку!</div>
                     <input type="number" id="minesBet" class="game-input" value="10" min="1">
@@ -2084,7 +2224,7 @@
                 if (revealed.includes(idx)) return;
 
                 revealed.push(idx);
-                const cell = document.querySelector(`[data-idx="${idx}"]`);
+                const cell = document.querySelector(`.mine-cell[data-idx="${idx}"]`);
                 cell.textContent = '⏳';
 
                 try {
@@ -2104,8 +2244,7 @@
                     if (data.success) {
                         if (data.hit) {
                             cell.textContent = '💣';
-                            cell.style.background = 'rgba(255,0,64,0.15)';
-                            cell.style.borderColor = '#ff0040';
+                            cell.classList.add('mine');
                             gameActive = false;
                             document.getElementById('minesResult').className = 'game-result loss';
                             document.getElementById('minesResult').textContent = '💥 МИНА! -' + Math.abs(data
@@ -2113,8 +2252,7 @@
                             showNotification('💥 МИНА! -' + Math.abs(data.win_amount) + ' ₽', 'error');
                         } else {
                             cell.textContent = '💎';
-                            cell.style.background = 'rgba(0,255,136,0.1)';
-                            cell.style.borderColor = '#00ff88';
+                            cell.classList.add('diamond');
                             document.getElementById('minesResult').className = 'game-result win';
                             document.getElementById('minesResult').textContent = '💎 АЛМАЗ! +' + data.win_amount + ' ₽';
                             showNotification('💎 АЛМАЗ! +' + data.win_amount + ' ₽', 'success');
@@ -2158,10 +2296,9 @@
                         revealed = [];
                         gameActive = true;
 
-                        document.querySelectorAll('#minesGrid div').forEach(el => {
+                        document.querySelectorAll('.mine-cell').forEach(el => {
                             el.textContent = '❓';
-                            el.style.background = 'rgba(0,0,0,0.3)';
-                            el.style.borderColor = 'rgba(255,255,255,0.03)';
+                            el.className = 'mine-cell';
                         });
 
                         document.getElementById('minesResult').className = 'game-result info';
