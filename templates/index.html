@@ -6,7 +6,6 @@
     <title>RuWin — Премиум Казино</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* ===== НЕОНОВЫЙ ДИЗАЙН ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --neon-cyan: #00f0ff;
@@ -473,10 +472,6 @@
     </div>
 
     <script>
-        // ============================================================
-        // ПОЛНЫЙ JAVASCRIPT
-        // ============================================================
-        
         let userId = null;
         let sessionId = null;
         let currentGame = 'lobby';
@@ -484,7 +479,6 @@
         let isAdmin = false;
         let userLevel = 1;
 
-        // ===== БАЛАНС =====
         function getCurrentBalance() {
             const el = document.getElementById('balance');
             if (!el) return 0;
@@ -517,7 +511,6 @@
             }
         }
 
-        // ===== НАВИГАЦИЯ =====
         function setupNavigation() {
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -550,7 +543,6 @@
             });
         }
 
-        // ===== ЗАГРУЗКА ИГР =====
         function loadGame(game) {
             const container = document.getElementById('gameContainer');
             const games = {
@@ -572,7 +564,6 @@
                     <div id="gameExtra"></div>
                 </div>
             `;
-            // Специфичные настройки
             if (game === 'roulette') {
                 document.getElementById('gameExtra').innerHTML = `
                     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px;">
@@ -610,7 +601,6 @@
             }
         }
 
-        // ===== ИГРОВАЯ ФУНКЦИЯ =====
         async function playGame(game) {
             const btn = document.getElementById('gameActionBtn');
             if (btn.disabled) return;
@@ -675,7 +665,6 @@
             btn.disabled = false;
         }
 
-        // ===== ЧАТ =====
         function sendChat() {
             const input = document.getElementById('chatInput');
             const msg = input.value.trim();
@@ -691,7 +680,6 @@
 
         function sendChatOnEnter(event) { if (event.key === 'Enter') sendChat(); }
 
-        // ===== УВЕДОМЛЕНИЯ =====
         function showNotification(message, type = 'info') {
             const container = document.getElementById('notifications') || (() => {
                 const el = document.createElement('div');
@@ -711,7 +699,6 @@
             }, 4000);
         }
 
-        // ===== ПРОВЕРКА БАЛАНСА =====
         function checkBalance(amount) {
             const balance = getCurrentBalance();
             if (amount > balance) {
@@ -721,7 +708,6 @@
             return true;
         }
 
-        // ===== ТАЙМЕР ДОЖДЯ =====
         function startRainTimer() {
             let hours = 3, minutes = 20, seconds = 55;
             setInterval(() => {
@@ -733,23 +719,16 @@
             }, 1000);
         }
 
-        // ===== БОНУС =====
         function showBonus() {
             showNotification('🎁 Бонус +80 ₽ зачислен на баланс!', 'success');
             updateUI({ balance: userBalance + 80 });
         }
 
-        // ===== ПРОФИЛЬ =====
         function toggleProfile() {
             showNotification('👤 ' + (document.getElementById('username').textContent || 'Игрок') + ' | Баланс: ' + userBalance.toLocaleString() + ' ₽', 'info');
         }
 
-        // ============================================================
-        // ИНИЦИАЛИЗАЦИЯ
-        // ============================================================
-
         document.addEventListener('DOMContentLoaded', function() {
-            // Проверка сессии
             const savedId = localStorage.getItem('ruwin_user_id');
             if (savedId) {
                 userId = savedId;
@@ -770,7 +749,6 @@
                 })
                 .catch(() => {});
             } else {
-                // Автоматический вход как test
                 localStorage.setItem('ruwin_user_id', 'test_001');
                 document.getElementById('app').style.display = 'block';
                 fetch('/api/init', {
@@ -792,7 +770,6 @@
             startRainTimer();
         });
 
-        // Глобальные функции
         window.playGame = playGame;
         window.sendChat = sendChat;
         window.sendChatOnEnter = sendChatOnEnter;
